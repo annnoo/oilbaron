@@ -48,10 +48,15 @@ def decode_dialog(data, dlg_name):
         pos = end + 1
         font_info = f'FONT {pt}, "{fontname}"'
 
-    clean_name = dlg_name.strip('"\'').replace(' ', '_')
+    clean_name = f'"{dlg_name}"' if ' ' in dlg_name else dlg_name
+    x_str = f'({x})' if x < 0 else str(x)
+    y_str = f'({y})' if y < 0 else str(y)
+    cx_str = f'({cx})' if cx < 0 else str(cx)
+    cy_str = f'({cy})' if cy < 0 else str(cy)
+
     out = []
     out.append(f'// Dialog: {dlg_name}')
-    out.append(f'{clean_name} DIALOG {x}, {y}, {cx}, {cy}')
+    out.append(f'{clean_name} DIALOG {x_str}, {y_str}, {cx_str}, {cy_str}')
     out.append(f'STYLE 0x{style:08X}L')
     if caption:
         out.append(f'CAPTION "{caption}"')
@@ -109,7 +114,7 @@ def decode_dialog(data, dlg_name):
 
 
 def decode_menu(data, menu_name):
-    clean_name = menu_name.strip('"\'').replace(' ', '_')
+    clean_name = f'"{menu_name}"' if ' ' in menu_name else menu_name
     out = [f'// Menu: {menu_name}', f'{clean_name} MENU', 'BEGIN']
 
     pos = 4  # skip 4-byte header
@@ -156,7 +161,7 @@ def decode_menu(data, menu_name):
 
 
 def decode_accelerators(data, table_name):
-    clean_name = table_name.strip('"\'').replace(' ', '_')
+    clean_name = f'"{table_name}"' if ' ' in table_name or table_name == 'ACCELERATORS' else table_name
     out = [f'// Accelerators: {table_name}', f'{clean_name} ACCELERATORS', 'BEGIN']
 
     pos = 0
@@ -165,19 +170,19 @@ def decode_accelerators(data, table_name):
         pos += 5
 
         f_parts = []
-        if flags & 0x10:
+        if flags & 0x01:
             f_parts.append('VIRTKEY')
         if flags & 0x02:
-            f_parts.append('SHIFT')
-        if flags & 0x04:
-            f_parts.append('CONTROL')
-        if flags & 0x08:
-            f_parts.append('ALT')
-        if flags & 0x01:
             f_parts.append('NOINVERT')
+        if flags & 0x04:
+            f_parts.append('SHIFT')
+        if flags & 0x08:
+            f_parts.append('CONTROL')
+        if flags & 0x10:
+            f_parts.append('ALT')
 
         flag_str = ', ' + ', '.join(f_parts) if f_parts else ''
-        if 32 <= key < 127 and not (flags & 0x10):
+        if 32 <= key < 127 and not (flags & 0x01):
             key_repr = f'"{chr(key)}"'
         else:
             key_repr = str(key)
