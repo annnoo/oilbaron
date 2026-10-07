@@ -1,0 +1,17 @@
+# Game binaries and proprietary original files
+game/
+
+# Ghidra project files and lock databases
+*.gpr
+*.rep/
+*.lock*
+
+# OS and Editor metadata
+.DS_Store
+.idea/
+.vscode/
+
+# Web dependencies and build artifacts (for future webgame)
+node_modules/
+dist/
+build/
