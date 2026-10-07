@@ -1,0 +1,485 @@
+|CONTEXT
+|CTXOMAP
+|FONT
+|KWBTREE
+|KWDATA
+|KWMAP
+|SYSTEM
+|TOPIC
+|TTLBTREE
+|bm0
+|bm1
+|bm2
+|bm3
+|bm4
+|bm5
+|bm6
+|bm7
+87f77fbbf8888ccccceccccceccccceccccceccccceccccc0088888f87eefffff8888ccccceccccceccccceccccceccccceccccc0088888f87eefffff8ccccccccccccccccccccccccccccccccccccccccc0088f87fe67fff8ccccccccccccccccccccccccccccccccccccccccc0088f87ffff77f8ccccccccceeeeeeeeeeeeeeeeeeeeeeeccccccccc0088f87ddfffff88cccccccccceeeeeeeeeeeeeeeeeeeccccccccc008888f87ddfffff8888cccccccccceeeeeeeeeeeeeeeccccccccc00888888f87fffffff888888cccccccccceeeeeeeeeeeccccccccc0088888888f87fffffff88888888cccccccccceeeeeeeccccccccc008888888888f87effffff8888888888cccccccccccccccccccccc00888888888888f87fffffff888888888888cccccccccccccccccc0088888888888888f87fffffff88888888888888cccccccccccccc008888888888888888f87fffffff8888888888888888cccccccccc00888888888888888888f87dffffff8888888888888888888888888888888888888888888888f87fffffff888888888888888888888888888888888888888888
+wzwxz
+wwuUP
+Help IndexB
+Oil Baron Game Information
+The objective of Oil Baron is to amass the largest possible amount of wealth by creating companies and trading their stock.  You may compete against another human player or play against the computer.
+For help on playing Oil Baron, select from the topics below:
+Basic Rules for Play
+The Game Menu
+The Options Menu
+The Window Menu
+The Button Bar
+The Mouse Commands
+The Keyboard Commands
+Notes on Oil Baron
+Registration Blank
+Oil Baron v1.2, Copyr. 1992 Al Funk (member, Association of Shareware Professionals).  This is a shareware program; unregistered usage of this game is permitted for evaluation purposes only.  See Notes for more information.
+Registration Blank>
+Registration Blank
+To register Oil Baron, print this help page and 
+send the following form to the address listed 
+at the end:
+-----------------------------------------------
+     Oil Baron Registration, Version 1.2
+Name : _______________________________________
+Cmpy.: _______________________________________
+Addr1: _______________________________________
+Addr2: _______________________________________
+City : _________________ State: ___ Zip:______
+Phone No. (optional) (    ) - _____ - ________
+Computer Make: ________________ Model :_______
+Processor    : ________________ Memory:_______
+DOS version  : ________________
+Name, as will appear in registration box:
+Name: ________________________________________
+Address, as will appear in registration box:
+Adr.: ________________________________________
+Other Comments : _____________________________
+______________________________________________
+______________________________________________
+CIS ID, if any : _____________________________
+How did you come across Oil Baron? ___________
+______________________________________________
+# copies     : _______  @ $10-- ea. = $ ___.__
+On disk copy, S&H       @ $ 2.50    = $ ___.__
+total =                               $ ___.__
+To be paid by check, certified check to:
+Al Funk
+42 Parkwyn Dr.
+Delmar, NY 12054
+Rules for Play6
+Rules for Play
+Game action in each player's turn is broken down into two segments.  In the first segment, the player has the option to place a piece or discard one.  If a piece is played, it appears on the board either as an independent company (i.e., it has no insignia) or as a piece of a larger company.
+If a piece is placed next to another independent piece, a new company is created.  The creating player has the option to choose any of the listed companies, and will receive 10 free shares for creating the company.  A company may not be created if it is already on the board.  In addition, no more than eight companies may coexist.  Therefore, pieces which create a 9th company will be darkened.  These darkened pieces may be discarded but not played; if it is possible in the future to create a new company, the pieces will no longer be darkened.
+If the piece placed is adjacent (horizontally or vertically) to a company, the piece will take on that company's insignia and add to the size and value of the company.
+If the piece played links two companies (not along the diagonal, however) a merger is said to take place.  When a merger occurs, the larger of the two companies (by share price) will remain and the smaller will disappear from the board and its chits5
+ will be  incorporated into the larger.  The individuals with the largest number of shares in the company will be paid a merger bonus in cash (some companies will give larger bonuses than others, however).  All shareholders will have the choice to sell, trade, or hold their shares in the company.  Trades are made 2 blocks of the dead chain's stock for 1 block of the new chain.  If a player chooses to hold his shares, he will own however many he decided to keep if that company is re-created (you will see a dialog and have a choice of how many you wish to keep).  Shares in an inactive company are not sellable and do not give dividends until that company is re-created.  See the help section on game options for more details on share limits and trading.
+After placing, players may buy or sell shares in the companies existing on the board.  There may or may not be limits on the number of shares which may be purchased in a given company according to the game options chosen.  See the help section on game options for more details.
+The game ends when either: a) one company dominates the board and no new companies can be created or b) all pieces have been drawn for a number of rounds equal to half the number of chits allotted to each player.  The player with the largest worth at the end of the game is the winner.
+Game Play Options
+Comparison of Companies
+Strategy For Playing Oil Baron
+The Game Menu5
+The Game Menu
+The Game Menu allows you to start a new game, save the current game, or load a previously begun game.
+If you wish to customize your play options, choose New Game New Options.  If you wish to play with the currently selected options, select New Game Same Options.  Options you can change with the new options selection include the size of the playing board, share limits, and starting cash.  If you choose to keep the same options you will still have the chance to customize the player list.
+To save a game, choose Save Game from the Game Menu.  The Game will be saved at the current point in play.  Saving the game is a useful method for evaluating strategies.
+To load a previous game, choose Open Game.  The current game will be lost and your previous game will be restored and you may begin playing at the point you saved it.  Note that games from a later version cannot be played on an earlier version of the software.
+Choosing Game Play Options
+Customize Players
+Open Game
+Save Game
+Choose Game Play Options@
+Choose Game Play Options
+The following options may be changed on the Options dialog:
+Number of Chits:  Changing this number will change the number of pieces you have in your hand at any given moment.  The minimum number of chits allowed is 4, the maximum 14.  Recommended figures for this are between 5 and 11.  This number should be modified in proportion to the size of your playing grid.
+Columns/Rows: You can change the horizontal and vertical size of the playing grid by modifying this selection.  The maximum number of columns and rows is 26, the minimum 12.  Recommended sizes range from 12x12 to 18x20.  Different sizes may be more or less legible depending on the graphics of your computer.
+Starting Cash:  This selection modifies the amount of money each player begins the game with.  A larger number reduces the amount of luck in the early stages of the game because initial company creation is not as significant a source of income.  However, it is important to balance out share limits with starting cash as small share limits and large starting cash amounts can make for a volatileKN
+ game.
+Share Limit: The minimum share limit is 500, the maximum 10,000,000.  The share limit is the maximum number of shares that may be purchased in a company.  However, it is possible to exceed this number by trading into a company.
+Blanks:  If blanks are permitted, some blank pieces will be mixed in with the normal draw.  If a player receives a blank piece, he may place it in any unoccupied square he chooses.  The piece corresponding to that square will be eliminated and the player with that piece will draw another.
+Pay Dividends:  The Pay Dividends check box determines whether companies offer dividends.  Each company gives out dividends in proportion to the cost of its stock.  These dividends give players a bit of extra cash without the need to sell shares.  The dividends from Imperial and Colored Cube are higher in proportion to their share value than are the other six.  In last six, share dividends are an identical proportion of their share value.  Thus it may be helpful sometimes to invest in these two companies, as their dividend returns are high.  This selection has a minimal effect on the overall outcome of games.
+Randomize Dividends:  When this selection is checked, dividends for each new company are determined randomly within a range loosely correlated with the standard setup.
+Randomize Share Costs:  Company share costs are determined on creation, and are determined randomly within a range loosely based on the standard setup.
+Hide Pieces on Play:  This is also changeable from the Options menu.  Selecting this option makes the computer hide your pieces after you have placed.  This is useful in human multi-player games in order that the other player(s) will not see your pieces but can watch share purchases.  Note that piece visibility can be toggled whether or not this selection is on.
+Purchasing Limit:  Choose a purchasing limit to make quick company dominance difficult.  Setting a purchasing limit prevents the current player from purchasing more than a certain number of shares in each company for that turn.  However, if you sell shares in a company but decide, on the same turn, that you really do wish to invest in that company, you will be allowed to purchase back the sold shares 
+as well as 
+ purchase the number of the purchasing limit.
+Hard Share Limits: When checked, prevents trading into a company which is at its share limit.  If this is not checked, the share limit can be violated for traded shares.  However, if sold, those shares above the limit cannot be purchased again.  
+Important Note:
+ The first player to trade (i.e., the current player) will reap the benefits of this option, then the player who plays after him, etc.  Trading is first-come first-served.
+The Game Menu
+The War Room Display8
+War Room Display
+The War Room selection automatically displays and arranges Oil Baron's information windows, making it easier to see the current status of the game.
+The Window Menu7
+The Window Menu
+The Window menu is used to view one of the three statistics displays: the information box, the wealth bar graph, or the shareholdings graph.
+Information Box
+Company Information
+Wealth Bar Graph
+Shareholdings Graph
+War Room
+Information Box7
+Information Box
+The Info... dialog allows the viewing of the share holdings and total wealth of each player on the board.  It is crucial to monitor this board in order to see who has majorities in which companies and in which companies all the shares have been
+ bought up.  In addition, it gives some insight into the strategies of the other players.  Use the mouse or keyboard to select the company to view and stock counts and total values will be adjusted accordingly.
+Click on the 'company information' button to bring up the company information dialog.  Hit <Enter> to exit this display.
+The Wealth Bar Graph<
+The Wealth Bar Graph
+The Wealth Bar Graph displays in visual format the relative positions of players during the game.  Next to the bar representation, the actual wealth figures are displayed.  This window remains in the front of the display at all times.
+The Button Bar6
+The Button Bar
+The Button Bar allows the quick selection of menu choices.  Each button's function can also be emulated from the keyboard.  See the following for more information:
+Ending Your Turn
+Discarding Pieces
+Buying and Selling Shares
+Hiding Your Chits
+The Shareholdings Graph
+Using the Mouse7
+Using the Mouse
+It is easiest to play Oil Baron using the mouse.  The button bar provides an easy way to select options during play.
+In addition to the button bar, the mouse can be used to drag pieces, instantly place pieces, and select companies from which to buy or sell.
+To drag a piece, simply point to that piece, hold the left button, drag it to its square, and release the button.  This is the easiest way to place blanks in particular.
+To instantly place a piece, double click on the piece and it will place itself.
+To buy or sell shares in a company, double click on any one of the company's pieces in the grid and you will see the buy/sell dialog box.  It is also possible to double click on the icons on the right side of the screen.
+To get a menu of options available for a specific company, click the right button on any of the company's symbols on the game board.  Select from the menu that appears, or click anywhere else to remove the menu.
+For more information, see the following:
+Buying and Selling Shares
+Rules for Play
+Using the Keyboard
+Using the Keyboard;
+ Using the Keyboard
+Although it is easiest to play Oil Baron with the mouse, anything that can be done with the mouse can also be done from the keyboard.  For instance, all button bar commands can be selected either from the Options menu or from hotkeys identified on the buttons and the menu.
+To operate (move/resize/change options) graph and wealth window displays from the keyboard:
+1) Select the window from the Window menu
+2) When finished, press TAB to return to the main menu.
+In addition to the above, all dialog boxes are fully operable from the keyboard.
+Main window hotkeys are as follows:
+Key Combination
+  Function
+B, Alt + B
+Buy/Sell
+D, Alt + D
+Discard Chit
+I, Alt + I
+Hide/View Chits
+P, Alt + P
+Place Piece
+N, Alt + N
+See Information
+For more information, see:
+Mouse Commands
+Button Bar
+Select Players6
+Select Players
+Whenever a new game is started you are presented with a dialog allowing you to enter the names and status of all players.  If you did not select new options, you may also return to a game in progress by hitting 'Cancel'.
+Type the names of each player and the fictional names of computer players into the boxes on the left.  Then, select the status of each player on the right.  Choosing 'human' allows you to play the game yourself.  Choosing either kind of computer player will make the computer play against you.
+The two computer options, dumb and smart, allow you to set the difficulty of the game which you are playing.  A dumb computer will be more likely to underestimate the importance of a move or buy the incorrect stock.  However, do not underestimate the intelligence of even the dumb computer players.
+Computer players will move and trade stock nearly instantaneously.  Be sure to check the board and the game information before proceeding with your own turn.
+Buying and Selling SharesA
+Buying and Selling Shares
+To buy or sell shares, either hit Alt + B, click the buy/sell button on the button bar, double-click on a unit in the company you wish to select, or choose the appropriate menu selection.
+First, make sure that the company you wish to choose is selected in the pull-down list on the top of the dialog.  The buy/sell dialog will now show you how many shares you can buy.  If you choose to sell, click on the 'sell' button and the number of shares you can sell will appear.  You may adjust this number either by typing in a new choice or clicking on the + and - buttons.
+To finalize the purchase or sale, click on OK.  To exit without buying or selling shares, click on Cancel or hit Escape.
+It is possible that you will not be able to buy enough shares in a company to deplete your cash.  Check and see if the company's shares have all been bought up, if there are purchasing limits, or if you have chosen a share limit.  If so, purchase shares in another company.  Remember: spare cash does not earn dividends.
+Discarding Pieces9
+Discarding Pieces
+If you find that you cannot place all of your pieces, or they all will help other players, you do not have to place any of them.  Instead, you can discard.  To discard, either hit Alt + D or click on the discard button on the button bar.
+Discarding removes that piece from play.  If you have selected 'show discarded pieces' from the Options menu, your discarded piece will appear as an X on the appropriate square.
+A blank may be placed in a square whose piece has been discarded.
+Ending Your Turn8
+Ending Your Turn
+Anytime after you have placed your piece you have the option to end your turn.  When you end your turn, your dividends are calculated and it is the next player's chance to place.
+To end your turn, either type Alt + E or select 'End Turn' from the button bar.
+Hiding Your Chits9
+Hiding Your Chits
+If you are playing with another person it is best to select 'hide chits on play' from either the options dialog or the Options menu.  This selection clears your chit display after you have placed, allowing the other player to watch the rest of your turn and concealing your pieces from view.
+The Options Menu8
+The Options Menu
+The options menu allows you to execute commands from the keyboard as well as viewing and changing play options.
+Choose 'Show Play OQ
+ptions' to see which options are in effect for the current game.
+Sell All Shares:  If you choose this option, the computer will sell all of your holdings.  You may then use that cash to buy as you wish.  You may also use the buy/sell dialog to sell shares from individual companies.
+Note that the menu bar changes during computer turns.  The Options menu is a subset of ordinarily accessible features.
+gGlm
+XTt-
+For more information on specific options, see the following:
+Buying and Selling Shares
+Hiding Your Chits
+Ending Your Turn
+Discarding Pieces
+Using the Share Graph
+Change To Computer
+Using Options Menu During Computer Turns
+Company Comparison:
+Company Comparison
+There are eight companies in the world of Oil Baron: Imperial, Colored Cube, Arabian, American, Pyramid, SupraCo, Weemoco, and Purple.  They are divided into three groups each of which has certain different characteristics.  Learning which companies to create and invest in when is the focus of strategy in Oil Baron.
+Company
+Starting Value/Shr
+$ Gain Potential
+Holders' Bonus
+Imperial, Colored Cube
+40.00
+High
+Arabian,American,Pyrmd.
+20.00
+Medium
+Medium
+SupraCo,Weem,Purple
+7.50
+High
+For more details than this chart provides, pull up the 'company information' dialog.
+Also note that different companies have different maximum share values, which is crucial in determining which company or companies will dominate the board at the end of the game.
+Company insignia:
+ Imperial Oil & Gas
+ Colored Cube Oil Co.
+ American Natural Gas Co
+ Arabian Oil Co.
+ Pyramid Oil Co.
+ SupraCo Fuel Resources
+ Weem Oil Refining
+ Purple Oil Company
+Notes on Oil BaronG
+Notes on Oil Baron: Version 1.2
+PLEASE SUPPORT THE SHAREWARE CONCEPT.
+Oil Baron was designed by Al Funk, Copyright 1992.  It is a shareware product.  To obtain a registration code for Oil Baron, please send $10 to:
+Al Funk
+42 Parkwyn Dr.
+Delmar, NY 12054
+See the registration blank option at the end of Notes for easy registration.  Send checks only, please.  For an on-disk copy of the most recent version, please send an additional $2.50.  Registration will provide a code valid for all future versions, as well as guaranteed notification of available updates.  Future updates will include such improvements as computer players who can play blanks, smarter computer players, more game play options, and bug-fixes (if necessary).  Updates may also incorporate player suggestions.
+The author may be contacted at the above address by mail, at CompuServe account 71505,1277, or America Online user name 'Alfunk'.  Product support is guaranteed to registered users.
+This program is intended to be run on Windows 3.1 or greater, on a computer with 150k free memory and a VGA or super-VGA adapter.  Use on other system configurations may produce some minor aberrations (for example, odd colors on EGA cards).
+Please note the following:
+"This program is produced by a member of the Association of Shareware Professionals (ASP). ASP wants to make sure that the shareware principle works for you. If you are unable to resolve a shareware-related problem with an ASP member by contacting the member directly, ASP may be able to help. The AS
+P Ombudsman can help you resolve a dispute or problem with an ASP member, but does not provide technical support for members' products. Please write to the ASP Ombudsman at 545 Grover Road, Muskegon, MI 49442 or send a CompuServe message via CompuServe Mail to ASP Ombudsman 70007,3536."
+DISCLAIMER: No warranties are expressed or implied as to performance or merchantability.  The user of this program must assume the entire risk of using the program.  Any liability of the author is limited exclusively to replacement or refund of the purchase price.
+Oil Baron was programmed in Turbo Pascal for Windows v1.5 Copyright Borland under Windows 3.1 Copyright Microsoft.
+Update Information
+Registration Blank
+Update Information:
+Update Information
+Version 1.1 of Oil Baron added the following enhancements, among others:
++ More intelligent computer players
++ A wealth display window
++ Automatic "War Room" window configuration
++ Enhanced Button Bar
++ Enhanced Keyboard and Mouse Support
++ Improved share disposition options on merger (when keeping shares)
++ Random Share and Dividend Options
+Version 1.2 of Oil Baron adds the following:
++ Right button functionality on main board
++ Company Information dialog box
++ Purchasing Limits option
++ "Hard" trading Limits option
++ "Quick Peek" at share information on share display graph
++ Total and Remaining shares display on share statistics table
++ Saving of configuration information when game is exited
++ Computer turn pause option
++ New color scheme for graph and wealth display windows
+Known Incompatibilities
++ Artisoft's Wired for Sound: window "hooks" cause problems when exiting.  Solution: close share graph before closing the game.
+Many thanks to those users whose suggestions continue to make Oil Baron an even better game!
+Thanks in particular to Rod Moses, CIS ID [75016,2031], and Garrett Wirth for beta testing Oil Baron 1.2.
+Oil Baron is a shareware product, Copyr. 1992 by Al Funk.  See Notes for more information.
+Using the Shareholding GraphD
+Using the Shareholding Graph
+The shareholding graph allows the players to view the distribution of shares by company.  This share information may be displayed either by the number of shares held or in percentages of company ownership.  The graph may be left up while the game is played to make references to the Information dialog less necessary.
+To view a quick readout on the number of shares held by players, click the right button on the company's bar and a small window will appear.  You may move the window to display the graph; click on either button to end the display.
+Options Menu During Computer TurnJ
+Options Menu During Computer Turns
+During a computer player's turn, it is possible to access a subset of the options menu.  The Info, Show Graph, and Show Play Options selections are the same as on the human player menu.  Note that the Info and Show Play Options dialogs will halt the thinking of the computer.
+It is possible to change a computer player into a human player by choosing the Change To Human option on the Options menu.  A computer player turned into a human player will be accessible on its next turn.
+Change To Computer:
+Change To Computer
+XTt-
+This options selection is only available before a move for this turn has been made.  It allows the current player to be changed into a Smart computer player.  See Options Menu During Computer Turns for the reverse selection (available during that computer player's turn on the options menu).
+Options Menu During Computer Turns
+Open Game1
+Open Game
+The open game feature allows the continuation of a previously saved game.
+Simply select the Oil Baron game you wish to continue from the list.
+Save Game
+Save Game1
+Save Game
+The save game feature allows the recording of a current game.  Simply type in the name under which you would like to record the game.  When you wish to continue the game, choose 'Open Game'.
+Open Game
+Company Information DialogF
+Company Information Dialog Box
+The company information dialog displays useful information about a company.  This readout can be critical in determing an investment strategy.  Definitions are as follows:
+Company Name:  From this list, select the company which you wish to examine.
+Price:  The cost per share to buy into this company.
+Dividend: The amount of cash each share earns per turn.
+Return:  The value of the dividend in proportion to the cost per share.  The higher the return, the better the investment if dividends are the primary vehicle of growth.
+Starting Cost:  The price of this stock with two chits.
+Increment:  In dollars, the amount the share price will grow per chit added.
+Growth Rate:  The increment divided by the price.  The higher this number, the greater the benefit of having shares in the company when it grows.
+Strategy Hints for Oil BaronG
+Oil Baron Strategy Hints + Tips
+Below is a (far from comprehensive) list of points to follow when playing Oil Baron:
+1)  Buy Low, Sell High.  In Oil Baron, companies grow at a constant 
+increment.
+  The increment is the amount in $ that a stock changes per chit added.  Because the amount of the increase (in $) is constant, the smaller the share value before the addition, the larger the increment is as a % of the value of the stock.  A percentage can be retrieved for a company by accessing the Company Information dialog, under Growth Rate.  Example:  a company worth $100 which grows at $2 will give a return of $2/100, or 2%.  A company whose increment is the same $2 but which is valued at $10 will grow instead at a rate of $2/10 or 20%.  Therefore, for $1000 invested in the first company the investor will make $20, whereas the investor in the second company with the same investment will make $200.
+2)  Trade when the larger company's value 
+will exceed twice the smaller after the merger
+.  It is obviously to our benefit to trade from a $10 company into a $100 company, because for every share in the original company we make a profit of over $40 (2 shares in the smaller are worth $20.  We end up with 1 share at $100, for an overall profit of $80.  Each share earned us $40 + the appreciation of the larger company).  But what about a company that is less than twice as large?  To determine the final value of the company, look up the company's increment, count the number of chits in the smaller company (add in the one just placed!), multiply these numbers, and add them to the value of the larger company.  Then determine whether you wish to trade.
+3)  If two companies are of similar value, buy into the larger.  That w
+ay, if there is a merger, your company's value will appreciate.  Although the owners of the other company may gain merger bonuses, they will have to sell (it won't be worth it to trade if the companies are similar in value) and you will reap the benefits.
+4)  Never underestimate the value of dividends.  Imperial and Colored Cube usually have higher dividends than the other companies.  If you don't believe other companies will grow, invest in a company which will guarantee you earnings.
+5)  If a company is not owned, think about putting a couple of shares in it.  If the company is merged into another (for instance, for another person using reason 3) you will gain majority holders' bonuses.
+6) If there are hard share limits, being the first to trade into a company that is almost at the limit is to your benefit.  If you can shut others out, you will reap all of the benefits of the merger (minus the appreciation of the other players shares in the surviving company).
+7)  Without purchasing limits, creating a small company and owning the majority can give you a big leg up on the competition.  If there are purchasing limits, you can be one block ahead (as people buy into it) at all times and reap a similar benefit.  Then, when it merges into a larger company, you will get large trading profits by virtue of its small size relative to the other company.
+8)  When playing against another person, put space between yourselves with two computer players (dumb or smart or one of each).  The order might be: Comp1, Human1, Comp2, Human2.  Or start with a human player and alternate from there.  This gives a more balanced game.
+9)  Discover the pattern behind equal value mergers.  In an equal value merger, it would appear that there is no way to determine which company will survive.  There is a method of determing the surviving company.
+10)  Discover the computer's weaknesses.  There are some, but I'm not going to give them away.
+Helv
+!"#$%&'()*+,-./Times New Roman
+@ABCSymbol
+KLMNOPQRSTUVWArial
+^_`abcdefghijkHelvetica
+vwxyz{|}~
+Wingdings
+Courier New
+fffff8888888
+action
+Al Funk
+author
+beginners
+blank
+blanks
+buttons
+buying
+chain
+chains
+change
+chits
+choices
+choose
+choosing
+click
+columns
+commands
+companies
+company
+comparison
+computer
+computer players
+continue
+cost
+dialog
+dialogs
+discard
+discarding
+display
+dividends
+dumb
+ending
+ending a turn
+ending turn
+estate
+fill-in
+graph
+growth
+help
+hide
+hiding
+hiding pieces
+hints
+holdings
+human
+increment
+index
+info
+information
+keyboard
+keys
+load
+load game
+main index
+menu
+merger
+mouse
+new game
+notes
+objective
+Oil Baron
+open game
+options
+pieces
+placement
+placing
+play
+player
+players
+playing
+print
+rate
+record
+registration
+rows
+rules
+save
+save game
+saved game
+segments
+selling
+shares
+show options
+smart
+starting
+starting cash
+stockholder
+stocks
+strategy
+suspend
+total
+Turbo Pascal
+update
+value
+version
+view
+viewing
+wealth
+Windows
+$x2f
+$x2f
+G3Gu
+~1`^
+C:\~hc39
+zu~&
+u'`+
+fffff888888888888888888888888888888888888888888
+|SYSTEM
+|TOPIC
+|bm0
+Help Index
+Registration Blank
+Rules for Play
+The Game Menu
+Choose Game Play Options
+The War Room Display
+The Window Menu
+Information Box
+The Wealth Bar Graph
+The Button Bar
+Using the Mouse
+Using the Keyboard
+Select Players
+Buying and Selling Shares
+Discarding Pieces
+Ending Your Turn
+Hiding Your Chits
+The Options Menu
+Company Comparison
+Notes on Oil Baron
+Update Information
+Using the Shareholding Graph
+Options Menu During Computer Turn
+Change To Computer
+Open Game
+Save Game
+Company Information Dialog
+Strategy Hints for Oil Baron
+XTt-
+gGlm
+D HP
+G HP
+l RP
