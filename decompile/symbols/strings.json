@@ -1,0 +1,137 @@
+{
+  "dgroup_strings": [
+    {
+      "offset": "0x01e0",
+      "dgroup_symbol": "DAT_10a8_01e0",
+      "value": "error has been found in the file"
+    },
+    {
+      "offset": "0x0212",
+      "dgroup_symbol": "DAT_10a8_0212",
+      "value": "will abort current game.  Contin"
+    },
+    {
+      "offset": "0x0298",
+      "dgroup_symbol": "DAT_10a8_0298",
+      "value": "This Version "
+    },
+    {
+      "offset": "0x0592",
+      "dgroup_symbol": "DAT_10a8_0592",
+      "value": "have blanks with computer player"
+    },
+    {
+      "offset": "0x065c",
+      "dgroup_symbol": "DAT_10a8_065c",
+      "value": "player will be human on its next"
+    },
+    {
+      "offset": "0x0683",
+      "dgroup_symbol": "DAT_10a8_0683",
+      "value": "Is this what "
+    },
+    {
+      "offset": "0x0ca6",
+      "dgroup_symbol": "DAT_10a8_0ca6",
+      "value": "show statistics: company has not"
+    },
+    {
+      "offset": "0x0cab",
+      "dgroup_symbol": "DAT_10a8_0cab",
+      "value": "statistics: company has not been"
+    },
+    {
+      "offset": "0x0e3c",
+      "dgroup_symbol": "DAT_10a8_0e3c",
+      "value": "'Game...New' to begin a new game"
+    },
+    {
+      "offset": "0x0eb5",
+      "dgroup_symbol": "DAT_10a8_0eb5",
+      "value": "Press <Space>"
+    },
+    {
+      "offset": "0x16fa",
+      "dgroup_symbol": "DAT_10a8_16fa",
+      "value": "or Columns must be 12 or greater"
+    }
+  ],
+  "dialog_identifiers": [
+    "ABOUT",
+    "BLANK_MOVE",
+    "CHOOSE COMPANY",
+    "COMPANY_STATS",
+    "DISCARDPIECE",
+    "GAME_OVER",
+    "KEEP_SHARES",
+    "MERGER STATISTICS",
+    "NEW GAME",
+    "OPTIONS",
+    "SHARE_STATS",
+    "SHAREOPTIONSDIALOG",
+    "SHARES DIALOG",
+    "QUICK_PEEK",
+    "OPTIONS_CHOSEN",
+    "INTRODUCTION",
+    "REGISTRATION"
+  ],
+  "companies": [
+    {
+      "id": 1,
+      "name": "Imperial",
+      "full_name": "Imperial Oil and Gas",
+      "tier": "High",
+      "base_price": 400
+    },
+    {
+      "id": 2,
+      "name": "Royal",
+      "full_name": "Colored Cube Oil Co.",
+      "tier": "Low",
+      "base_price": 200
+    },
+    {
+      "id": 3,
+      "name": "American",
+      "full_name": "American Natural Gas Co.",
+      "tier": "Mid",
+      "base_price": 300
+    },
+    {
+      "id": 4,
+      "name": "Arabian",
+      "full_name": "Oil Arabia, Inc.",
+      "tier": "Mid",
+      "base_price": 300
+    },
+    {
+      "id": 5,
+      "name": "Tower",
+      "full_name": "Pyramid Oil Co.",
+      "tier": "Low",
+      "base_price": 200
+    },
+    {
+      "id": 6,
+      "name": "Supra",
+      "full_name": "SupraCo Fuel Resources",
+      "tier": "High",
+      "base_price": 400
+    },
+    {
+      "id": 7,
+      "name": "Weemoco",
+      "full_name": "Weem Oil Refining",
+      "tier": "High",
+      "base_price": 400
+    }
+  ],
+  "grid_offsets": {
+    "board_cells": "DAT_10a8_22d2",
+    "row_stride": 140,
+    "cell_size": 5,
+    "player_array": "DAT_10a8_30aa",
+    "player_stride": 252,
+    "active_companies": "DAT_10a8_3790"
+  }
+}
