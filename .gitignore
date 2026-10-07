@@ -15,3 +15,4 @@ game/
 node_modules/
 dist/
 build/
+__pycache__/
