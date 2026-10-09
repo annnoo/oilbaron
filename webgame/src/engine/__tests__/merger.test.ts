@@ -338,7 +338,7 @@ describe('Merger Resolution & Shareholder Payouts', () => {
     expect(queue).toEqual(['imperial', 'royal', 'tower']);
   });
 
-  it('creates shareholder queue starting from active player index', () => {
+  it('creates shareholder queue starting from active player index and normalizes negative indices', () => {
     const players: PlayerState[] = [
       { id: 'p1', name: 'Alice', cash: 1000, shares: { american: 0 }, hand: [], isAi: false },
       { id: 'p2', name: 'Bob', cash: 1000, shares: { american: 5 }, hand: [], isAi: false },
@@ -350,5 +350,84 @@ describe('Merger Resolution & Shareholder Payouts', () => {
     // Order around table: Charlie (p3), Dave (p4), Alice (p1 - 0 shares, skipped), Bob (p2)
     const queue = getShareholderQueue('american', players, 2);
     expect(queue).toEqual(['p3', 'p4', 'p2']);
+
+    // Negative index: -1 wraps to index 3 (Dave) -> Dave (p4), Alice (p1 - skipped), Bob (p2), Charlie (p3)
+    const queueNeg = getShareholderQueue('american', players, -1);
+    expect(queueNeg).toEqual(['p4', 'p2', 'p3']);
+  });
+
+  it('deduplicates company IDs to prevent false ties and duplicates', () => {
+    const companies: Record<string, CompanyState> = {
+      american: { id: 'american', size: 10 } as any,
+      tower: { id: 'tower', size: 5 } as any,
+    };
+
+    // Duplicate IDs in determineSurvivingCompany
+    const survivor = determineSurvivingCompany(['american', 'american'], companies);
+    expect(survivor.survivorId).toBe('american');
+    expect(survivor.hasTie).toBe(false);
+
+    // Duplicate IDs in getDefunctCompanyQueue
+    const queue = getDefunctCompanyQueue(['american', 'tower', 'tower'], 'american', companies);
+    expect(queue).toEqual(['tower']);
+  });
+
+  it('automatically holds unallocated shares when hold is omitted', () => {
+    const player: PlayerState = {
+      id: 'p1',
+      name: 'Alice',
+      cash: 1000,
+      shares: { american: 5, imperial: 0 },
+      hand: [],
+      isAi: false,
+    };
+    const survivor: CompanyState = {
+      id: 'imperial',
+      availableShares: 10,
+    } as any;
+
+    // Player trades 2 and sells 1, omitting hold. 2 unallocated shares must be retained!
+    const result = applyShareDisposition(player, 'american', 400, survivor, {
+      sell: 1,
+      trade: 2,
+    });
+
+    expect(result.player.shares.american).toBe(2); // 5 - (1 + 2) = 2 retained!
+    expect(result.player.shares.imperial).toBe(1); // 2:1 trade -> 1 share
+    expect(result.player.cash).toBe(1400);
+    expect(result.survivorCompany.availableShares).toBe(9);
+  });
+
+  it('rejects under-allocation when hold is explicitly provided and rejects non-integers', () => {
+    const player: PlayerState = {
+      id: 'p1',
+      name: 'Alice',
+      cash: 1000,
+      shares: { american: 5, imperial: 0 },
+      hand: [],
+      isAi: false,
+    };
+    const survivor: CompanyState = {
+      id: 'imperial',
+      availableShares: 10,
+    } as any;
+
+    // Explicit hold that does not equal total owned shares (1 + 2 + 0 = 3 !== 5)
+    expect(() =>
+      applyShareDisposition(player, 'american', 400, survivor, {
+        sell: 1,
+        trade: 2,
+        hold: 0,
+      })
+    ).toThrow(/equal player's held shares/i);
+
+    // Non-integer counts
+    expect(() =>
+      applyShareDisposition(player, 'american', 400, survivor, {
+        sell: 1.5,
+        trade: 2,
+        hold: 1.5,
+      })
+    ).toThrow(/integer/i);
   });
 });

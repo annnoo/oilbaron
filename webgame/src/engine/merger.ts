@@ -39,7 +39,8 @@ export function determineSurvivingCompany(
   companyIds: readonly CompanyId[],
   companies: Record<CompanyId, CompanyState> | Partial<Record<CompanyId, CompanyState>>
 ): SurvivingCompanyResult {
-  if (companyIds.length === 0) {
+  const uniqueCompanyIds = [...new Set(companyIds)];
+  if (uniqueCompanyIds.length === 0) {
     return {
       survivorId: null,
       hasTie: false,
@@ -48,14 +49,14 @@ export function determineSurvivingCompany(
   }
 
   let maxSize = -1;
-  for (const id of companyIds) {
+  for (const id of uniqueCompanyIds) {
     const size = companies[id]?.size ?? 0;
     if (size > maxSize) {
       maxSize = size;
     }
   }
 
-  const tied = companyIds.filter((id) => (companies[id]?.size ?? 0) === maxSize);
+  const tied = uniqueCompanyIds.filter((id) => (companies[id]?.size ?? 0) === maxSize);
 
   if (tied.length > 1) {
     return {
@@ -179,9 +180,25 @@ export function validateShareDisposition(
   player: PlayerState,
   defunctCompanyId: CompanyId,
   survivorCompany: CompanyState,
-  choices: ShareDispositionChoices
+  choices: Partial<ShareDispositionChoices>
 ): ShareDispositionValidation {
-  const { sell, trade, hold } = choices;
+  const currentDefunctShares = player.shares[defunctCompanyId] ?? 0;
+  const sell = choices.sell ?? 0;
+  const trade = choices.trade ?? 0;
+  const hold = choices.hold !== undefined
+    ? choices.hold
+    : currentDefunctShares - (sell + trade);
+
+  if (
+    !Number.isInteger(sell) ||
+    !Number.isInteger(trade) ||
+    !Number.isInteger(hold)
+  ) {
+    return {
+      valid: false,
+      reason: 'Disposition counts must be integers',
+    };
+  }
 
   if (sell < 0 || trade < 0 || hold < 0) {
     return {
@@ -197,13 +214,18 @@ export function validateShareDisposition(
     };
   }
 
-  const currentDefunctShares = player.shares[defunctCompanyId] ?? 0;
   const totalAllocated = sell + trade + hold;
-
   if (totalAllocated > currentDefunctShares) {
     return {
       valid: false,
       reason: `Total shares allocated (${totalAllocated}) exceed player's held shares (${currentDefunctShares})`,
+    };
+  }
+
+  if (totalAllocated < currentDefunctShares) {
+    return {
+      valid: false,
+      reason: `Total shares allocated (${totalAllocated}) must equal player's held shares (${currentDefunctShares})`,
     };
   }
 
@@ -222,25 +244,26 @@ export function validateShareDisposition(
  * Immutably applies share disposition for a player during a merger:
  * - Liquidates `sell` defunct shares at `defunctPrice` into player cash.
  * - Trades `trade` defunct shares (2:1 ratio) for survivor company shares from bank.
- * - Retains `hold` defunct shares in player portfolio.
+ * - Retains `hold` defunct shares in player portfolio (defaults to unallocated shares).
  */
 export function applyShareDisposition(
   player: PlayerState,
   defunctCompanyId: CompanyId,
   defunctPrice: number,
   survivorCompany: CompanyState,
-  choices: ShareDispositionChoices
+  choices: Partial<ShareDispositionChoices>
 ): ShareDispositionResult {
   const currentDefunctShares = player.shares[defunctCompanyId] ?? 0;
-  const effectiveHold =
-    choices.hold !== undefined
-      ? choices.hold
-      : currentDefunctShares - (choices.sell + choices.trade);
+  const sell = choices.sell ?? 0;
+  const trade = choices.trade ?? 0;
+  const hold = choices.hold !== undefined
+    ? choices.hold
+    : currentDefunctShares - (sell + trade);
 
   const normalizedChoices: ShareDispositionChoices = {
-    sell: choices.sell,
-    trade: choices.trade,
-    hold: effectiveHold,
+    sell,
+    trade,
+    hold,
   };
 
   const validation = validateShareDisposition(
@@ -351,9 +374,9 @@ export function getDefunctCompanyQueue(
   survivingCompanyId: CompanyId,
   companies: Record<CompanyId, CompanyState> | Partial<Record<CompanyId, CompanyState>>
 ): CompanyId[] {
-  return participatingCompanyIds
+  const uniqueCompanyIds = [...new Set(participatingCompanyIds)];
+  return uniqueCompanyIds
     .filter((id) => id !== survivingCompanyId)
-    .slice()
     .sort((a, b) => {
       const sizeA = companies[a]?.size ?? 0;
       const sizeB = companies[b]?.size ?? 0;
@@ -372,9 +395,12 @@ export function getShareholderQueue(
 ): string[] {
   const queue: string[] = [];
   const total = players.length;
+  if (total === 0) return queue;
+
+  const normalizedActiveIndex = ((activePlayerIndex % total) + total) % total;
 
   for (let i = 0; i < total; i++) {
-    const idx = (activePlayerIndex + i) % total;
+    const idx = (normalizedActiveIndex + i) % total;
     const player = players[idx]!;
     if ((player.shares[defunctCompanyId] ?? 0) > 0) {
       queue.push(player.id);
