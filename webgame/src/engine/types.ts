@@ -110,6 +110,8 @@ export interface GameConfig {
   totalSharesPerCompany: number; // Default 25 shares
   startingCash: number;          // Default $6,000
   companies: CompanyDefinition[];// Data-driven list of company templates
+  majorityBonusMultiplier?: number; // Default 10x
+  minorityBonusMultiplier?: number; // Default 5x
 }
 
 export interface GameState {
