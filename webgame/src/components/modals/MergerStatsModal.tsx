@@ -3,6 +3,7 @@ import { Award, DollarSign, X, CheckCircle, TrendingUp } from 'lucide-react';
 import { playClick } from '../../assets/audio';
 import { CompanyId, GameState } from '../../engine/types';
 import { calculateMergerBonuses } from '../../engine/merger';
+import { useTranslation } from '../../i18n';
 
 export interface MergerStatsModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const MergerStatsModal: React.FC<MergerStatsModalProps> = ({
   survivorCompanyId,
   preMergerPrice,
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   const defunctDef = gameState.config.companies.find((c) => c.id === defunctCompanyId);
@@ -59,7 +61,7 @@ export const MergerStatsModal: React.FC<MergerStatsModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="merger-stats-title">
             <Award size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Merger Payouts & Shareholder Bonuses</span>
+            <span>{t('mergerStats.title')}</span>
           </div>
           <button
             type="button"
@@ -84,12 +86,12 @@ export const MergerStatsModal: React.FC<MergerStatsModalProps> = ({
           >
             <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
               <span style={{ color: defunctDef?.color || '#f87171' }}>{defunctDef?.name || defunctCompanyId}</span>
-              {' '}is being acquired by{' '}
+              {' '}{t('mergerStats.acquiredNotice', { defunct: '', survivor: '' }).replace('{defunct}', '').replace('{survivor}', '').trim()}{' '}
               <span style={{ color: survivorDef?.color || '#38bdf8' }}>{survivorDef?.name || survivorCompanyId}</span>!
             </div>
             <div style={{ display: 'flex', gap: '16px', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-              <span>Pre-Merger Share Price: <strong style={{ color: 'var(--text-amber)' }}>${preMergerPrice}</strong></span>
-              <span>Defunct Size: <strong>{defunctState?.size ?? 0} tiles</strong></span>
+              <span>{t('mergerStats.preMergerPrice', { price: `$${preMergerPrice}` })}</span>
+              <span>{t('common.size')}: <strong>{defunctState?.size ?? 0} {t('common.tiles')}</strong></span>
             </div>
           </div>
 
@@ -106,13 +108,13 @@ export const MergerStatsModal: React.FC<MergerStatsModalProps> = ({
               <span className="discarded-stat-value" style={{ color: 'var(--text-amber)' }}>
                 ${majorityPool.toLocaleString()}
               </span>
-              <span className="discarded-stat-label">1st Majority Bonus Pool (10×)</span>
+              <span className="discarded-stat-label">{t('mergerStats.majorityBonusPool')}</span>
             </div>
             <div className="discarded-stat-card">
               <span className="discarded-stat-value" style={{ color: '#38bdf8' }}>
                 ${minorityPool.toLocaleString()}
               </span>
-              <span className="discarded-stat-label">2nd Minority Bonus Pool (5×)</span>
+              <span className="discarded-stat-label">{t('mergerStats.minorityBonusPool')}</span>
             </div>
           </div>
 
@@ -121,16 +123,16 @@ export const MergerStatsModal: React.FC<MergerStatsModalProps> = ({
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: 'var(--bg-surface-elevated)', borderBottom: '1px solid var(--border-subtle)', textAlign: 'left' }}>
-                  <th style={{ padding: '8px 10px' }}>Shareholder</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Shares</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Cash Payout</th>
+                  <th style={{ padding: '8px 10px' }}>{t('stats.shareholder')}</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>{t('common.shares')}</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>{t('mergerStats.cashPayout')}</th>
                 </tr>
               </thead>
               <tbody>
                 {shareholders.length === 0 ? (
                   <tr>
                     <td colSpan={3} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      No players held stock in {defunctDef?.name}. Bonus pools returned to bank.
+                      {t('mergerStats.noSharesHeld', { name: defunctDef?.name || defunctCompanyId })}
                     </td>
                   </tr>
                 ) : (
@@ -183,7 +185,7 @@ export const MergerStatsModal: React.FC<MergerStatsModalProps> = ({
               onClose();
             }}
           >
-            Proceed to Share Disposition
+            {t('mergerStats.proceed')}
           </button>
         </div>
       </div>

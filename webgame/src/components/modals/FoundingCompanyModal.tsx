@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Building2, Award, Check } from 'lucide-react';
 import { playClick, playFoundCompany } from '../../assets/audio';
 import { CompanyDefinition, CompanyId, GameState } from '../../engine/types';
+import { useTranslation } from '../../i18n';
 
 export interface FoundingCompanyModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const FoundingCompanyModal: React.FC<FoundingCompanyModalProps> = ({
   availableCompanyIds,
   onSelectCompany,
 }) => {
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<CompanyId | null>(null);
 
   if (!isOpen) return null;
@@ -44,7 +46,7 @@ export const FoundingCompanyModal: React.FC<FoundingCompanyModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="founding-modal-title">
             <Building2 size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Form New Oil Company</span>
+            <span>{t('founding.title')}</span>
           </div>
         </div>
 
@@ -52,15 +54,15 @@ export const FoundingCompanyModal: React.FC<FoundingCompanyModalProps> = ({
           <div className="founding-banner">
             <div>
               <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {activePlayer ? activePlayer.name : 'Active Player'} is founding a company!
+                {t('founding.playerNotice', { name: activePlayer ? activePlayer.name : t('common.player') })}
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                Select an available corporation to incorporate this new oil reserve.
+                {t('founding.chooseCorpSubtitle')}
               </div>
             </div>
             <div className="founder-bonus-badge" title="Founder bonus awarded to the active player">
               <Award size={16} color="var(--accent-gold)" />
-              <span>+{founderBonusShares} Free {founderBonusShares === 1 ? 'Share' : 'Shares'}</span>
+              <span>{t('founding.bonusShares', { count: founderBonusShares })}</span>
             </div>
           </div>
 
@@ -126,10 +128,10 @@ export const FoundingCompanyModal: React.FC<FoundingCompanyModalProps> = ({
                         color: tierBadgeColor,
                       }}
                     >
-                      {comp.tier} Tier
+                      {t('founding.tier', { tier: comp.tier })}
                     </span>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Base Price: ${comp.basePrice}
+                      {t('founding.basePrice', { price: comp.basePrice })}
                     </span>
                   </div>
                 </div>
@@ -139,7 +141,7 @@ export const FoundingCompanyModal: React.FC<FoundingCompanyModalProps> = ({
 
           {availableDefs.length === 0 && (
             <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No companies currently available for founding.
+              {t('founding.noneAvailable')}
             </div>
           )}
         </div>
@@ -151,7 +153,7 @@ export const FoundingCompanyModal: React.FC<FoundingCompanyModalProps> = ({
             disabled={!selectedId}
             onClick={handleConfirm}
           >
-            Incorporate & Claim Bonus
+            {t('founding.incorporateBtn')}
           </button>
         </div>
       </div>

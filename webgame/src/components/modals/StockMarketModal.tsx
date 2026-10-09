@@ -3,6 +3,7 @@ import { TrendingUp, Plus, Minus, DollarSign, AlertCircle, ShoppingCart, X } fro
 import { playClick, playCashChime } from '../../assets/audio';
 import { CompanyId, GameState, SharePurchase } from '../../engine/types';
 import { calculateSharePrice, validateSharePurchases } from '../../engine/market';
+import { useTranslation } from '../../i18n';
 
 export interface StockMarketModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const StockMarketModal: React.FC<StockMarketModalProps> = ({
   gameState,
   onConfirmPurchase,
 }) => {
+  const { t } = useTranslation();
   const [counts, setCounts] = useState<Record<CompanyId, number>>({});
 
   useEffect(() => {
@@ -111,7 +113,7 @@ export const StockMarketModal: React.FC<StockMarketModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="stock-market-title">
             <TrendingUp size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Stock Exchange — Buy Shares</span>
+            <span>{t('market.title')}</span>
           </div>
           <button
             type="button"
@@ -138,13 +140,13 @@ export const StockMarketModal: React.FC<StockMarketModalProps> = ({
             }}
           >
             <div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Buyer Portfolio</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('market.buyerPortfolio')}</div>
               <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {activePlayer ? activePlayer.name : 'Unknown Player'}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Available Cash</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('market.availableCash')}</div>
               <div
                 style={{
                   fontFamily: 'var(--font-mono)',
@@ -172,7 +174,7 @@ export const StockMarketModal: React.FC<StockMarketModalProps> = ({
             }}
           >
             <span style={{ fontSize: '12px', color: 'var(--text-primary)' }}>
-              Purchase quota: <strong>{totalSelectedCount} / {maxShares}</strong> shares selected this turn
+              {t('market.purchaseQuota')} <strong>{totalSelectedCount} / {maxShares}</strong> {t('common.shares')} {t('market.quotaMax', { count: totalSelectedCount }).replace(/^[0-9]+\s*(of\s*3\s*shares|von\s*3\s*Aktien)\s*/i, '')}
             </span>
             <span
               style={{
@@ -182,14 +184,14 @@ export const StockMarketModal: React.FC<StockMarketModalProps> = ({
                 color: 'var(--text-amber)',
               }}
             >
-              {maxShares - totalSelectedCount} remaining
+              {t('market.remainingCount', { count: maxShares - totalSelectedCount })}
             </span>
           </div>
 
           {/* Active Companies List */}
           {activeCompanies.length === 0 ? (
             <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              No active companies on the board yet. Place tiles to found companies before buying shares!
+              {t('market.noActive')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '340px', overflowY: 'auto' }}>
@@ -233,14 +235,14 @@ export const StockMarketModal: React.FC<StockMarketModalProps> = ({
                               borderRadius: '3px',
                             }}
                           >
-                            SAFE
+                            {t('common.safe')}
                           </span>
                         )}
                       </div>
                       <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>
-                        <span>Size: <strong>{comp.size}</strong></span>
-                        <span>Bank: <strong>{comp.availableShares}</strong> left</span>
-                        <span>You own: <strong>{playerShares}</strong></span>
+                        <span>{t('common.size')}: <strong>{comp.size}</strong></span>
+                        <span>{t('common.bank')}: <strong>{comp.availableShares}</strong> {t('market.left')}</span>
+                        <span>{t('market.youOwn', { count: playerShares })}</span>
                       </div>
                     </div>
 
@@ -310,7 +312,7 @@ export const StockMarketModal: React.FC<StockMarketModalProps> = ({
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <ShoppingCart size={16} color="var(--accent-gold)" />
-                <span style={{ fontSize: '13px', fontWeight: 600 }}>Total Purchase Cost:</span>
+                <span style={{ fontSize: '13px', fontWeight: 600 }}>{t('market.totalPurchaseCost')}</span>
               </div>
               <div
                 style={{
@@ -339,7 +341,7 @@ export const StockMarketModal: React.FC<StockMarketModalProps> = ({
             className="btn btn-secondary"
             onClick={handlePass}
           >
-            Skip / Pass Turn
+            {t('market.skipPass')}
           </button>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
@@ -347,7 +349,7 @@ export const StockMarketModal: React.FC<StockMarketModalProps> = ({
               className="btn btn-secondary"
               onClick={onClose}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="button"
@@ -355,7 +357,7 @@ export const StockMarketModal: React.FC<StockMarketModalProps> = ({
               disabled={purchases.length === 0 || !validation.valid}
               onClick={handleConfirm}
             >
-              Confirm Purchase (${validation.totalCost})
+              {t('market.confirmPurchaseCost', { cost: validation.totalCost })}
             </button>
           </div>
         </div>

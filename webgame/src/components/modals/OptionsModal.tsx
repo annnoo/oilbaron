@@ -3,6 +3,7 @@ import { Sliders, X, Check, RotateCcw } from 'lucide-react';
 import { playClick } from '../../assets/audio';
 import { GameConfig } from '../../engine/types';
 import { CLASSIC_CONFIG, MODERN_BALANCED_CONFIG } from '../../engine/config';
+import { useTranslation } from '../../i18n';
 
 export interface OptionsModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
   onSaveConfig,
   slowCpu,
 }) => {
+  const { t, language, setLanguage } = useTranslation();
   const [ruleset, setRuleset] = useState<GameConfig['ruleset']>(config.ruleset);
   const [handSize, setHandSize] = useState<number>(config.handSize);
   const [safeThreshold, setSafeThreshold] = useState<number>(config.safeThreshold);
@@ -92,7 +94,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="options-title">
             <Sliders size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Game Options & Ruleset</span>
+            <span>{t('options.title')}</span>
           </div>
           <button
             type="button"
@@ -107,7 +109,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
         <div className="modal-body">
           {/* Ruleset Selection */}
           <div className="form-group" style={{ marginBottom: '16px' }}>
-            <span className="form-label">Ruleset Paradigm</span>
+            <span className="form-label">{t('options.rulesetParadigm')}</span>
             <div className="ruleset-cards-grid">
               <button
                 type="button"
@@ -115,11 +117,13 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
                 onClick={() => handleRulesetSelect('oilbaron_classic')}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 700, color: 'var(--accent-gold)' }}>1993 Oil Baron Classic</span>
+                  <span style={{ fontWeight: 700, color: 'var(--accent-gold)' }}>
+                    {t('options.classicTitle')}
+                  </span>
                   {ruleset === 'oilbaron_classic' && <Check size={16} color="var(--accent-gold)" />}
                 </div>
                 <span className="form-help">
-                  Authentic 10 founder bonus shares. High-stakes early founding advantages and classic Windows 3.1 economy.
+                  {t('options.classicDesc')}
                 </span>
               </button>
 
@@ -129,21 +133,53 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
                 onClick={() => handleRulesetSelect('modern_balanced')}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontWeight: 700, color: '#38bdf8' }}>Modern Balanced</span>
+                  <span style={{ fontWeight: 700, color: '#38bdf8' }}>
+                    {t('options.modernTitle')}
+                  </span>
                   {ruleset === 'modern_balanced' && <Check size={16} color="#38bdf8" />}
                 </div>
                 <span className="form-help">
-                  Standard 1 founder bonus share. Smooth competitive curve with tighter mid-game control.
+                  {t('options.modernDesc')}
                 </span>
               </button>
             </div>
           </div>
 
+          {/* Language Selection */}
+          <div className="form-group" style={{ marginBottom: '16px' }}>
+            <span className="form-label">{t('options.language')}</span>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+              <button
+                type="button"
+                className={`btn btn-sm ${language === 'en' ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => {
+                  playClick();
+                  setLanguage('en');
+                }}
+              >
+                {language === 'en' && <Check size={14} style={{ marginRight: '4px' }} />}
+                English
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${language === 'de' ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => {
+                  playClick();
+                  setLanguage('de');
+                }}
+              >
+                {language === 'de' && <Check size={14} style={{ marginRight: '4px' }} />}
+                Deutsch
+              </button>
+            </div>
+            <span className="form-help">{t('options.languageDesc')}</span>
+          </div>
+
           {/* Hand Size Slider */}
           <div className="form-group" style={{ marginBottom: '14px' }}>
             <div className="form-label">
-              <span>Tiles in Player Hand</span>
-              <span className="slider-value-badge">{handSize} tiles</span>
+              <span>{t('options.handSize')}</span>
+              <span className="slider-value-badge">{handSize} {t('common.tiles')}</span>
             </div>
             <div className="slider-container">
               <input
@@ -155,14 +191,14 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
                 className="slider-input"
               />
             </div>
-            <span className="form-help">Default is 6 tiles. Larger hands grant broader tactical foresight.</span>
+            <span className="form-help">{t('options.handSizeDesc')}</span>
           </div>
 
           {/* Safe Threshold Slider */}
           <div className="form-group" style={{ marginBottom: '14px' }}>
             <div className="form-label">
-              <span>Safe Company Threshold</span>
-              <span className="slider-value-badge">{safeThreshold} tiles</span>
+              <span>{t('options.safeThreshold')}</span>
+              <span className="slider-value-badge">{safeThreshold} {t('common.tiles')}</span>
             </div>
             <div className="slider-container">
               <input
@@ -175,14 +211,14 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
               />
             </div>
             <span className="form-help">
-              Companies with this size or greater cannot be acquired in mergers (Default: 11).
+              {t('options.safeThresholdDesc')}
             </span>
           </div>
 
           {/* Starting Cash */}
           <div className="form-group" style={{ marginBottom: '14px' }}>
             <div className="form-label">
-              <span>Starting Cash</span>
+              <span>{t('options.startingCash')}</span>
               <span className="slider-value-badge">${startingCash.toLocaleString()}</span>
             </div>
             <div className="slider-container">
@@ -196,7 +232,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
                 className="slider-input"
               />
             </div>
-            <span className="form-help">Capital allocated to each player at match start (Default: $6,000).</span>
+            <span className="form-help">{t('options.startingCashDesc')}</span>
           </div>
 
           {/* Slow Computer Turns Toggle */}
@@ -212,11 +248,11 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
                 style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
               />
               <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                Slow Computer Turns (Display AI thinking pause)
+                {t('options.slowCpu')}
               </span>
             </label>
             <span className="form-help" style={{ marginLeft: '26px' }}>
-              Adds intentional delays between CPU actions so you can follow their placements and purchases.
+              {t('options.slowCpuDesc')}
             </span>
           </div>
         </div>
@@ -228,7 +264,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
             onClick={handleResetDefaults}
           >
             <RotateCcw size={14} style={{ marginRight: '6px' }} />
-            Reset Defaults
+            {t('common.reset')}
           </button>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
@@ -236,14 +272,14 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
               className="btn btn-secondary"
               onClick={onClose}
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="button"
               className="btn btn-primary"
               onClick={handleSave}
             >
-              Apply Options
+              {t('options.apply')}
             </button>
           </div>
         </div>

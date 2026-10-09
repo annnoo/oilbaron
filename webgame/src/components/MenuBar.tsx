@@ -24,6 +24,7 @@ import {
   Monitor,
 } from 'lucide-react';
 import { playClick } from '../assets/audio';
+import { useTranslation } from '../i18n';
 
 export type MenuCategory = 'game' | 'actions' | 'views' | 'settings' | 'help';
 
@@ -292,6 +293,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
 
   const [openMenu, setOpenMenu] = useState<MenuCategory | null>(null);
   const menuBarRef = useRef<HTMLElement>(null);
+  const { t, language, setLanguage } = useTranslation();
 
   const executeAction = (actionId: MenuActionId, callback?: () => void) => {
     dispatchMenuAction(actionId, callback, onAction);
@@ -378,7 +380,11 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
             onClick={() => handleHeaderClick('game')}
             onMouseEnter={() => handleHeaderMouseEnter('game')}
           >
-            <span className="mnemonic">G</span>ame
+            {language === 'de' ? (
+              <><span className="mnemonic">S</span>piel</>
+            ) : (
+              <><span className="mnemonic">G</span>ame</>
+            )}
           </button>
 
           {openMenu === 'game' && (
@@ -391,7 +397,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <RotateCcw size={14} className="menu-icon" />
-                  <span>New Game (Same Options)</span>
+                  <span>{t('menu.newGameSame')}</span>
                 </span>
               </button>
 
@@ -403,7 +409,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <FolderPlus size={14} className="menu-icon" />
-                  <span>New Game (New Options)...</span>
+                  <span>{t('menu.newGameNew')}</span>
                 </span>
               </button>
 
@@ -417,7 +423,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <Save size={14} className="menu-icon" />
-                  <span>Save Game...</span>
+                  <span>{t('menu.saveGame')}</span>
                 </span>
               </button>
 
@@ -429,7 +435,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <Upload size={14} className="menu-icon" />
-                  <span>Load Game...</span>
+                  <span>{t('menu.loadGame')}</span>
                 </span>
               </button>
 
@@ -447,7 +453,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
                   ) : (
                     <Volume2 size={14} className="menu-icon text-gold" />
                   )}
-                  <span>Sound Effects</span>
+                  <span>{soundMuted ? t('menu.soundMuted') : t('menu.soundOn')}</span>
                 </span>
                 <span className="menu-item-check">
                   {!soundMuted && <Check size={14} className="check-icon" />}
@@ -467,7 +473,11 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
             onClick={() => handleHeaderClick('actions')}
             onMouseEnter={() => handleHeaderMouseEnter('actions')}
           >
-            <span className="mnemonic">A</span>ctions
+            {language === 'de' ? (
+              <><span className="mnemonic">A</span>ktionen</>
+            ) : (
+              <><span className="mnemonic">A</span>ctions</>
+            )}
           </button>
 
           {openMenu === 'actions' && (
@@ -481,7 +491,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <Coins size={14} className="menu-icon" />
-                  <span>Buy / Sell Shares</span>
+                  <span>{t('menu.buyShares')}</span>
                 </span>
                 <kbd className="menu-item-shortcut">Alt+B</kbd>
               </button>
@@ -495,7 +505,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <Crosshair size={14} className="menu-icon" />
-                  <span>Place Chit</span>
+                  <span>{t('menu.placeChit')}</span>
                 </span>
                 <kbd className="menu-item-shortcut">Alt+P</kbd>
               </button>
@@ -509,7 +519,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <Trash2 size={14} className="menu-icon" />
-                  <span>Discard Chit</span>
+                  <span>{t('menu.discardChit')}</span>
                 </span>
                 <kbd className="menu-item-shortcut">Alt+D</kbd>
               </button>
@@ -525,7 +535,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <ChevronRight size={14} className="menu-icon" />
-                  <span>End Turn</span>
+                  <span>{t('menu.endTurn')}</span>
                 </span>
                 <kbd className="menu-item-shortcut">Alt+E</kbd>
               </button>
@@ -543,7 +553,11 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
             onClick={() => handleHeaderClick('views')}
             onMouseEnter={() => handleHeaderMouseEnter('views')}
           >
-            <span className="mnemonic">V</span>iews
+            {language === 'de' ? (
+              <><span className="mnemonic">A</span>nsichten</>
+            ) : (
+              <><span className="mnemonic">V</span>iews</>
+            )}
           </button>
 
           {openMenu === 'views' && (
@@ -556,7 +570,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <BarChart3 size={14} className="menu-icon" />
-                  <span>Wealth Bar Chart</span>
+                  <span>{t('menu.viewWealth')}</span>
                 </span>
                 <kbd className="menu-item-shortcut">Alt+N</kbd>
               </button>
@@ -569,7 +583,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <PieChart size={14} className="menu-icon" />
-                  <span>Share Graph</span>
+                  <span>{t('menu.viewShares')}</span>
                 </span>
                 <kbd className="menu-item-shortcut">Alt+S</kbd>
               </button>
@@ -582,7 +596,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <Building2 size={14} className="menu-icon" />
-                  <span>Company Stats</span>
+                  <span>{t('menu.viewCompanies')}</span>
                 </span>
                 <kbd className="menu-item-shortcut">Alt+C</kbd>
               </button>
@@ -595,7 +609,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <Shield size={14} className="menu-icon" />
-                  <span>War Room</span>
+                  <span>{t('menu.viewWarRoom')}</span>
                 </span>
                 <kbd className="menu-item-shortcut">Alt+W</kbd>
               </button>
@@ -610,7 +624,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <Archive size={14} className="menu-icon" />
-                  <span>Discarded Pieces</span>
+                  <span>{t('menu.viewDiscarded')}</span>
                 </span>
               </button>
 
@@ -641,7 +655,11 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
             onClick={() => handleHeaderClick('settings')}
             onMouseEnter={() => handleHeaderMouseEnter('settings')}
           >
-            <span className="mnemonic">S</span>ettings
+            {language === 'de' ? (
+              <><span className="mnemonic">O</span>ptionen</>
+            ) : (
+              <><span className="mnemonic">S</span>ettings</>
+            )}
           </button>
 
           {openMenu === 'settings' && (
@@ -654,7 +672,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <Sliders size={14} className="menu-icon" />
-                  <span>Options...</span>
+                  <span>{t('menu.options')}</span>
                 </span>
               </button>
 
@@ -673,8 +691,8 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
                     <Bot size={14} className="menu-icon text-blue" />
                   )}
                   <span>
-                    {activePlayerName ? `${activePlayerName}: ` : 'Active Player: '}
-                    {activePlayerIsAi ? 'Change to Human' : 'Change to CPU'}
+                    {activePlayerName ? `${activePlayerName}: ` : `${t('menu.activePlayer')}: `}
+                    {activePlayerIsAi ? t('menu.changeToHuman') : t('menu.changeToCpu')}
                   </span>
                 </span>
               </button>
@@ -687,7 +705,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <span className="menu-icon-spacer" />
-                  <span>Slow Computer Turns</span>
+                  <span>{t('menu.slowCpuTurns')}</span>
                 </span>
                 <span className="menu-item-check">
                   {slowCpuTurns && <Check size={14} className="check-icon" />}
@@ -702,10 +720,51 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <span className="menu-icon-spacer" />
-                  <span>Hide Chits (Privacy)</span>
+                  <span>{t('menu.hideChits')}</span>
                 </span>
                 <span className="menu-item-check">
                   {hideChits && <Check size={14} className="check-icon" />}
+                </span>
+              </button>
+
+              <div className="menu-dropdown-divider" role="separator" />
+
+              {/* Language Switcher */}
+              <button
+                type="button"
+                className="menu-dropdown-item"
+                role="menuitem"
+                onClick={() => {
+                  playClick();
+                  setLanguage('en');
+                  setOpenMenu(null);
+                }}
+              >
+                <span className="menu-item-left">
+                  <span className="menu-icon-spacer" />
+                  <span>English</span>
+                </span>
+                <span className="menu-item-check">
+                  {language === 'en' && <Check size={14} className="check-icon" />}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="menu-dropdown-item"
+                role="menuitem"
+                onClick={() => {
+                  playClick();
+                  setLanguage('de');
+                  setOpenMenu(null);
+                }}
+              >
+                <span className="menu-item-left">
+                  <span className="menu-icon-spacer" />
+                  <span>Deutsch</span>
+                </span>
+                <span className="menu-item-check">
+                  {language === 'de' && <Check size={14} className="check-icon" />}
                 </span>
               </button>
             </div>
@@ -722,7 +781,11 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
             onClick={() => handleHeaderClick('help')}
             onMouseEnter={() => handleHeaderMouseEnter('help')}
           >
-            <span className="mnemonic">H</span>elp
+            {language === 'de' ? (
+              <><span className="mnemonic">H</span>ilfe</>
+            ) : (
+              <><span className="mnemonic">H</span>elp</>
+            )}
           </button>
 
           {openMenu === 'help' && (
@@ -735,7 +798,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <BookOpen size={14} className="menu-icon" />
-                  <span>Rules & Strategy</span>
+                  <span>{t('menu.helpRules')}</span>
                 </span>
               </button>
 
@@ -747,7 +810,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
               >
                 <span className="menu-item-left">
                   <Info size={14} className="menu-icon" />
-                  <span>About Oil Baron</span>
+                  <span>{t('menu.helpAbout')}</span>
                 </span>
               </button>
             </div>
@@ -755,10 +818,30 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
         </div>
       </div>
 
-      {/* Status Bar Indicator */}
-      <div className="menu-bar-status">
+      {/* Status Bar Indicator & Language Quick Toggle */}
+      <div className="menu-bar-status" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm"
+          style={{
+            padding: '2px 8px',
+            fontSize: '11px',
+            fontWeight: 700,
+            border: '1px solid var(--border-subtle)',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+          onClick={() => {
+            playClick();
+            setLanguage(language === 'en' ? 'de' : 'en');
+          }}
+          title={language === 'en' ? 'Auf Deutsch wechseln' : 'Switch to English'}
+          aria-label="Toggle language"
+        >
+          🌐 {language.toUpperCase()}
+        </button>
         <span className="menu-bar-badge">
-          {activePlayerIsAi ? 'CPU Turn' : 'Human Turn'}
+          {activePlayerIsAi ? t('menu.statusCpuTurn') : t('menu.statusHumanTurn')}
         </span>
       </div>
     </nav>

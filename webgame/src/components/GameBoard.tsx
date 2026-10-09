@@ -27,6 +27,7 @@ import {
 } from '../engine/board';
 import { TileInspector, getCompanyVisual } from './TileInspector';
 import { playClick } from '../assets/audio';
+import { useTranslation } from '../i18n';
 
 export interface GameBoardProps {
   /**
@@ -122,6 +123,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   onInspectCoord,
   className = '',
 }) => {
+  const { t } = useTranslation();
+
   // Local state for hover, inspector, and toggles
   const [hoveredCellCoord, setHoveredCellCoord] = useState<TileCoord | null>(null);
   const [localInspectedCoord, setLocalInspectedCoord] = useState<TileCoord | null>(null);
@@ -263,34 +266,41 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const getPreviewDescription = () => {
     if (!moveClassification) {
       if (selectedTileCoord) {
-        return `Selected Tile: ${formatCoord(selectedTileCoord)} — Click board to place`;
+        return t('board.selectedPrompt', { coord: formatCoord(selectedTileCoord) });
       }
-      return 'Hover any empty cell or hand tile to preview • Right-click or Inspect to peek';
+      return t('board.hoverPrompt');
     }
 
     const coordStr = formatCoord(moveClassification.coord);
 
     switch (moveClassification.type) {
       case 'isolated':
-        return `${coordStr}: Isolated wildcat chit (No adjacent tiles)`;
+        return t('board.previewIsolated', { coord: coordStr });
       case 'expansion': {
         const comp = companies[moveClassification.companyId];
         const name = comp?.name ?? moveClassification.companyId.toUpperCase();
-        return `${coordStr}: Expands ${name} (+${moveClassification.connectedCoords.length} tiles)`;
+        return t('board.previewExpansion', {
+          coord: coordStr,
+          name,
+          count: moveClassification.connectedCoords.length,
+        });
       }
       case 'founding':
-        return `${coordStr}: Founds a new corporation (Connects ${moveClassification.connectedCoords.length} wildcat chits)`;
+        return t('board.previewFounding', {
+          coord: coordStr,
+          count: moveClassification.connectedCoords.length,
+        });
       case 'merger': {
         const names = moveClassification.participatingCompanyIds
           .map((id) => companies[id]?.name ?? id.toUpperCase())
           .join(' vs ');
-        return `${coordStr}: Corporate Takeover Merger! (${names})`;
+        return t('board.previewMerger', { coord: coordStr, names });
       }
       case 'illegal_safe_merger': {
         const safeNames = moveClassification.safeCompanyIds
           .map((id) => companies[id]?.name ?? id.toUpperCase())
           .join(' & ');
-        return `${coordStr}: DEAD TILE — Cannot merge safe corporations (${safeNames} are ≥ 11 tiles)`;
+        return t('board.previewDead', { coord: coordStr, names: safeNames });
       }
     }
   };
@@ -302,8 +312,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         <div className="toolbar-left">
           <div className="board-title-group">
             <Grid size={16} className="text-gold" />
-            <span className="board-title">Oil Baron Board</span>
-            <span className="badge">10 × 12 Grid</span>
+            <span className="board-title">{t('board.title')}</span>
+            <span className="badge">{t('board.gridSize')}</span>
           </div>
         </div>
 
@@ -316,10 +326,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               playClick();
               setInspectModeActive((prev) => !prev);
             }}
-            title="Inspect Mode: Click any cell to view Quick Peek details"
+            title={t('board.inspectModeTooltip')}
           >
             <Eye size={13} />
-            <span>{inspectModeActive ? 'Inspecting...' : 'Inspect Mode'}</span>
+            <span>{inspectModeActive ? t('board.inspecting') : t('board.inspectMode')}</span>
           </button>
 
           {/* Hover Tooltip Toggle */}
@@ -330,10 +340,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               playClick();
               setHoverTooltipEnabled((prev) => !prev);
             }}
-            title="Toggle floating quick tooltip on hover"
+            title={t('board.tooltipToggle')}
           >
             <Info size={13} />
-            <span>Tooltip {hoverTooltipEnabled ? 'ON' : 'OFF'}</span>
+            <span>{t('board.tooltip')} {hoverTooltipEnabled ? 'ON' : 'OFF'}</span>
           </button>
 
           {/* Color Legend Toggle */}
@@ -344,10 +354,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
               playClick();
               setShowLegend((prev) => !prev);
             }}
-            title="Toggle move preview color legend"
+            title={t('board.legendToggle')}
           >
             <HelpCircle size={13} />
-            <span>Legend</span>
+            <span>{t('board.legend')}</span>
           </button>
         </div>
       </div>

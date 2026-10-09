@@ -20,6 +20,7 @@ import {
 } from '../engine/market';
 import { getCompanyVisual } from './TileInspector';
 import { playClick } from '../assets/audio';
+import { useTranslation } from '../i18n';
 
 export interface PlayerScoreboardProps {
   /**
@@ -74,6 +75,8 @@ export const PlayerScoreboard: React.FC<PlayerScoreboardProps> = ({
   onSelectPlayer,
   className = '',
 }) => {
+  const { t, language } = useTranslation();
+
   // Precompute net worth for all players to determine current leader
   const playerValuations = React.useMemo(() => {
     return players.map((player) => ({
@@ -97,10 +100,10 @@ export const PlayerScoreboard: React.FC<PlayerScoreboardProps> = ({
       <div className="scoreboard-header">
         <div className="scoreboard-header-title">
           <TrendingUp size={15} className="text-gold" />
-          <span>SCOREBOARD</span>
+          <span>{t('scoreboard.title')}</span>
         </div>
         <span className="scoreboard-player-count">
-          {players.length} Players
+          {players.length} {language === 'de' ? 'Spieler' : 'Players'}
         </span>
       </div>
 
@@ -160,7 +163,7 @@ export const PlayerScoreboard: React.FC<PlayerScoreboardProps> = ({
                       title="Currently active player's turn"
                       data-testid={`badge-active-turn-${index}`}
                     >
-                      <Sparkles size={10} /> TURN
+                      <Sparkles size={10} /> {t('scoreboard.turn')}
                     </span>
                   )}
 
@@ -189,23 +192,23 @@ export const PlayerScoreboard: React.FC<PlayerScoreboardProps> = ({
               {/* Financial Metrics Row */}
               <div className="player-metrics-grid">
                 <div className="player-metric-box">
-                  <span className="metric-box-label">Cash</span>
+                  <span className="metric-box-label">{t('scoreboard.cash')}</span>
                   <span className="metric-box-value cash-value">
                     {formatCurrency(player.cash)}
                   </span>
                 </div>
 
                 <div className="player-metric-box">
-                  <span className="metric-box-label">Net Worth</span>
+                  <span className="metric-box-label">{t('scoreboard.netWorth')}</span>
                   <span className="metric-box-value networth-value">
                     {formatCurrency(netWorth)}
                   </span>
                 </div>
 
                 <div className="player-metric-box">
-                  <span className="metric-box-label">Hand</span>
+                  <span className="metric-box-label">{language === 'de' ? 'Hand' : 'Hand'}</span>
                   <span className="metric-box-value hand-value">
-                    {player.hand.length} chits
+                    {player.hand.length} {language === 'de' ? 'Felder' : 'chits'}
                   </span>
                 </div>
               </div>
@@ -214,7 +217,7 @@ export const PlayerScoreboard: React.FC<PlayerScoreboardProps> = ({
               <div className="player-shares-section">
                 <div className="shares-header-row">
                   <span className="shares-section-label">
-                    Shares ({totalSharesCount})
+                    {language === 'de' ? 'Aktien' : 'Shares'} ({totalSharesCount})
                   </span>
                   {totalSharesCount > 0 && (
                     <span className="shares-count-total">

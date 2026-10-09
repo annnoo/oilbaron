@@ -2,6 +2,7 @@ import React from 'react';
 import { BarChart3, X, DollarSign, TrendingUp, Crown } from 'lucide-react';
 import { GameState } from '../../engine/types';
 import { calculateNetWorth, calculateSharePrice } from '../../engine/market';
+import { useTranslation } from '../../i18n';
 
 export interface WealthChartModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export const WealthChartModal: React.FC<WealthChartModalProps> = ({
   onClose,
   gameState,
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   const playerWealth = gameState.players.map((p) => {
@@ -61,7 +63,7 @@ export const WealthChartModal: React.FC<WealthChartModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="wealth-chart-title">
             <BarChart3 size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Wealth Bar Chart — Net Worth Valuation</span>
+            <span>{t('wealth.title')}</span>
           </div>
           <button
             type="button"
@@ -76,16 +78,16 @@ export const WealthChartModal: React.FC<WealthChartModalProps> = ({
         <div className="modal-body">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-              Real-time balance of liquid cash capital and active market stock valuation.
+              {t('wealth.balanceDesc')}
             </span>
             <div style={{ display: 'flex', gap: '14px', fontSize: '11px' }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: '#22c55e' }} />
-                <span>Liquid Cash</span>
+                <span>{t('wealth.liquidCash')}</span>
               </span>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: '#f59e0b' }} />
-                <span>Stock Portfolio</span>
+                <span>{t('wealth.stockPortfolio')}</span>
               </span>
             </div>
           </div>
@@ -128,12 +130,12 @@ export const WealthChartModal: React.FC<WealthChartModalProps> = ({
                         {p.name}
                       </span>
                       {p.isAi && (
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>(CPU)</span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({t('common.cpu')})</span>
                       )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                        Cash: <strong style={{ color: '#22c55e' }}>${p.cash.toLocaleString()}</strong> | Stocks: <strong style={{ color: '#f59e0b' }}>${p.stockValue.toLocaleString()}</strong>
+                        {t('common.cash')}: <strong style={{ color: '#22c55e' }}>${p.cash.toLocaleString()}</strong> | {t('scoreboard.stocks')}: <strong style={{ color: '#f59e0b' }}>${p.stockValue.toLocaleString()}</strong>
                       </span>
                       <span
                         style={{
@@ -167,7 +169,7 @@ export const WealthChartModal: React.FC<WealthChartModalProps> = ({
                         backgroundColor: '#22c55e',
                         height: '100%',
                       }}
-                      title={`Cash: $${p.cash.toLocaleString()}`}
+                      title={`${t('common.cash')}: $${p.cash.toLocaleString()}`}
                     />
                     <div
                       style={{
@@ -175,7 +177,7 @@ export const WealthChartModal: React.FC<WealthChartModalProps> = ({
                         backgroundColor: '#f59e0b',
                         height: '100%',
                       }}
-                      title={`Stock Value: $${p.stockValue.toLocaleString()}`}
+                      title={`${t('wealth.stockPortfolio')}: $${p.stockValue.toLocaleString()}`}
                     />
                   </div>
                 </div>
@@ -186,7 +188,7 @@ export const WealthChartModal: React.FC<WealthChartModalProps> = ({
 
         <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Close
+            {t('common.close')}
           </button>
         </div>
       </div>

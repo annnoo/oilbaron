@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { HelpCircle, X, BookOpen, Award, GitMerge, TrendingUp, ShieldCheck, Flag } from 'lucide-react';
 import { playClick } from '../../assets/audio';
+import { useTranslation } from '../../i18n';
 
 export interface HelpModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ export interface HelpModalProps {
 }
 
 export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
+  const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState<'overview' | 'founding' | 'mergers' | 'market' | 'gameover'>('overview');
 
   if (!isOpen) return null;
@@ -29,7 +31,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         <div className="modal-header">
           <div className="modal-title" id="help-title">
             <HelpCircle size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Oil Baron — Rules of Play & Strategy Guide</span>
+            <span>{t('help.title')}</span>
           </div>
           <button
             type="button"
@@ -52,7 +54,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 setActiveSection('overview');
               }}
             >
-              Overview & Board
+              {t('help.tabOverview')}
             </button>
             <button
               type="button"
@@ -62,7 +64,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 setActiveSection('founding');
               }}
             >
-              Founding Companies
+              {t('help.tabFounding')}
             </button>
             <button
               type="button"
@@ -72,7 +74,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 setActiveSection('market');
               }}
             >
-              Stock Market
+              {t('help.tabMarket')}
             </button>
             <button
               type="button"
@@ -82,7 +84,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 setActiveSection('mergers');
               }}
             >
-              Mergers & Payouts
+              {t('help.tabMergers')}
             </button>
             <button
               type="button"
@@ -92,7 +94,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 setActiveSection('gameover');
               }}
             >
-              End Game & Scoring
+              {t('help.tabEndGame')}
             </button>
           </div>
 
@@ -197,7 +199,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
         <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Close
+            {t('common.close')}
           </button>
         </div>
       </div>

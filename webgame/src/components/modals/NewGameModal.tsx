@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, User, Bot, Plus, Trash2, X, Play, Palette } from 'lucide-react';
 import { playClick } from '../../assets/audio';
 import { DEFAULT_PLAYER_COLORS } from '../../engine/config';
+import { useTranslation } from '../../i18n';
 
 export interface PlayerConfig {
   id: string;
@@ -39,6 +40,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
   onStartGame,
   initialPlayers,
 }) => {
+  const { t, language } = useTranslation();
   const [players, setPlayers] = useState<PlayerConfig[]>(() => {
     if (initialPlayers && initialPlayers.length >= 2) {
       return initialPlayers.map((p, idx) => ({
@@ -199,7 +201,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="new-game-title">
             <Users size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>New Match — Player Setup</span>
+            <span>{t('newGame.title')}</span>
           </div>
           <button
             type="button"
@@ -215,9 +217,9 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
           {/* Quick Presets Toolbar */}
           <div className="form-group" style={{ marginBottom: '14px' }}>
             <span className="form-label">
-              <span>Quick Roster Presets</span>
+              <span>{t('newGame.presets')}</span>
               <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
-                {players.length} of 6 Players Configured
+                {t('newGame.configuredCount', { count: players.length })}
               </span>
             </span>
             <div className="preset-button-bar">
@@ -226,28 +228,28 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                 className="btn btn-secondary btn-sm"
                 onClick={() => handleApplyPreset('2p')}
               >
-                2P (1 Human, 1 CPU)
+                {t('newGame.preset2p')}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
                 onClick={() => handleApplyPreset('3p')}
               >
-                3P (1 Human, 2 CPU)
+                {t('newGame.preset3p')}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
                 onClick={() => handleApplyPreset('4p_cpu')}
               >
-                4P (1 Human, 3 CPU)
+                {t('newGame.preset4pCpu')}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
                 onClick={() => handleApplyPreset('4p_human')}
               >
-                4P Hotseat (4 Humans)
+                {t('newGame.preset4pHuman')}
               </button>
             </div>
           </div>
@@ -256,17 +258,17 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
           <div className="form-group">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span className="form-label" style={{ margin: 0 }}>
-                Player Roster (2–6 Players)
+                {t('newGame.rosterTitle')}
               </span>
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
                 onClick={handleAddPlayer}
                 disabled={players.length >= 6}
-                title={players.length >= 6 ? 'Maximum 6 players reached' : 'Add another player'}
+                title={players.length >= 6 ? t('newGame.maxPlayers') : t('newGame.addPlayer')}
               >
                 <Plus size={14} />
-                <span>Add Player</span>
+                <span>{t('newGame.addPlayer')}</span>
               </button>
             </div>
 
@@ -351,7 +353,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                   />
 
                   {/* Human vs CPU Toggle */}
-                  <button
+                    <button
                     type="button"
                     className={`player-type-toggle-btn ${
                       player.isAi ? 'is-cpu' : 'is-human'
@@ -361,7 +363,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                     aria-label={`Toggle AI for ${player.name}`}
                   >
                     {player.isAi ? <Bot size={13} /> : <User size={13} />}
-                    <span>{player.isAi ? 'CPU' : 'Human'}</span>
+                    <span>{player.isAi ? t('common.cpu') : t('common.human')}</span>
                   </button>
 
                   {/* Remove Player Button */}
@@ -373,7 +375,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                     disabled={players.length <= 2}
                     title={
                       players.length <= 2
-                        ? 'Minimum 2 players required'
+                        ? t('newGame.minPlayers')
                         : `Remove ${player.name}`
                     }
                     aria-label={`Remove player ${index + 1}`}
@@ -384,15 +386,14 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
               ))}
             </div>
             <p className="form-help">
-              Oil Baron matches support 2 to 6 human or computer players. Computer oil barons
-              make automatic speculative acquisitions on their turns.
+              {t('newGame.helpText')}
             </p>
           </div>
         </div>
 
         <div className="modal-footer">
           <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             type="button"
@@ -401,7 +402,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
             disabled={players.length < 2 || players.length > 6}
           >
             <Play size={14} />
-            <span>Start Game ({players.length} Players)</span>
+            <span>{t('newGame.startWithCount', { count: players.length })}</span>
           </button>
         </div>
       </div>

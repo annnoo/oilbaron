@@ -3,6 +3,7 @@ import { Shield, TrendingUp, ChevronRight, Layers } from 'lucide-react';
 import type { CompanyDefinition, CompanyId, CompanyState } from '../engine/types';
 import { CLASSIC_COMPANIES, DEFAULT_CONFIG } from '../engine/config';
 import { calculateSharePrice, getCompanyDefinition } from '../engine/market';
+import { useTranslation } from '../i18n';
 
 export interface CompanyTickerProps {
   /**
@@ -46,6 +47,8 @@ export const CompanyTicker: React.FC<CompanyTickerProps> = ({
   onSelectCompany,
   className = '',
 }) => {
+  const { t } = useTranslation();
+
   // Normalize companies record/array
   const companyList: CompanyState[] = Array.isArray(companies)
     ? companies
@@ -62,10 +65,10 @@ export const CompanyTicker: React.FC<CompanyTickerProps> = ({
     >
       <div className="ticker-header">
         <TrendingUp size={14} className="ticker-header-icon" />
-        <span className="ticker-header-title">MARKET</span>
+        <span className="ticker-header-title">{t('ticker.market')}</span>
         {activeCompanies.length > 0 && (
           <span className="ticker-counter-badge">
-            {activeCompanies.length} Active
+            {activeCompanies.length} {t('ticker.active')}
           </span>
         )}
       </div>
@@ -74,10 +77,10 @@ export const CompanyTicker: React.FC<CompanyTickerProps> = ({
         {activeCompanies.length === 0 ? (
           <div className="ticker-empty-wrapper">
             <span className="ticker-empty-msg">
-              No active companies on board yet — place 2 adjacent chits to found a company.
+              {t('ticker.emptyMsg')}
             </span>
             <div className="ticker-unformed-pills">
-              <span className="ticker-unformed-heading">Available:</span>
+              <span className="ticker-unformed-heading">{t('ticker.available')}</span>
               {unformedCompanies.map((c) => {
                 const def = getCompanyDefinition(definitions, c.id);
                 const basePrice = def?.basePrice ?? 200;
@@ -146,29 +149,29 @@ export const CompanyTicker: React.FC<CompanyTickerProps> = ({
                     {isSafe && (
                       <span
                         className="badge badge-safe ticker-safe-badge"
-                        title={`Safe chain (>= ${safeThreshold} tiles). Immune from takeovers.`}
+                        title={t('ticker.safeBadgeTitle', { threshold: safeThreshold })}
                       >
                         <Shield size={10} />
-                        <span>SAFE</span>
+                        <span>{t('common.safe')}</span>
                       </span>
                     )}
                   </div>
 
                   <div className="card-stats">
                     <div className="stat-group">
-                      <span className="stat-label">Size</span>
+                      <span className="stat-label">{t('common.size')}</span>
                       <span className="stat-value num">{company.size}</span>
                     </div>
 
                     <div className="stat-group">
-                      <span className="stat-label">Price</span>
+                      <span className="stat-label">{t('common.price')}</span>
                       <span className="stat-value money text-gold">
                         ${sharePrice.toLocaleString()}
                       </span>
                     </div>
 
                     <div className="stat-group">
-                      <span className="stat-label">Bank</span>
+                      <span className="stat-label">{t('common.bank')}</span>
                       <span className="stat-value shares">
                         {company.availableShares}
                         <span className="shares-max">/{totalShares}</span>
@@ -187,7 +190,7 @@ export const CompanyTicker: React.FC<CompanyTickerProps> = ({
               >
                 <div className="unformed-summary-header">
                   <Layers size={12} className="text-secondary" />
-                  <span>{unformedCompanies.length} Unformed</span>
+                  <span>{unformedCompanies.length} {t('ticker.unformed')}</span>
                 </div>
                 <div className="unformed-dots">
                   {unformedCompanies.map((c) => (
@@ -195,7 +198,7 @@ export const CompanyTicker: React.FC<CompanyTickerProps> = ({
                       key={c.id}
                       className="unformed-dot"
                       style={{ backgroundColor: c.color }}
-                      title={`${c.name} (Unformed)`}
+                      title={`${c.name} (${t('ticker.unformed')})`}
                     />
                   ))}
                 </div>

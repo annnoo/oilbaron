@@ -3,6 +3,7 @@ import { GitMerge, Check, AlertCircle } from 'lucide-react';
 import { playClick, playMergerAlert } from '../../assets/audio';
 import { CompanyId, GameState } from '../../engine/types';
 import { calculateSharePrice } from '../../engine/market';
+import { useTranslation } from '../../i18n';
 
 export interface MergerSurvivorModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const MergerSurvivorModal: React.FC<MergerSurvivorModalProps> = ({
   tiedCompanyIds,
   onChooseSurvivor,
 }) => {
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<CompanyId | null>(null);
 
   if (!isOpen) return null;
@@ -46,7 +48,7 @@ export const MergerSurvivorModal: React.FC<MergerSurvivorModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="merger-survivor-title">
             <GitMerge size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Merger Conflict — Tie-Break Decision</span>
+            <span>{t('mergerSurvivor.title')}</span>
           </div>
         </div>
 
@@ -54,16 +56,16 @@ export const MergerSurvivorModal: React.FC<MergerSurvivorModalProps> = ({
           <div className="founding-banner" style={{ borderColor: 'rgba(239, 68, 68, 0.4)' }}>
             <div>
               <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Multiple Corporations Tie for Largest Size!
+                {t('mergerSurvivor.tieNotice')}
               </div>
               <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {activePlayer ? activePlayer.name : 'The active player'} must choose which corporation survives and absorbs the rival companies.
+                {t('mergerSurvivor.chooseDesc', { name: activePlayer ? activePlayer.name : t('common.player') })}
               </div>
             </div>
           </div>
 
           <div style={{ margin: '14px 0 8px 0', fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-            Select the Surviving Corporation:
+            {t('mergerSurvivor.selectSurviving')}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -109,9 +111,9 @@ export const MergerSurvivorModal: React.FC<MergerSurvivorModalProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', gap: '14px', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    <span>Size: <strong>{compState.size} tiles</strong></span>
-                    <span>Share Price: <strong style={{ color: 'var(--text-amber)' }}>${price}</strong></span>
-                    <span>Bank Shares: <strong>{compState.availableShares}</strong></span>
+                    <span>{t('common.size')}: <strong>{compState.size} {t('common.tiles')}</strong></span>
+                    <span>{t('mergerSurvivor.sharePrice', { price: `$${price}` })}</span>
+                    <span>{t('mergerSurvivor.bankShares', { count: compState.availableShares })}</span>
                   </div>
                 </div>
               );
@@ -126,7 +128,7 @@ export const MergerSurvivorModal: React.FC<MergerSurvivorModalProps> = ({
             disabled={!selectedId}
             onClick={handleConfirm}
           >
-            Confirm Survivor
+            {t('mergerSurvivor.confirm')}
           </button>
         </div>
       </div>
