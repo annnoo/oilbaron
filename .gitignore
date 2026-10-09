@@ -16,3 +16,7 @@ node_modules/
 dist/
 build/
 __pycache__/
+
+# Worktrees
+.worktrees/
+worktrees/
