@@ -33,5 +33,18 @@ describe('App Integration', () => {
     expect(html).toContain('Seed Founding');
     expect(html).toContain('Seed Merger');
     expect(html).toContain('Seed Dead Tile');
+
+    // Task 4: PlayerHand Tray
+    expect(html).toContain('data-testid="player-hand-tray"');
+    expect(html).toContain('Place Chit');
+    expect(html).toContain('Discard Dead Tile');
+    expect(html).toContain('Hide Chits');
+
+    // Task 4: PlayerScoreboard
+    expect(html).toContain('data-testid="player-scoreboard"');
+    expect(html).toContain('SCOREBOARD');
+    expect(html).toContain('2 Players');
+    expect(html).toContain('Change to CPU');
+    expect(html).toContain('Change to Human');
   });
 });

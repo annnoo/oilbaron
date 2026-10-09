@@ -26,6 +26,8 @@ import { gameReducer } from './engine/reducer';
 import { MenuBar, type MenuActionId } from './components/MenuBar';
 import { CompanyTicker } from './components/CompanyTicker';
 import { GameBoard } from './components/GameBoard';
+import { PlayerHand } from './components/PlayerHand';
+import { PlayerScoreboard } from './components/PlayerScoreboard';
 
 export const App: React.FC = () => {
   const [muted, setMuted] = useState<boolean>(soundEffects.isMuted());
@@ -39,7 +41,10 @@ export const App: React.FC = () => {
 
   // Initialize game state with standard 2-player match
   const [gameState, setGameState] = useState<GameState>(() =>
-    createInitialGameState(DEFAULT_CONFIG, ['Player 1', 'Computer 1 (CPU)'])
+    createInitialGameState(DEFAULT_CONFIG, [
+      { name: 'Player 1', isAi: false },
+      { name: 'Computer 1 (CPU)', isAi: true },
+    ])
   );
 
   const handleToggleMute = () => {
@@ -66,7 +71,12 @@ export const App: React.FC = () => {
         setLastAction(`Active player type changed to ${!activePlayerIsAi ? 'CPU' : 'Human'}`);
         break;
       case 'new_game_same':
-        setGameState(createInitialGameState(DEFAULT_CONFIG, ['Player 1', 'Computer 1 (CPU)']));
+        setGameState(
+          createInitialGameState(DEFAULT_CONFIG, [
+            { name: 'Player 1', isAi: false },
+            { name: 'Computer 1 (CPU)', isAi: true },
+          ])
+        );
         setLastAction('New Game started (Same Options)');
         playFoundCompany();
         break;
@@ -162,6 +172,37 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleDiscardDeadTile = (coord: TileCoord) => {
+    try {
+      const nextState = gameReducer(gameState, { type: 'DISCARD_DEAD_TILE', coord });
+      setGameState(nextState);
+      setSelectedHandCoord(null);
+      playClick();
+      setLastAction(`Discarded dead chit at ${formatCoord(coord)} and drew replacement`);
+    } catch (err: any) {
+      setLastAction(`Cannot discard dead tile: ${err.message}`);
+    }
+  };
+
+  const handleTogglePlayerAi = (playerIndex: number, nextIsAi: boolean) => {
+    setGameState((prev) => {
+      const nextPlayers = prev.players.map((p, idx) =>
+        idx === playerIndex ? { ...p, isAi: nextIsAi } : p
+      );
+      return { ...prev, players: nextPlayers };
+    });
+    if (playerIndex === gameState.activePlayerIndex) {
+      setActivePlayerIsAi(nextIsAi);
+    }
+    const pName = gameState.players[playerIndex]?.name ?? `Player ${playerIndex + 1}`;
+    setLastAction(`${pName} type changed to ${nextIsAi ? 'CPU' : 'Human'}`);
+  };
+
+  const handleToggleHideChits = (nextHide: boolean) => {
+    setHideChits(nextHide);
+    setLastAction(`Hide chits (hotseat privacy): ${nextHide ? 'ON' : 'OFF'}`);
+  };
+
   const seedFoundingScenario = () => {
     playFoundCompany();
     setGameState((prev) => {
@@ -191,7 +232,7 @@ export const App: React.FC = () => {
         },
       };
     });
-    setLastAction('Seeded Merger Scenario: American at D-4/D-5 & Imperial at D-7/D-8 (Hover D-6 to preview Merger)');
+    setLastAction('Seeded Merger Scenario: American at D-4/D-7 & Imperial at D-7/D-8 (Hover D-6 to preview Merger)');
   };
 
   const seedDeadTileScenario = () => {
@@ -200,9 +241,22 @@ export const App: React.FC = () => {
       const nextBoard = prev.board.map((row) => [...row]);
       nextBoard[5]![4] = { type: 'company', companyId: 'imperial' }; // F-5
       nextBoard[5]![6] = { type: 'company', companyId: 'royal' };    // F-7
+
+      // Inject dead tile F-6 (row 5, col 5) into active player hand to test dead chit discarding
+      const activeIdx = prev.activePlayerIndex;
+      const deadCoord: TileCoord = { row: 5, col: 5 }; // F-6
+      const currentHand = prev.players[activeIdx]?.hand ?? [];
+      const hasF6 = currentHand.some((t) => t.row === 5 && t.col === 5);
+      const nextHand = hasF6 ? currentHand : [deadCoord, ...currentHand.slice(0, 5)];
+
+      const nextPlayers = prev.players.map((p, idx) =>
+        idx === activeIdx ? { ...p, hand: nextHand } : p
+      );
+
       return {
         ...prev,
         board: nextBoard,
+        players: nextPlayers,
         companies: {
           ...prev.companies,
           imperial: { ...prev.companies.imperial!, isActive: true, size: 11, isSafe: true },
@@ -210,7 +264,7 @@ export const App: React.FC = () => {
         },
       };
     });
-    setLastAction('Seeded Dead Tile Scenario: Safe Imperial & Safe Royal (Hover F-6 to preview Dead Tile / Illegal Safe Merger)');
+    setLastAction('Seeded Dead Tile Scenario: Safe Imperial & Safe Royal around F-6. Added F-6 dead chit to hand!');
   };
 
   return (
@@ -268,90 +322,99 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {/* Task 3 Interactive 10x12 Game Board */}
-        <GameBoard
-          board={gameState.board}
-          companies={gameState.companies}
-          definitions={gameState.config.companies}
-          safeThreshold={gameState.config.safeThreshold}
-          selectedTileCoord={selectedHandCoord}
-          previewTileCoord={hoveredHandCoord}
-          playerHand={gameState.players[gameState.activePlayerIndex]?.hand}
-          onPlaceTile={handlePlaceTile}
-        />
+        {/* Main Game Layout: Board & Hand Tray on Left, Scoreboard Sidebar on Right */}
+        <div className="game-workspace-layout">
+          <div className="game-main-content">
+            {/* Task 3 Interactive 10x12 Game Board */}
+            <GameBoard
+              board={gameState.board}
+              companies={gameState.companies}
+              definitions={gameState.config.companies}
+              safeThreshold={gameState.config.safeThreshold}
+              selectedTileCoord={selectedHandCoord}
+              previewTileCoord={hoveredHandCoord}
+              playerHand={gameState.players[gameState.activePlayerIndex]?.hand}
+              onPlaceTile={handlePlaceTile}
+            />
 
-        {/* Active Player Hand Preview Strip */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '10px',
-            padding: '10px 14px',
-            backgroundColor: 'var(--bg-surface)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-md)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)' }}>
-              {gameState.players[gameState.activePlayerIndex]?.name}'s Hand:
-            </span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-              {gameState.players[gameState.activePlayerIndex]?.hand.map((tile) => {
-                const formatted = formatCoord(tile);
-                const isSelected =
-                  selectedHandCoord &&
-                  selectedHandCoord.row === tile.row &&
-                  selectedHandCoord.col === tile.col;
-                return (
-                  <button
-                    key={`${tile.row}-${tile.col}`}
-                    type="button"
-                    className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '3px 8px' }}
-                    onClick={() => {
-                      playClick();
-                      setSelectedHandCoord(isSelected ? null : tile);
-                    }}
-                    onMouseEnter={() => setHoveredHandCoord(tile)}
-                    onMouseLeave={() => setHoveredHandCoord(null)}
-                    title={`Click to select ${formatted} for placement; hover to preview on board`}
-                  >
-                    {formatted}
-                  </button>
-                );
-              })}
+            {/* Task 4: Player Hand Tray */}
+            <PlayerHand
+              hand={gameState.players[gameState.activePlayerIndex]?.hand ?? []}
+              activePlayerName={gameState.players[gameState.activePlayerIndex]?.name}
+              activePlayerIndex={gameState.activePlayerIndex}
+              isCurrentTurn={true}
+              turnPhase={gameState.phase}
+              isAi={gameState.players[gameState.activePlayerIndex]?.isAi}
+              board={gameState.board}
+              companies={gameState.companies}
+              definitions={gameState.config.companies}
+              safeThreshold={gameState.config.safeThreshold}
+              selectedCoord={selectedHandCoord}
+              hoveredCoord={hoveredHandCoord}
+              hideChits={hideChits}
+              onSelectTile={setSelectedHandCoord}
+              onHoverTile={setHoveredHandCoord}
+              onPlaceTile={handlePlaceTile}
+              onDiscardDeadTile={handleDiscardDeadTile}
+              onToggleHideChits={handleToggleHideChits}
+            />
+
+            {/* Scenario Quick-Seed Helper Toolbar */}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px',
+                padding: '8px 12px',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-sm)',
+              }}
+            >
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                SCENARIO GENERATOR:
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={seedFoundingScenario}
+                  title="Seed adjacent chits at C-4 & C-5 to test Founding preview"
+                >
+                  Seed Founding
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={seedMergerScenario}
+                  title="Seed American & Imperial at D-4/D-7 to test Merger preview"
+                >
+                  Seed Merger
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={seedDeadTileScenario}
+                  title="Seed 2 Safe companies around F-6 and add dead chit to hand"
+                >
+                  Seed Dead Tile
+                </button>
+              </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={seedFoundingScenario}
-              title="Seed adjacent chits at C-4 & C-5 to test Founding preview"
-            >
-              Seed Founding
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={seedMergerScenario}
-              title="Seed American & Imperial at D-4/D-7 to test Merger preview"
-            >
-              Seed Merger
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={seedDeadTileScenario}
-              title="Seed 2 Safe companies around F-6 to test Dead Tile preview"
-            >
-              Seed Dead Tile
-            </button>
-          </div>
+          <aside className="game-sidebar-content">
+            {/* Task 4: Sidebar Scoreboard */}
+            <PlayerScoreboard
+              players={gameState.players}
+              activePlayerIndex={gameState.activePlayerIndex}
+              companies={gameState.companies}
+              definitions={gameState.config.companies}
+              onTogglePlayerAi={handleTogglePlayerAi}
+            />
+          </aside>
         </div>
 
         {/* Task 2 Interactive Verification Panel */}

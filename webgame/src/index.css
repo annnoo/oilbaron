@@ -1453,3 +1453,615 @@ html, body {
   border-radius: 50%;
   display: inline-block;
 }
+
+/* ==========================================================================
+   TASK 4: PLAYER HAND TRAY STYLING
+   ========================================================================== */
+
+.player-hand-tray {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hand-tray-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background-color: var(--bg-surface-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hand-header-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hand-player-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+.hand-player-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-gold);
+  box-shadow: 0 0 6px var(--accent-gold);
+}
+
+.hand-counter-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  background-color: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+}
+
+.hand-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hand-tray-content {
+  padding: 12px 14px;
+  background-color: var(--bg-deep);
+  min-height: 94px;
+  display: flex;
+  align-items: center;
+}
+
+.hand-chits-rack {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.hand-chit-card {
+  position: relative;
+  min-width: 92px;
+  height: 72px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+  font-family: var(--font-sans);
+  text-align: left;
+}
+
+.hand-chit-card:hover:not(:disabled) {
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.hand-chit-card:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 1px;
+}
+
+.hand-chit-card.is-selected {
+  border-color: var(--accent-gold) !important;
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  box-shadow: 0 0 12px var(--accent-gold-glow);
+  transform: translateY(-3px);
+}
+
+.hand-chit-card.is-dead {
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  background-color: rgba(239, 68, 68, 0.08) !important;
+}
+
+.hand-chit-card.is-dead:hover:not(:disabled) {
+  border-color: #ef4444 !important;
+  background-color: rgba(239, 68, 68, 0.16) !important;
+}
+
+.hand-chit-card.is-hovered {
+  border-color: var(--accent-blue);
+}
+
+.hand-chit-card.is-hidden {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: default;
+  background-color: var(--bg-surface-elevated);
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.chit-coord-hidden {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.chit-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.chit-coord-tag {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.chit-dead-badge {
+  font-size: 9px;
+  font-weight: 700;
+  background-color: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  padding: 1px 4px;
+  border-radius: 2px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+
+.chit-move-pill {
+  font-size: 8px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 2px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.chit-card-body {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chit-marker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-gold);
+}
+
+.hand-chit-card.is-dead .chit-marker-dot {
+  background-color: #ef4444;
+}
+
+.chit-card-type {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.hand-chit-card.is-dead .chit-card-type {
+  color: #f87171;
+}
+
+.chit-selected-indicator {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: var(--accent-gold);
+  color: var(--text-inverse);
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.chit-inline-discard-btn {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.chit-inline-discard-btn:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.hand-privacy-overlay {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.hand-privacy-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+
+.hand-empty-notice {
+  width: 100%;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 16px 0;
+}
+
+.hand-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background-color: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hand-action-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hand-selection-status {
+  font-size: 12px;
+}
+
+.status-selected-info {
+  color: var(--text-secondary);
+}
+
+.status-dead-warning {
+  color: #f87171;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   TASK 4: PLAYER SCOREBOARD SIDEBAR STYLING
+   ========================================================================== */
+
+.player-scoreboard-sidebar {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 280px;
+}
+
+.scoreboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background-color: var(--bg-surface-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.scoreboard-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+}
+
+.scoreboard-player-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  background-color: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+}
+
+.scoreboard-players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+
+.scoreboard-player-card {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all var(--transition-fast);
+}
+
+.scoreboard-player-card:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-strong);
+}
+
+.scoreboard-player-card.is-active {
+  border-left-color: var(--accent-gold) !important;
+  background-color: rgba(245, 158, 11, 0.05);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);
+}
+
+.scoreboard-player-card.is-leader {
+  border-top-color: rgba(245, 158, 11, 0.3);
+  border-right-color: rgba(245, 158, 11, 0.3);
+  border-bottom-color: rgba(245, 158, 11, 0.3);
+}
+
+.player-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.player-title-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.player-index-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.player-name-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-badges-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.player-turn-badge {
+  font-size: 10px;
+  padding: 1px 5px;
+}
+
+.player-leader-badge {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  font-size: 10px;
+  padding: 1px 5px;
+}
+
+.badge-human {
+  background-color: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.badge-cpu {
+  background-color: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.player-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.player-metric-box {
+  background-color: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  padding: 5px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.metric-box-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.metric-box-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metric-box-value.cash-value {
+  color: #4ade80;
+}
+
+.metric-box-value.networth-value {
+  color: var(--text-amber);
+  font-weight: 700;
+}
+
+.metric-box-value.hand-value {
+  color: var(--text-secondary);
+}
+
+.player-shares-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shares-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shares-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.shares-count-total {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.shares-empty-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.shares-pills-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.shareholder-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.shareholder-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.shareholder-code {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.shareholder-count {
+  color: var(--text-amber);
+  font-weight: 600;
+}
+
+.player-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 6px;
+}
+
+.cpu-toggle-btn {
+  font-size: 11px;
+  padding: 3px 8px;
+  gap: 5px;
+}
+
+/* Two-column Game Workspace Layout */
+.game-workspace-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 1200px) {
+  .game-workspace-layout {
+    grid-template-columns: 1fr 340px;
+    align-items: start;
+  }
+}
+
+.game-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.game-sidebar-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
