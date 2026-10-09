@@ -49,6 +49,42 @@ function countCompanyTilesOnBoard(
 }
 
 /**
+ * Evaluates whether a player possesses at least one legally playable tile in hand.
+ * A tile is not playable if:
+ * - It is out of grid bounds or the target cell is not empty.
+ * - Placing it would trigger an illegal merger between 2+ safe companies (dead tile).
+ * - Placing it would found a company, but all companies are already active on the board.
+ */
+export function hasPlayableTile(
+  player: PlayerState,
+  board: readonly (readonly CellState[])[],
+  companies: Record<CompanyId, CompanyState>,
+  config: GameConfig
+): boolean {
+  if (player.hand.length === 0) return false;
+  return player.hand.some((tile) => {
+    if (
+      tile.row < 0 ||
+      tile.row >= config.boardRows ||
+      tile.col < 0 ||
+      tile.col >= config.boardCols
+    ) {
+      return false;
+    }
+    const cell = board[tile.row]?.[tile.col];
+    if (!cell || cell.type !== 'empty') return false;
+    if (isTileDead(board, tile, companies, config.safeThreshold)) return false;
+    const classification = classifyMove(board, tile, companies, config.safeThreshold);
+    if (classification.type === 'illegal_safe_merger') return false;
+    if (classification.type === 'founding') {
+      const anyAvailable = config.companies.some((def) => !companies[def.id]?.isActive);
+      if (!anyAvailable) return false;
+    }
+    return true;
+  });
+}
+
+/**
  * Determines whether the game has satisfied any victory or termination criteria:
  * 1. All active companies on the board have reached safe status (size >= safeThreshold).
  * 2. Any active company has grown to size >= 41.
@@ -69,7 +105,7 @@ export function isGameOver(state: GameState): boolean {
 
   if (state.tilePool.length === 0) {
     const anyPlayable = state.players.some((p) =>
-      p.hand.some((tile) => !isTileDead(state.board, tile, state.companies, state.config.safeThreshold))
+      hasPlayableTile(p, state.board, state.companies, state.config)
     );
     if (!anyPlayable) {
       return true;
@@ -525,8 +561,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         throw new Error(`Cannot choose merger survivor during phase '${state.phase}'`);
       }
 
-      if (!state.pendingMerger.participatingCompanyIds.includes(action.survivorCompanyId)) {
-        throw new Error(`Company ${action.survivorCompanyId} is not a participating company in merger`);
+      const survivorCheck = determineSurvivingCompany(
+        state.pendingMerger.participatingCompanyIds,
+        state.companies
+      );
+
+      const validSurvivorIds = survivorCheck.hasTie
+        ? survivorCheck.tiedCompanyIds
+        : survivorCheck.survivorId
+          ? [survivorCheck.survivorId]
+          : state.pendingMerger.participatingCompanyIds;
+
+      if (!validSurvivorIds.includes(action.survivorCompanyId)) {
+        throw new Error(
+          `Company ${action.survivorCompanyId} is not an eligible survivor among tied contenders (${validSurvivorIds.join(', ')})`
+        );
       }
 
       const survivingCompanyId = action.survivorCompanyId;
@@ -747,12 +796,34 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         idx === state.activePlayerIndex ? { ...p, hand: updatedHand } : p
       );
 
-      return {
+      const candidateState: GameState = {
         ...state,
         players: updatedPlayers,
         tilePool: updatedTilePool,
         history: [...state.history, action],
       };
+
+      const activePlayerUpdated = updatedPlayers[state.activePlayerIndex]!;
+      if (
+        updatedTilePool.length === 0 &&
+        !hasPlayableTile(activePlayerUpdated, state.board, state.companies, state.config)
+      ) {
+        if (isGameOver(candidateState)) {
+          const liquidation = liquidateGame(candidateState);
+          return {
+            ...candidateState,
+            players: liquidation.players,
+            phase: 'game_over',
+            winnerPlayerId: liquidation.winnerPlayerId,
+          };
+        }
+        return {
+          ...candidateState,
+          phase: 'buy_shares',
+        };
+      }
+
+      return candidateState;
     }
 
     case 'END_TURN': {
@@ -805,6 +876,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           players: liquidation.players,
           phase: 'game_over',
           winnerPlayerId: liquidation.winnerPlayerId,
+        };
+      }
+
+      const nextPlayer = candidateState.players[nextPlayerIndex]!;
+      if (
+        !hasPlayableTile(
+          nextPlayer,
+          candidateState.board,
+          candidateState.companies,
+          candidateState.config
+        )
+      ) {
+        return {
+          ...candidateState,
+          phase: 'buy_shares',
         };
       }
 

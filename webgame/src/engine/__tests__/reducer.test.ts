@@ -601,4 +601,204 @@ describe('Game State Reducer & Turn Flow', () => {
 
     expect(isGameOver(state)).toBe(true);
   });
+
+  it('automatically transitions next player with no legal moves to buy_shares so they can finish turn', () => {
+    let state = createInitialGameState(
+      DEFAULT_CONFIG,
+      [
+        { name: 'P1', isAi: false },
+        { name: 'P2', isAi: false },
+      ],
+      42
+    );
+
+    // American is safe (size 11)
+    state.companies.american = {
+      ...state.companies.american!,
+      isActive: true,
+      isSafe: true,
+      size: 11,
+    };
+    state.board[2]![2] = { type: 'company', companyId: 'american' };
+
+    // Imperial is safe (size 11)
+    state.companies.imperial = {
+      ...state.companies.imperial!,
+      isActive: true,
+      isSafe: true,
+      size: 11,
+    };
+    state.board[2]![4] = { type: 'company', companyId: 'imperial' };
+
+    // Supra is active but NOT safe (size 5), so all-safe game-over doesn't trigger
+    state.companies.supra = {
+      ...state.companies.supra!,
+      isActive: true,
+      isSafe: false,
+      size: 5,
+    };
+    state.board[8]![8] = { type: 'company', companyId: 'supra' };
+
+    // P1 has 2 playable isolated tiles
+    state.players[0]!.hand = [{ row: 0, col: 0 }, { row: 9, col: 9 }];
+
+    // P2 has only dead tiles (bridging safe companies) and empty tile pool
+    state.players[1]!.hand = [{ row: 2, col: 3 }];
+    state.tilePool = [];
+
+    // P1 plays first tile and ends turn
+    state = gameReducer(state, { type: 'PLACE_TILE', coord: { row: 0, col: 0 } });
+    state = gameReducer(state, { type: 'END_TURN' });
+
+    // Turn advances to P2, but P2 has no playable tiles!
+    // Since P1 still holds a playable tile, the game is not over yet,
+    // so P2's phase automatically transitions to 'buy_shares'
+    expect(state.activePlayerIndex).toBe(1);
+    expect(state.phase).toBe('buy_shares');
+
+    // P2 can complete their turn by ending it
+    state = gameReducer(state, { type: 'END_TURN' });
+
+    // Turn advances back to P1 who still has a playable tile
+    expect(state.activePlayerIndex).toBe(0);
+    expect(state.phase).toBe('place_tile');
+
+    // P1 plays their last tile and ends turn
+    state = gameReducer(state, { type: 'PLACE_TILE', coord: { row: 9, col: 9 } });
+    state = gameReducer(state, { type: 'END_TURN' });
+
+    // Now neither P1 nor P2 has playable tiles -> game over!
+    expect(state.phase).toBe('game_over');
+  });
+
+  it('rejects choosing a non-tied smaller company as merger survivor in CHOOSE_MERGER_SURVIVOR', () => {
+    let state = createInitialGameState(
+      DEFAULT_CONFIG,
+      [
+        { name: 'P1', isAi: false },
+        { name: 'P2', isAi: false },
+      ],
+      42
+    );
+
+    // American: size 4
+    for (let c = 0; c <= 3; c++) {
+      state.board[2]![c] = { type: 'company', companyId: 'american' };
+    }
+    state.companies.american = {
+      ...state.companies.american!,
+      isActive: true,
+      size: 4,
+    };
+
+    // Imperial: size 4 (tied with American)
+    for (let r = 0; r <= 3; r++) {
+      state.board[r]![5] = { type: 'company', companyId: 'imperial' };
+    }
+    state.companies.imperial = {
+      ...state.companies.imperial!,
+      isActive: true,
+      size: 4,
+    };
+
+    // Supra: size 2 (smaller, non-tied)
+    state.board[3]![4] = { type: 'company', companyId: 'supra' };
+    state.board[4]![4] = { type: 'company', companyId: 'supra' };
+    state.companies.supra = {
+      ...state.companies.supra!,
+      isActive: true,
+      size: 2,
+    };
+
+    // P1 holds shares in American and Supra
+    state.players[0]!.shares.american = 2;
+    state.players[0]!.shares.supra = 2;
+
+    // Bridge tile at (2, 4) connects American, Imperial, and Supra
+    state.players[0]!.hand[0] = { row: 2, col: 4 };
+    state = gameReducer(state, { type: 'PLACE_TILE', coord: { row: 2, col: 4 } });
+
+    expect(state.phase).toBe('choose_merger_survivor');
+
+    // Choosing Supra (size 2) must fail because American and Imperial are tied for max size 4
+    expect(() =>
+      gameReducer(state, {
+        type: 'CHOOSE_MERGER_SURVIVOR',
+        survivorCompanyId: 'supra',
+      })
+    ).toThrow(/not an eligible survivor among tied contenders/);
+
+    // Choosing Imperial (size 4) succeeds
+    state = gameReducer(state, {
+      type: 'CHOOSE_MERGER_SURVIVOR',
+      survivorCompanyId: 'imperial',
+    });
+    expect(state.phase).toBe('dispose_merger_shares');
+    expect(state.pendingMerger?.survivingCompanyId).toBe('imperial');
+  });
+
+  it('transitions to buy_shares or triggers game_over when discarding dead tile with exhausted pool', () => {
+    let state = createInitialGameState(
+      DEFAULT_CONFIG,
+      [
+        { name: 'P1', isAi: false },
+        { name: 'P2', isAi: false },
+      ],
+      42
+    );
+
+    // American is safe (size 11)
+    state.companies.american = {
+      ...state.companies.american!,
+      isActive: true,
+      isSafe: true,
+      size: 11,
+    };
+    state.board[2]![2] = { type: 'company', companyId: 'american' };
+
+    // Imperial is safe (size 11)
+    state.companies.imperial = {
+      ...state.companies.imperial!,
+      isActive: true,
+      isSafe: true,
+      size: 11,
+    };
+    state.board[2]![4] = { type: 'company', companyId: 'imperial' };
+
+    // Supra is active but NOT safe (size 5)
+    state.companies.supra = {
+      ...state.companies.supra!,
+      isActive: true,
+      isSafe: false,
+      size: 5,
+    };
+    state.board[8]![8] = { type: 'company', companyId: 'supra' };
+
+    state.tilePool = [];
+
+    // P1 holds dead tile at (2, 3)
+    const deadTile = { row: 2, col: 3 };
+    state.players[0]!.hand = [deadTile];
+
+    // Case A: P2 still has a playable tile at (0, 0)
+    state.players[1]!.hand = [{ row: 0, col: 0 }];
+
+    // P1 discards dead tile -> pool is empty, no playable tiles remain in P1's hand
+    // Since P2 still has a playable tile, game is not over, so P1 transitions to 'buy_shares'
+    let stateA = gameReducer(state, { type: 'DISCARD_DEAD_TILE', coord: deadTile });
+    expect(stateA.phase).toBe('buy_shares');
+    expect(stateA.players[0]!.hand).toHaveLength(0);
+
+    // Case B: Neither player has playable tiles (P2 also holds only dead tile)
+    let stateBSetup = {
+      ...state,
+      players: [
+        { ...state.players[0]!, hand: [deadTile] },
+        { ...state.players[1]!, hand: [deadTile] },
+      ],
+    };
+    let stateB = gameReducer(stateBSetup, { type: 'DISCARD_DEAD_TILE', coord: deadTile });
+    expect(stateB.phase).toBe('game_over');
+    expect(stateB.winnerPlayerId).toBeDefined();
+  });
 });
