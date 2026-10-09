@@ -86,6 +86,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
   const [companyStatsModalOpen, setCompanyStatsModalOpen] = useState<boolean>(false);
   const [warRoomModalOpen, setWarRoomModalOpen] = useState<boolean>(false);
   const [saveLoadModalOpen, setSaveLoadModalOpen] = useState<boolean>(false);
+  const [saveLoadModalMode, setSaveLoadModalMode] = useState<'save' | 'load'>('save');
   const [helpModalOpen, setHelpModalOpen] = useState<boolean>(false);
   const [mergerStatsDismissed, setMergerStatsDismissed] = useState<boolean>(false);
 
@@ -257,7 +258,11 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
         setOptionsModalOpen(true);
         break;
       case 'save_game':
+        setSaveLoadModalMode('save');
+        setSaveLoadModalOpen(true);
+        break;
       case 'load_game':
+        setSaveLoadModalMode('load');
         setSaveLoadModalOpen(true);
         break;
       case 'toggle_sound':
@@ -556,6 +561,14 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
                 activePlayerIsAi={activePlayerIsAi}
                 activePlayerName={activePlayer?.name ?? 'Player 1'}
                 onAction={handleMenuAction}
+                onSaveGame={() => {
+                  setSaveLoadModalMode('save');
+                  setSaveLoadModalOpen(true);
+                }}
+                onLoadGame={() => {
+                  setSaveLoadModalMode('load');
+                  setSaveLoadModalOpen(true);
+                }}
                 onViewClassic={() => setViewMode('classic')}
               />
             </div>
@@ -864,6 +877,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
       {/* 6. System Utility Modals */}
       <SaveLoadModal
         isOpen={saveLoadModalOpen}
+        initialMode={saveLoadModalMode}
         onClose={() => setSaveLoadModalOpen(false)}
         gameState={gameState}
         onLoadGame={(loadedState) => {
