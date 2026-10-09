@@ -135,11 +135,6 @@ export const App: React.FC = () => {
         activePlayerIsAi={activePlayerIsAi}
         activePlayerName={activePlayerIsAi ? 'Computer 1' : 'Player 1'}
         onAction={handleMenuAction}
-        onToggleSound={handleToggleMute}
-        onToggleSlowCpu={() => setSlowCpuTurns((prev) => !prev)}
-        onToggleHideChits={() => setHideChits((prev) => !prev)}
-        onTogglePlayerAi={() => setActivePlayerIsAi((prev) => !prev)}
-        onNewGameSame={() => handleMenuAction('new_game_same')}
       />
 
       {/* Live Company Stock Ticker */}

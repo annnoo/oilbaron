@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { MenuBar, handleKeyboardShortcut } from '../MenuBar';
+import { MenuBar, handleKeyboardShortcut, dispatchMenuAction } from '../MenuBar';
 
 describe('MenuBar Component', () => {
   it('renders top navigation menu bar with all categories', () => {
@@ -35,8 +35,46 @@ describe('MenuBar Component', () => {
     expect(html).toContain('CPU Turn');
   });
 
+  describe('dispatchMenuAction & Single Callback Execution', () => {
+    it('invokes callback exactly once and does not double-invoke onAction when both are provided', () => {
+      const callback = vi.fn();
+      const onAction = vi.fn();
+
+      dispatchMenuAction('toggle_sound', callback, onAction);
+
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(onAction).not.toHaveBeenCalled();
+    });
+
+    it('falls back to onAction exactly once when no specific callback is provided', () => {
+      const onAction = vi.fn();
+
+      dispatchMenuAction('toggle_slow_cpu', undefined, onAction);
+
+      expect(onAction).toHaveBeenCalledTimes(1);
+      expect(onAction).toHaveBeenCalledWith('toggle_slow_cpu');
+    });
+
+    it('toggles boolean state exactly once without cancel-out', () => {
+      let soundMuted = false;
+      const toggleSound = vi.fn(() => {
+        soundMuted = !soundMuted;
+      });
+      const onAction = vi.fn((actionId) => {
+        if (actionId === 'toggle_sound') soundMuted = !soundMuted;
+      });
+
+      // Exclusive dispatch ensures sound is muted once (not muted and then unmuted)
+      dispatchMenuAction('toggle_sound', toggleSound, onAction);
+
+      expect(toggleSound).toHaveBeenCalledTimes(1);
+      expect(onAction).not.toHaveBeenCalled();
+      expect(soundMuted).toBe(true);
+    });
+  });
+
   describe('handleKeyboardShortcut', () => {
-    it('triggers onBuyShares on Alt+B when enabled', () => {
+    it('triggers onBuyShares exclusively on Alt+B without double-calling onAction', () => {
       const onBuyShares = vi.fn();
       const onAction = vi.fn();
       const preventDefault = vi.fn();
@@ -49,6 +87,21 @@ describe('MenuBar Component', () => {
       expect(handled).toBe(true);
       expect(preventDefault).toHaveBeenCalled();
       expect(onBuyShares).toHaveBeenCalledTimes(1);
+      expect(onAction).not.toHaveBeenCalled();
+    });
+
+    it('falls back to onAction on Alt+B when onBuyShares is not provided', () => {
+      const onAction = vi.fn();
+      const preventDefault = vi.fn();
+
+      const handled = handleKeyboardShortcut(
+        { key: 'b', altKey: true, preventDefault },
+        { onAction, canBuyShares: true }
+      );
+
+      expect(handled).toBe(true);
+      expect(preventDefault).toHaveBeenCalled();
+      expect(onAction).toHaveBeenCalledTimes(1);
       expect(onAction).toHaveBeenCalledWith('buy_shares');
     });
 

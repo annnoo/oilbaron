@@ -144,8 +144,11 @@ export function handleKeyboardShortcut(
     case 'b': {
       event.preventDefault?.();
       if (handlers.canBuyShares !== false) {
-        handlers.onBuyShares?.();
-        handlers.onAction?.('buy_shares');
+        if (handlers.onBuyShares) {
+          handlers.onBuyShares();
+        } else {
+          handlers.onAction?.('buy_shares');
+        }
         playClick();
       }
       return true;
@@ -153,8 +156,11 @@ export function handleKeyboardShortcut(
     case 'p': {
       event.preventDefault?.();
       if (handlers.canPlaceChit !== false) {
-        handlers.onPlaceChit?.();
-        handlers.onAction?.('place_chit');
+        if (handlers.onPlaceChit) {
+          handlers.onPlaceChit();
+        } else {
+          handlers.onAction?.('place_chit');
+        }
         playClick();
       }
       return true;
@@ -162,8 +168,11 @@ export function handleKeyboardShortcut(
     case 'd': {
       event.preventDefault?.();
       if (handlers.canDiscardChit !== false) {
-        handlers.onDiscardChit?.();
-        handlers.onAction?.('discard_chit');
+        if (handlers.onDiscardChit) {
+          handlers.onDiscardChit();
+        } else {
+          handlers.onAction?.('discard_chit');
+        }
         playClick();
       }
       return true;
@@ -171,42 +180,74 @@ export function handleKeyboardShortcut(
     case 'e': {
       event.preventDefault?.();
       if (handlers.canEndTurn !== false) {
-        handlers.onEndTurn?.();
-        handlers.onAction?.('end_turn');
+        if (handlers.onEndTurn) {
+          handlers.onEndTurn();
+        } else {
+          handlers.onAction?.('end_turn');
+        }
         playClick();
       }
       return true;
     }
     case 'n': {
       event.preventDefault?.();
-      handlers.onViewWealth?.();
-      handlers.onAction?.('view_wealth');
+      if (handlers.onViewWealth) {
+        handlers.onViewWealth();
+      } else {
+        handlers.onAction?.('view_wealth');
+      }
       playClick();
       return true;
     }
     case 's': {
       event.preventDefault?.();
-      handlers.onViewShares?.();
-      handlers.onAction?.('view_shares');
+      if (handlers.onViewShares) {
+        handlers.onViewShares();
+      } else {
+        handlers.onAction?.('view_shares');
+      }
       playClick();
       return true;
     }
     case 'c': {
       event.preventDefault?.();
-      handlers.onViewCompanies?.();
-      handlers.onAction?.('view_companies');
+      if (handlers.onViewCompanies) {
+        handlers.onViewCompanies();
+      } else {
+        handlers.onAction?.('view_companies');
+      }
       playClick();
       return true;
     }
     case 'w': {
       event.preventDefault?.();
-      handlers.onViewWarRoom?.();
-      handlers.onAction?.('view_warroom');
+      if (handlers.onViewWarRoom) {
+        handlers.onViewWarRoom();
+      } else {
+        handlers.onAction?.('view_warroom');
+      }
       playClick();
       return true;
     }
     default:
       return false;
+  }
+}
+
+/**
+ * Executes a menu action ensuring exclusive single-dispatch:
+ * If a specific callback is supplied, it is invoked; otherwise, falls back to onAction.
+ */
+export function dispatchMenuAction(
+  actionId: MenuActionId,
+  callback?: () => void,
+  onAction?: (actionId: MenuActionId) => void
+): void {
+  playClick();
+  if (callback) {
+    callback();
+  } else {
+    onAction?.(actionId);
   }
 }
 
@@ -249,9 +290,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
   const menuBarRef = useRef<HTMLElement>(null);
 
   const executeAction = (actionId: MenuActionId, callback?: () => void) => {
-    playClick();
-    callback?.();
-    onAction?.(actionId);
+    dispatchMenuAction(actionId, callback, onAction);
     setOpenMenu(null);
   };
 
