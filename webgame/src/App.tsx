@@ -29,6 +29,7 @@ import type {
 import { formatCoord } from './engine/board';
 import { gameReducer } from './engine/reducer';
 import { simulateAiTurn, getBestMergerDisposition } from './engine/ai';
+import { useTranslation } from './i18n';
 
 // Core UI Components
 import { MenuBar, type MenuActionId } from './components/MenuBar';
@@ -55,6 +56,8 @@ import { HelpModal } from './components/modals/HelpModal';
 import { GameOverModal } from './components/modals/GameOverModal';
 
 export const App: React.FC = () => {
+  const { t, language } = useTranslation();
+
   // Config & Audio State
   const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
   const [muted, setMuted] = useState<boolean>(soundEffects.isMuted());
@@ -482,7 +485,9 @@ export const App: React.FC = () => {
               }}
             />
             <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {activePlayer?.name}'s Turn ({activePlayerIsAi ? 'CPU' : 'Human'})
+              {language === 'de'
+                ? `${activePlayer?.name} ist am Zug (${activePlayerIsAi ? 'CPU' : 'Mensch'})`
+                : `${activePlayer?.name}'s Turn (${activePlayerIsAi ? 'CPU' : 'Human'})`}
             </span>
             <span
               style={{
@@ -507,14 +512,14 @@ export const App: React.FC = () => {
                   onClick={() => setStockMarketModalOpen(true)}
                 >
                   <ShoppingBag size={13} style={{ marginRight: '5px' }} />
-                  Buy Shares (Alt+B)
+                  {t('app.buySharesBtn')}
                 </button>
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
                   onClick={() => dispatch({ type: 'END_TURN' })}
                 >
-                  End Turn / Pass (Alt+E)
+                  {t('app.endTurnBtn')}
                 </button>
               </>
             )}

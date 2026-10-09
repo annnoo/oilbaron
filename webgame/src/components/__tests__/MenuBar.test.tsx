@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { MenuBar, handleKeyboardShortcut, dispatchMenuAction } from '../MenuBar';
+import { setLanguage } from '../../i18n';
 
 describe('MenuBar Component', () => {
   it('renders top navigation menu bar with all categories', () => {
@@ -33,6 +34,27 @@ describe('MenuBar Component', () => {
     );
 
     expect(html).toContain('CPU Turn');
+  });
+
+  it('renders German navigation headers and status badge when language is de', () => {
+    setLanguage('de');
+    const html = renderToStaticMarkup(
+      <MenuBar
+        activePlayerIsAi={false}
+        activePlayerName="Spieler 1"
+        soundMuted={false}
+        slowCpuTurns={false}
+        hideChits={false}
+      />
+    );
+
+    expect(html).toContain('<span class="mnemonic">S</span>piel');
+    expect(html).toContain('<span class="mnemonic">A</span>ktionen');
+    expect(html).toContain('<span class="mnemonic">A</span>nsichten');
+    expect(html).toContain('<span class="mnemonic">O</span>ptionen');
+    expect(html).toContain('<span class="mnemonic">H</span>ilfe');
+    expect(html).toContain('Mensch-Zug');
+    setLanguage('en');
   });
 
   describe('dispatchMenuAction & Single Callback Execution', () => {

@@ -3,6 +3,7 @@ import { Building2, X, Award, ShieldCheck, PieChart, Users } from 'lucide-react'
 import { playClick } from '../../assets/audio';
 import { CompanyId, GameState } from '../../engine/types';
 import { calculateSharePrice } from '../../engine/market';
+import { useTranslation } from '../../i18n';
 
 export interface CompanyStatsModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export const CompanyStatsModal: React.FC<CompanyStatsModalProps> = ({
   onClose,
   gameState,
 }) => {
+  const { t } = useTranslation();
   const [selectedCompanyId, setSelectedCompanyId] = useState<CompanyId | null>(null);
 
   if (!isOpen) return null;
@@ -61,7 +63,7 @@ export const CompanyStatsModal: React.FC<CompanyStatsModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="company-stats-title">
             <Building2 size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Corporate Statistics & Shareholder Register</span>
+            <span>{t('stats.title')}</span>
           </div>
           <button
             type="button"
@@ -130,11 +132,11 @@ export const CompanyStatsModal: React.FC<CompanyStatsModalProps> = ({
                   <span>{def.name}</span>
                   {compState?.isSafe && (
                     <span style={{ fontSize: '9px', color: '#22c55e', fontWeight: 700 }}>
-                      [SAFE]
+                      [{t('common.safe')}]
                     </span>
                   )}
                   {!isActive && (
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>(Inactive)</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{t('stats.inactive')}</span>
                   )}
                 </button>
               );
@@ -153,27 +155,27 @@ export const CompanyStatsModal: React.FC<CompanyStatsModalProps> = ({
                 }}
               >
                 <div className="discarded-stat-card" style={{ borderLeft: `4px solid ${selectedDef.color}` }}>
-                  <span className="discarded-stat-value">{selectedState.isActive ? 'Active' : 'Unfounded'}</span>
-                  <span className="discarded-stat-label">Status</span>
+                  <span className="discarded-stat-value">{selectedState.isActive ? t('common.active') : t('stats.unfounded')}</span>
+                  <span className="discarded-stat-label">{t('stats.status')}</span>
                 </div>
 
                 <div className="discarded-stat-card">
                   <span className="discarded-stat-value">{selectedState.size}</span>
-                  <span className="discarded-stat-label">Grid Size (Tiles)</span>
+                  <span className="discarded-stat-label">{t('stats.gridSize')}</span>
                 </div>
 
                 <div className="discarded-stat-card">
                   <span className="discarded-stat-value" style={{ color: 'var(--text-amber)' }}>
                     ${currentPrice}
                   </span>
-                  <span className="discarded-stat-label">Stock Price</span>
+                  <span className="discarded-stat-label">{t('stats.stockPrice')}</span>
                 </div>
 
                 <div className="discarded-stat-card">
                   <span className="discarded-stat-value" style={{ color: '#38bdf8' }}>
                     {selectedState.availableShares}
                   </span>
-                  <span className="discarded-stat-label">Bank Shares</span>
+                  <span className="discarded-stat-label">{t('stats.bankShares')}</span>
                 </div>
 
                 <div className="discarded-stat-card">
@@ -181,9 +183,9 @@ export const CompanyStatsModal: React.FC<CompanyStatsModalProps> = ({
                     className="discarded-stat-value"
                     style={{ color: selectedState.isSafe ? '#22c55e' : 'var(--text-muted)' }}
                   >
-                    {selectedState.isSafe ? 'Protected' : 'Acquirable'}
+                    {selectedState.isSafe ? t('common.protected') : t('common.acquirable')}
                   </span>
-                  <span className="discarded-stat-label">Safe Status</span>
+                  <span className="discarded-stat-label">{t('stats.safeStatus')}</span>
                 </div>
               </div>
 
@@ -202,14 +204,14 @@ export const CompanyStatsModal: React.FC<CompanyStatsModalProps> = ({
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Award size={16} color="var(--accent-gold)" />
-                  <span style={{ fontSize: '12px', fontWeight: 600 }}>Prospective Merger Bonuses:</span>
+                  <span style={{ fontSize: '12px', fontWeight: 600 }}>{t('stats.prospectiveBonuses')}:</span>
                 </div>
                 <div style={{ display: 'flex', gap: '16px', fontSize: '13px' }}>
                   <span>
-                    1st Majority: <strong style={{ color: 'var(--text-amber)' }}>${majorityBonus.toLocaleString()}</strong>
+                    <strong style={{ color: 'var(--text-amber)' }}>{t('stats.firstMajority', { amount: `$${majorityBonus.toLocaleString()}` })}</strong>
                   </span>
                   <span>
-                    2nd Minority: <strong style={{ color: '#38bdf8' }}>${minorityBonus.toLocaleString()}</strong>
+                    <strong style={{ color: '#38bdf8' }}>{t('stats.secondMinority', { amount: `$${minorityBonus.toLocaleString()}` })}</strong>
                   </span>
                 </div>
               </div>
@@ -229,12 +231,12 @@ export const CompanyStatsModal: React.FC<CompanyStatsModalProps> = ({
                   }}
                 >
                   <Users size={14} />
-                  <span>Shareholder Distribution ({totalIssuedShares} Total Shares Held by Players)</span>
+                  <span>{t('stats.shareholderDist')} ({totalIssuedShares} {t('common.shares')})</span>
                 </div>
 
                 {shareholders.length === 0 ? (
                   <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    No shares of {selectedDef.name} are currently owned by players.
+                    {t('stats.noSharesOwned', { name: selectedDef.name })}
                   </div>
                 ) : (
                   <div
@@ -247,11 +249,11 @@ export const CompanyStatsModal: React.FC<CompanyStatsModalProps> = ({
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                       <thead>
                         <tr style={{ background: 'var(--bg-surface-elevated)', borderBottom: '1px solid var(--border-subtle)', textAlign: 'left' }}>
-                          <th style={{ padding: '8px 12px' }}>Rank</th>
-                          <th style={{ padding: '8px 12px' }}>Shareholder</th>
-                          <th style={{ padding: '8px 12px', textAlign: 'right' }}>Shares</th>
-                          <th style={{ padding: '8px 12px', textAlign: 'right' }}>Ownership</th>
-                          <th style={{ padding: '8px 12px', textAlign: 'right' }}>Merger Bonus Role</th>
+                          <th style={{ padding: '8px 12px' }}>{t('stats.rank')}</th>
+                          <th style={{ padding: '8px 12px' }}>{t('stats.shareholder')}</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'right' }}>{t('common.shares')}</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'right' }}>{t('stats.ownership')}</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'right' }}>{t('stats.bonusRole')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -296,14 +298,14 @@ export const CompanyStatsModal: React.FC<CompanyStatsModalProps> = ({
                               <td style={{ padding: '8px 12px', textAlign: 'right' }}>
                                 {isMajority ? (
                                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-amber)' }}>
-                                    Majority Holder (${majorityBonus.toLocaleString()})
+                                    {t('stats.majorityHolder')} (${majorityBonus.toLocaleString()})
                                   </span>
                                 ) : isMinority ? (
                                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8' }}>
-                                    Minority Holder (${minorityBonus.toLocaleString()})
+                                    {t('stats.minorityHolder')} (${minorityBonus.toLocaleString()})
                                   </span>
                                 ) : (
-                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>None</span>
+                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('common.none')}</span>
                                 )}
                               </td>
                             </tr>
@@ -320,7 +322,7 @@ export const CompanyStatsModal: React.FC<CompanyStatsModalProps> = ({
 
         <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Close
+            {t('common.close')}
           </button>
         </div>
       </div>

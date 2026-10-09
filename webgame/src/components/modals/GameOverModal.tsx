@@ -3,6 +3,7 @@ import { Trophy, Crown, RotateCcw, X, DollarSign, Award, Users } from 'lucide-re
 import { playVictoryFanfare, playClick } from '../../assets/audio';
 import { GameState } from '../../engine/types';
 import { calculateSharePrice } from '../../engine/market';
+import { useTranslation } from '../../i18n';
 
 export interface GameOverModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   gameState,
   onNewGame,
 }) => {
+  const { t } = useTranslation();
   useEffect(() => {
     if (isOpen) {
       playVictoryFanfare();
@@ -63,7 +65,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="gameover-title">
             <Trophy size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Match Concluded — The Oil Baron Winner!</span>
+            <span>{t('gameOver.title')}</span>
           </div>
           <button
             type="button"
@@ -90,13 +92,13 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
             >
               <Crown size={36} color="var(--accent-gold)" style={{ margin: '0 auto 8px auto' }} />
               <div style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-amber)', fontWeight: 700 }}>
-                Grand Petroleum Baron
+                {t('gameOver.champion')}
               </div>
               <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)', margin: '4px 0' }}>
                 {winner.name} {winner.isAi && '(CPU)'}
               </div>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '20px', fontWeight: 700, color: 'var(--text-green)' }}>
-                ${winner.totalNetWorth.toLocaleString()} Final Net Worth
+                {t('gameOver.finalNetWorth', { amount: winner.totalNetWorth.toLocaleString() })}
               </div>
             </div>
           )}
@@ -104,18 +106,18 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           {/* Final Standings Leaderboard */}
           <div>
             <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-              Final Portfolio & Liquidated Wealth Leaderboard
+              {t('gameOver.leaderboard')}
             </div>
 
             <div style={{ border: '1px solid var(--border-default)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ background: 'var(--bg-surface-elevated)', borderBottom: '1px solid var(--border-subtle)', textAlign: 'left' }}>
-                    <th style={{ padding: '8px 12px' }}>Rank</th>
-                    <th style={{ padding: '8px 12px' }}>Oil Baron</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right' }}>Liquid Cash</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right' }}>Stock Assets</th>
-                    <th style={{ padding: '8px 12px', textAlign: 'right' }}>Total Net Worth</th>
+                    <th style={{ padding: '8px 12px' }}>{t('gameOver.rank')}</th>
+                    <th style={{ padding: '8px 12px' }}>{t('gameOver.oilBaron')}</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'right' }}>{t('gameOver.liquidCash')}</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'right' }}>{t('gameOver.stockAssets')}</th>
+                    <th style={{ padding: '8px 12px', textAlign: 'right' }}>{t('gameOver.totalNetWorth')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -175,7 +177,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 
         <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between' }}>
           <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Inspect Board State
+            {t('gameOver.inspectBoard')}
           </button>
           <button
             type="button"
@@ -186,7 +188,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
             }}
           >
             <RotateCcw size={14} style={{ marginRight: '6px' }} />
-            Start New Game
+            {t('gameOver.playAgain')}
           </button>
         </div>
       </div>

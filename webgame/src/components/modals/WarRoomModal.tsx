@@ -2,6 +2,7 @@ import React from 'react';
 import { Compass, X, ShieldCheck, MapPin, Layers, Award } from 'lucide-react';
 import { GameState } from '../../engine/types';
 import { calculateSharePrice } from '../../engine/market';
+import { useTranslation } from '../../i18n';
 
 export interface WarRoomModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export const WarRoomModal: React.FC<WarRoomModalProps> = ({
   onClose,
   gameState,
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   const totalGridCells = 120; // 10 x 12
@@ -57,7 +59,7 @@ export const WarRoomModal: React.FC<WarRoomModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="war-room-title">
             <Compass size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>War Room — Strategic Intelligence</span>
+            <span>{t('warRoom.title')}</span>
           </div>
           <button
             type="button"
@@ -74,37 +76,41 @@ export const WarRoomModal: React.FC<WarRoomModalProps> = ({
           <div className="discarded-summary-grid">
             <div className="discarded-stat-card">
               <span className="discarded-stat-value">{placedTilesCount} / {totalGridCells}</span>
-              <span className="discarded-stat-label">Grid Occupancy ({((placedTilesCount / totalGridCells) * 100).toFixed(0)}%)</span>
+              <span className="discarded-stat-label">
+                {t('warRoom.occupancyPct', { pct: ((placedTilesCount / totalGridCells) * 100).toFixed(0) })}
+              </span>
             </div>
             <div className="discarded-stat-card">
               <span className="discarded-stat-value" style={{ color: '#22c55e' }}>
                 {safeCompanies.length} / {activeCompanies.length}
               </span>
-              <span className="discarded-stat-label">Safe Corporations (≥{gameState.config.safeThreshold})</span>
+              <span className="discarded-stat-label">
+                {t('warRoom.safeRatio', { threshold: gameState.config.safeThreshold })}
+              </span>
             </div>
             <div className="discarded-stat-card">
               <span className="discarded-stat-value" style={{ color: '#38bdf8' }}>
                 {remainingBag}
               </span>
-              <span className="discarded-stat-label">Tiles in Draw Bag</span>
+              <span className="discarded-stat-label">{t('warRoom.tilesInBag')}</span>
             </div>
             <div className="discarded-stat-card">
               <span className="discarded-stat-value" style={{ color: '#fbbf24' }}>
                 {unincorporatedCount}
               </span>
-              <span className="discarded-stat-label">Unincorporated Reserves</span>
+              <span className="discarded-stat-label">{t('warRoom.unincorporatedReserves')}</span>
             </div>
           </div>
 
           {/* Territory Dominance Breakdown */}
           <div style={{ marginTop: '16px' }}>
             <div style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-              Active Corporation Territory Control
+              {t('warRoom.territoryControl')}
             </div>
 
             {activeCompanies.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No active companies on the board yet.
+                {t('warRoom.noActive')}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -129,11 +135,11 @@ export const WarRoomModal: React.FC<WarRoomModalProps> = ({
                           <span style={{ fontWeight: 700, fontSize: '13px' }}>{def.name}</span>
                           {comp.isSafe ? (
                             <span style={{ fontSize: '10px', fontWeight: 700, color: '#22c55e', background: 'rgba(34, 197, 94, 0.15)', padding: '1px 5px', borderRadius: '3px' }}>
-                              SAFE MONOPOLY
+                              {t('warRoom.safeMonopoly')}
                             </span>
                           ) : (
                             <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                              Vulnerable ({gameState.config.safeThreshold - comp.size} more to safe)
+                              {t('warRoom.vulnerableRemaining', { count: gameState.config.safeThreshold - comp.size })}
                             </span>
                           )}
                         </div>
@@ -162,7 +168,7 @@ export const WarRoomModal: React.FC<WarRoomModalProps> = ({
 
         <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Close
+            {t('common.close')}
           </button>
         </div>
       </div>

@@ -36,6 +36,7 @@ import {
 } from '../engine/board';
 import { calculateSharePrice, getCompanyDefinition } from '../engine/market';
 import { playClick } from '../assets/audio';
+import { useTranslation } from '../i18n';
 
 export interface CompanyVisual {
   id: string;
@@ -187,6 +188,7 @@ export const TileInspector: React.FC<TileInspectorProps> = ({
     return null;
   }
 
+  const { t, language } = useTranslation();
   const cell = board[coord.row]?.[coord.col] ?? { type: 'empty' };
   const formattedCoord = formatCoord(coord);
   const neighbors = getNeighborDetails(board, coord);
@@ -322,9 +324,11 @@ export const TileInspector: React.FC<TileInspectorProps> = ({
         <div className="modal-header">
           <div className="modal-title">
             <Eye size={18} className="text-gold" />
-            <span>Quick Peek — Cell {formattedCoord}</span>
+            <span>{language === 'de' ? `Schnellansicht — Feld ${formattedCoord}` : `Quick Peek — Cell ${formattedCoord}`}</span>
             <span className="badge badge-gold" style={{ marginLeft: '6px' }}>
-              Row {String.fromCharCode(65 + coord.row)} • Col {coord.col + 1}
+              {language === 'de'
+                ? `Reihe ${String.fromCharCode(65 + coord.row)} • Spalte ${coord.col + 1}`
+                : `Row ${String.fromCharCode(65 + coord.row)} • Col ${coord.col + 1}`}
             </span>
           </div>
 
@@ -344,7 +348,7 @@ export const TileInspector: React.FC<TileInspectorProps> = ({
           <div className="inspector-card">
             <div className="inspector-card-header">
               <Layers size={14} />
-              <span>Cell Topology & Ownership</span>
+              <span>{language === 'de' ? 'Feld-Topologie & Besitz' : 'Cell Topology & Ownership'}</span>
             </div>
 
             <div className="inspector-card-content">
@@ -353,11 +357,11 @@ export const TileInspector: React.FC<TileInspectorProps> = ({
                 <div className="inspector-empty-state">
                   <div className="state-badge-row">
                     <span className="badge" style={{ backgroundColor: 'var(--bg-deep)', border: '1px solid var(--border-default)' }}>
-                      Empty Grid Slot
+                      {language === 'de' ? 'Freies Rasterfeld' : 'Empty Grid Slot'}
                     </span>
                     {isPlayableInHand && (
                       <span className="badge badge-safe">
-                        <CheckCircle2 size={12} /> In Your Hand
+                        <CheckCircle2 size={12} /> {language === 'de' ? 'Auf deiner Hand' : 'In Your Hand'}
                       </span>
                     )}
                   </div>
@@ -365,11 +369,11 @@ export const TileInspector: React.FC<TileInspectorProps> = ({
                   {movePreview && (
                     <div className={`preview-info-box preview-box-${movePreview.type}`}>
                       <div className="preview-info-title">
-                        {movePreview.type === 'isolated' && 'Isolated Wildcat Placement'}
-                        {movePreview.type === 'expansion' && 'Corporate Expansion'}
-                        {movePreview.type === 'founding' && 'New Corporation Founding'}
-                        {movePreview.type === 'merger' && 'Multi-Company Merger'}
-                        {movePreview.type === 'illegal_safe_merger' && 'Illegal Safe Merger (Dead Tile)'}
+                        {movePreview.type === 'isolated' && (language === 'de' ? 'Einzelbohrung' : 'Isolated Wildcat Placement')}
+                        {movePreview.type === 'expansion' && (language === 'de' ? 'Konzern-Erweiterung' : 'Corporate Expansion')}
+                        {movePreview.type === 'founding' && (language === 'de' ? 'Konzern-Neugründung' : 'New Corporation Founding')}
+                        {movePreview.type === 'merger' && (language === 'de' ? 'Konzernfusion' : 'Multi-Company Merger')}
+                        {movePreview.type === 'illegal_safe_merger' && (language === 'de' ? 'Ungesetzliche Fusion (Totes Feld)' : 'Illegal Safe Merger (Dead Tile)')}
                       </div>
 
                       <div className="preview-info-desc">
@@ -497,21 +501,21 @@ export const TileInspector: React.FC<TileInspectorProps> = ({
           <div className="inspector-card">
             <div className="inspector-card-header">
               <Compass size={14} />
-              <span>Cardinal Connectivity (Adjacent Neighbors)</span>
+              <span>{language === 'de' ? 'Kardinale Nachbarschaft (Angrenzende Felder)' : 'Cardinal Connectivity (Adjacent Neighbors)'}</span>
             </div>
 
             <div className="inspector-card-content">
               <div className="neighbors-grid">
                 {neighbors.map((n) => {
-                  let neighborLabel = 'Empty';
+                  let neighborLabel = language === 'de' ? 'Frei' : 'Empty';
                   let neighborColor = 'var(--text-muted)';
                   let neighborBadgeClass = '';
 
                   if (n.isEdge) {
-                    neighborLabel = 'Board Border';
+                    neighborLabel = language === 'de' ? 'Spielfeldrand' : 'Board Border';
                     neighborColor = 'var(--text-muted)';
                   } else if (n.cell?.type === 'unincorporated') {
-                    neighborLabel = 'Unincorporated Chit';
+                    neighborLabel = language === 'de' ? 'Wilde Bohrung' : 'Unincorporated Chit';
                     neighborColor = 'var(--accent-gold)';
                     neighborBadgeClass = 'badge-gold';
                   } else if (n.cell?.type === 'company') {
@@ -525,7 +529,7 @@ export const TileInspector: React.FC<TileInspectorProps> = ({
                     <div key={n.direction} className="neighbor-tile">
                       <div className="neighbor-direction">
                         {getDirectionIcon(n.direction)}
-                        <span>{n.direction.toUpperCase()}</span>
+                        <span>{language === 'de' ? (n.direction === 'north' ? 'NORDEN' : n.direction === 'south' ? 'SÜDEN' : n.direction === 'west' ? 'WESTEN' : 'OSTEN') : n.direction.toUpperCase()}</span>
                       </div>
 
                       <div className="neighbor-coord">

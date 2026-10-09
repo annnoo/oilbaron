@@ -24,6 +24,7 @@ import {
   type MoveClassification,
 } from '../engine/board';
 import { playClick } from '../assets/audio';
+import { useTranslation } from '../i18n';
 
 export interface PlayerHandProps {
   /**
@@ -172,6 +173,8 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
   disabled = false,
   className = '',
 }) => {
+  const { t, language } = useTranslation();
+
   // Uncontrolled fallback states if parent doesn't manage them
   const [uncontrolledSelected, setUncontrolledSelected] = useState<TileCoord | null>(null);
   const [uncontrolledHovered, setUncontrolledHovered] = useState<TileCoord | null>(null);
@@ -273,10 +276,10 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
         <div className="hand-header-info">
           <span className="hand-player-title">
             <span className="hand-player-indicator" />
-            {activePlayerName}'s Hand:
+            {language === 'de' ? `Hand von ${activePlayerName}:` : `${activePlayerName}'s Hand:`}
           </span>
           <span className="hand-counter-badge">
-            {hand.length} / 6 chits
+            {hand.length} / 6 {language === 'de' ? 'Felder' : 'chits'}
           </span>
           {isAi && (
             <span className="badge badge-active" title="Computer player turn">
@@ -293,7 +296,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
               }}
               title="Dead tiles detected (cannot be placed on board)"
             >
-              <AlertTriangle size={11} /> {deadTiles.length} Dead Chit{deadTiles.length > 1 ? 's' : ''}
+              <AlertTriangle size={11} /> {deadTiles.length} {language === 'de' ? 'Tote Felder' : 'Dead Chit'}{deadTiles.length > 1 && language !== 'de' ? 's' : ''}
             </span>
           )}
         </div>
@@ -304,12 +307,12 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
             type="button"
             className={`btn btn-sm ${hideChits ? 'btn-primary' : 'btn-secondary'}`}
             onClick={handleToggleHideChits}
-            aria-label={hideChits ? 'Show Chits' : 'Hide Chits'}
+            aria-label={hideChits ? (language === 'de' ? 'Hand aufdecken' : 'Show Chits') : (language === 'de' ? 'Hand verbergen' : 'Hide Chits')}
             aria-pressed={hideChits}
-            title={hideChits ? 'Reveal chits for current player' : 'Hide chits for pass-and-play hotseat privacy'}
+            title={hideChits ? (language === 'de' ? 'Hand aufdecken' : 'Reveal chits for current player') : (language === 'de' ? 'Hand verbergen für Sichtschutz' : 'Hide chits for pass-and-play hotseat privacy')}
           >
             {hideChits ? <Eye size={13} /> : <EyeOff size={13} />}
-            <span>{hideChits ? 'Show Chits' : 'Hide Chits'}</span>
+            <span>{hideChits ? (language === 'de' ? 'Hand aufdecken' : 'Show Chits') : (language === 'de' ? 'Hand verbergen' : 'Hide Chits')}</span>
           </button>
         </div>
       </div>
@@ -321,13 +324,13 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
           <div className="hand-privacy-overlay" data-testid="hand-privacy-view">
             <div className="hand-privacy-message">
               <Lock size={18} className="text-gold" />
-              <span>Chits concealed for pass-and-play hotseat privacy.</span>
+              <span>{language === 'de' ? 'Hand zum Sichtschutz verborgen.' : 'Chits concealed for pass-and-play hotseat privacy.'}</span>
               <button
                 type="button"
                 className="btn btn-sm btn-primary"
                 onClick={handleToggleHideChits}
               >
-                <Eye size={12} /> Reveal Chits
+                <Eye size={12} /> {language === 'de' ? 'Hand aufdecken' : 'Reveal Chits'}
               </button>
             </div>
             <div className="hand-chits-rack">
@@ -346,7 +349,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
         ) : hand.length === 0 ? (
           /* Empty Hand View */
           <div className="hand-empty-notice">
-            <span>No chits currently held in hand.</span>
+            <span>{language === 'de' ? 'Keine Felder auf der Hand.' : 'No chits currently held in hand.'}</span>
           </div>
         ) : (
           /* Visible Chits Rack */
@@ -467,10 +470,10 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
             <Play size={13} />
             <span>
               {selectedCoord && !isSelectedTileDead
-                ? `Place Chit (${formatCoord(selectedCoord)})`
+                ? (language === 'de' ? `Feld platzieren (${formatCoord(selectedCoord)})` : `Place Chit (${formatCoord(selectedCoord)})`)
                 : isSelectedTileDead
-                ? 'Cannot Place Dead Chit'
-                : 'Place Chit'}
+                ? (language === 'de' ? 'Totes Feld nicht platzierbar' : 'Cannot Place Dead Chit')
+                : (language === 'de' ? 'Feld platzieren' : 'Place Chit')}
             </span>
           </button>
 
@@ -480,7 +483,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
             className={`btn btn-sm ${hasDeadTiles ? 'btn-danger' : 'btn-secondary'}`}
             onClick={handleDiscardDeadClick}
             disabled={!hasDeadTiles || hideChits || disabled}
-            aria-label="Discard Dead Tile"
+            aria-label={language === 'de' ? 'Totes Feld ablegen' : 'Discard Dead Tile'}
             title={
               hasDeadTiles
                 ? `Discard dead tile${
@@ -493,7 +496,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
           >
             <Trash2 size={13} />
             <span>
-              Discard Dead Tile
+              {language === 'de' ? 'Totes Feld ablegen' : 'Discard Dead Tile'}
               {hasDeadTiles ? ` (${deadTiles.length})` : ''}
             </span>
           </button>
@@ -502,19 +505,19 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
         {/* Selected Chit Status Message */}
         <div className="hand-selection-status">
           {hideChits ? (
-            <span className="text-muted">Hand hidden for hotseat privacy</span>
+            <span className="text-muted">{language === 'de' ? 'Hand zum Sichtschutz verborgen' : 'Hand hidden for hotseat privacy'}</span>
           ) : selectedCoord ? (
             isSelectedTileDead ? (
               <span className="status-dead-warning">
-                <ShieldAlert size={12} /> {formatCoord(selectedCoord)} is a dead tile (cannot merge safe corporations)
+                <ShieldAlert size={12} /> {language === 'de' ? `${formatCoord(selectedCoord)} ist ein totes Feld (kann sichere Konzerne nicht fusionieren)` : `${formatCoord(selectedCoord)} is a dead tile (cannot merge safe corporations)`}
               </span>
             ) : (
               <span className="status-selected-info">
-                Selected: <strong className="text-amber">{formatCoord(selectedCoord)}</strong> — Ready to place
+                {language === 'de' ? 'Ausgewählt:' : 'Selected:'} <strong className="text-amber">{formatCoord(selectedCoord)}</strong> — {language === 'de' ? 'Bereit zum Platzieren' : 'Ready to place'}
               </span>
             )
           ) : (
-            <span className="text-muted">Click a chit above to select it for placement</span>
+            <span className="text-muted">{language === 'de' ? 'Klicke oben auf ein Feld, um es auszuwählen' : 'Click a chit above to select it for placement'}</span>
           )}
         </div>
       </div>

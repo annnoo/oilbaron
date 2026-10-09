@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PieChart, X, Percent, Hash } from 'lucide-react';
 import { playClick } from '../../assets/audio';
 import { GameState } from '../../engine/types';
+import { useTranslation } from '../../i18n';
 
 export interface ShareGraphModalProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ export const ShareGraphModal: React.FC<ShareGraphModalProps> = ({
   onClose,
   gameState,
 }) => {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<'totals' | 'percentages'>('totals');
 
   if (!isOpen) return null;
@@ -38,7 +40,7 @@ export const ShareGraphModal: React.FC<ShareGraphModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="share-graph-title">
             <PieChart size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Share Graph — Stock Ownership Matrix</span>
+            <span>{t('shareGraph.title')}</span>
           </div>
           <button
             type="button"
@@ -61,7 +63,7 @@ export const ShareGraphModal: React.FC<ShareGraphModalProps> = ({
             }}
           >
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-              Comprehensive share distribution across all players and bank reserves.
+              {t('shareGraph.headerDesc')}
             </span>
 
             {/* Percentages vs Totals Toggle */}
@@ -75,7 +77,7 @@ export const ShareGraphModal: React.FC<ShareGraphModalProps> = ({
                 }}
               >
                 <Hash size={13} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                Totals
+                {t('shareGraph.totals')}
               </button>
               <button
                 type="button"
@@ -86,7 +88,7 @@ export const ShareGraphModal: React.FC<ShareGraphModalProps> = ({
                 }}
               >
                 <Percent size={13} style={{ marginRight: '4px', verticalAlign: 'middle' }} />
-                Percentages (%)
+                {t('shareGraph.percentages')}
               </button>
             </div>
           </div>
@@ -96,7 +98,7 @@ export const ShareGraphModal: React.FC<ShareGraphModalProps> = ({
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: 'var(--bg-surface-elevated)', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <th style={{ padding: '8px 12px', textAlign: 'left' }}>Company</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left' }}>{t('shareGraph.companyCol')}</th>
                   {gameState.players.map((p) => (
                     <th key={p.id} style={{ padding: '8px 10px', textAlign: 'center' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -116,7 +118,7 @@ export const ShareGraphModal: React.FC<ShareGraphModalProps> = ({
                     </th>
                   ))}
                   <th style={{ padding: '8px 10px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    Bank Reserve
+                    {t('shareGraph.bankReserve')}
                   </th>
                 </tr>
               </thead>
@@ -187,7 +189,7 @@ export const ShareGraphModal: React.FC<ShareGraphModalProps> = ({
 
         <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Close
+            {t('common.close')}
           </button>
         </div>
       </div>

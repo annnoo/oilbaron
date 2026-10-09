@@ -3,6 +3,7 @@ import { DollarSign, ArrowRightLeft, Shield, AlertCircle, Check } from 'lucide-r
 import { playClick, playCashChime } from '../../assets/audio';
 import { CompanyId, GameState, ShareDispositionChoices } from '../../engine/types';
 import { validateShareDisposition } from '../../engine/merger';
+import { useTranslation } from '../../i18n';
 
 export interface ShareDispositionModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export const ShareDispositionModal: React.FC<ShareDispositionModalProps> = ({
   preMergerPrice,
   onConfirmDisposition,
 }) => {
+  const { t } = useTranslation();
   const pendingMerger = gameState.pendingMerger;
   const currentShareholderId =
     pendingMerger?.shareholderQueue[pendingMerger?.currentShareholderIndex ?? 0];
@@ -134,7 +136,7 @@ export const ShareDispositionModal: React.FC<ShareDispositionModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="disposition-title">
             <ArrowRightLeft size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Merger Share Disposition</span>
+            <span>{t('shareDisposition.title')}</span>
           </div>
         </div>
 
@@ -153,14 +155,14 @@ export const ShareDispositionModal: React.FC<ShareDispositionModalProps> = ({
             }}
           >
             <div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Shareholder Disposition Turn</div>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('shareDisposition.turnNotice')}</div>
               <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
                 {shareholder.name}
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                {defunctDef?.name} Stock Held
+                {t('shareDisposition.stockHeld', { name: defunctDef?.name || defunctCompanyId })}
               </div>
               <div
                 style={{
@@ -170,20 +172,25 @@ export const ShareDispositionModal: React.FC<ShareDispositionModalProps> = ({
                   color: 'var(--text-amber)',
                 }}
               >
-                {totalShares} Shares
+                {t('shareDisposition.sharesCount', { count: totalShares })}
               </div>
             </div>
           </div>
 
           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-            Choose how to dispose of your {totalShares} shares of {defunctDef?.name} (pre-merger price: ${preMergerPrice}).
-            Surviving company ({survivorDef?.name}) has {survivorCompany.availableShares} shares left in bank.
+            {t('shareDisposition.chooseDesc', {
+              count: totalShares,
+              defunct: defunctDef?.name || defunctCompanyId,
+              price: preMergerPrice,
+              survivor: survivorDef?.name || survivorCompanyId,
+              available: survivorCompany.availableShares,
+            })}
           </div>
 
           {/* Quick Buttons Toolbar */}
           <div className="preset-button-bar" style={{ marginBottom: '14px' }}>
             <button type="button" className="btn btn-secondary btn-sm" onClick={handleSellAll}>
-              Sell All ({totalShares})
+              {t('shareDisposition.sellAll', { count: totalShares })}
             </button>
             <button
               type="button"
@@ -191,10 +198,10 @@ export const ShareDispositionModal: React.FC<ShareDispositionModalProps> = ({
               onClick={handleTradeMax}
               disabled={maxTradeEven === 0}
             >
-              Trade Max ({maxTradeEven})
+              {t('shareDisposition.tradeMax', { count: maxTradeEven })}
             </button>
             <button type="button" className="btn btn-secondary btn-sm" onClick={handleHoldAll}>
-              Hold All ({totalShares})
+              {t('shareDisposition.holdAll', { count: totalShares })}
             </button>
           </div>
 
@@ -215,10 +222,10 @@ export const ShareDispositionModal: React.FC<ShareDispositionModalProps> = ({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <DollarSign size={15} color="#22c55e" />
-                  <span style={{ fontWeight: 700, fontSize: '13px' }}>Sell Shares</span>
+                  <span style={{ fontWeight: 700, fontSize: '13px' }}>{t('shareDisposition.sellShares')}</span>
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Receive ${preMergerPrice} cash per share
+                  {t('shareDisposition.receiveCash', { price: preMergerPrice })}
                 </div>
               </div>
 
@@ -270,10 +277,13 @@ export const ShareDispositionModal: React.FC<ShareDispositionModalProps> = ({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <ArrowRightLeft size={15} color="#38bdf8" />
-                  <span style={{ fontWeight: 700, fontSize: '13px' }}>Trade 2-for-1</span>
+                  <span style={{ fontWeight: 700, fontSize: '13px' }}>{t('shareDisposition.tradeShares')}</span>
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Trade 2 {defunctDef?.name} for 1 {survivorDef?.name} share
+                  {t('shareDisposition.tradeDescFormatted', {
+                    defunct: defunctDef?.name || defunctCompanyId,
+                    survivor: survivorDef?.name || survivorCompanyId,
+                  })}
                 </div>
               </div>
 
@@ -325,10 +335,10 @@ export const ShareDispositionModal: React.FC<ShareDispositionModalProps> = ({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Shield size={15} color="#a855f7" />
-                  <span style={{ fontWeight: 700, fontSize: '13px' }}>Hold Defunct Shares</span>
+                  <span style={{ fontWeight: 700, fontSize: '13px' }}>{t('shareDisposition.holdShares')}</span>
                 </div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Keep shares in dormant reserve for potential refounding
+                  {t('shareDisposition.keepDormant')}
                 </div>
               </div>
 
@@ -363,13 +373,13 @@ export const ShareDispositionModal: React.FC<ShareDispositionModalProps> = ({
             }}
           >
             <div>
-              Cash Gained: <strong style={{ color: 'var(--text-green)' }}>+${cashGained.toLocaleString()}</strong>
+              <strong style={{ color: 'var(--text-green)' }}>{t('shareDisposition.cashGained', { amount: cashGained.toLocaleString() })}</strong>
             </div>
             <div>
-              {survivorDef?.name} Shares: <strong style={{ color: '#38bdf8' }}>+{survivorSharesGained}</strong>
+              <strong style={{ color: '#38bdf8' }}>{t('shareDisposition.sharesGained', { name: survivorDef?.name || survivorCompanyId, count: survivorSharesGained })}</strong>
             </div>
             <div>
-              Defunct Kept: <strong>{hold}</strong>
+              <strong>{t('shareDisposition.defunctKept', { count: hold })}</strong>
             </div>
           </div>
 
@@ -388,7 +398,7 @@ export const ShareDispositionModal: React.FC<ShareDispositionModalProps> = ({
             disabled={!validation.valid}
             onClick={handleConfirm}
           >
-            Confirm Share Disposition
+            {t('shareDisposition.confirm')}
           </button>
         </div>
       </div>

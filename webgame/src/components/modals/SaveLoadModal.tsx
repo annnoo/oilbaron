@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, FolderOpen, Download, Upload, Trash2, X, Check, Clock } from 'lucide-react';
 import { playClick } from '../../assets/audio';
 import { GameState } from '../../engine/types';
+import { useTranslation } from '../../i18n';
 
 export interface SaveSlot {
   id: string;
@@ -28,6 +29,7 @@ export const SaveLoadModal: React.FC<SaveLoadModalProps> = ({
   gameState,
   onLoadGame,
 }) => {
+  const { t } = useTranslation();
   const [saves, setSaves] = useState<SaveSlot[]>([]);
   const [saveName, setSaveName] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -70,7 +72,7 @@ export const SaveLoadModal: React.FC<SaveLoadModalProps> = ({
     setSaves(updated);
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      setSuccessMsg(`Match saved as "${defaultName}"!`);
+      setSuccessMsg(t('saveLoad.matchSavedSuccess', { name: defaultName }));
       setSaveName('');
     } catch (err) {
       console.error('Failed to save to localStorage:', err);
@@ -140,7 +142,7 @@ export const SaveLoadModal: React.FC<SaveLoadModalProps> = ({
         <div className="modal-header">
           <div className="modal-title" id="saveload-title">
             <Save size={18} style={{ color: 'var(--accent-gold)' }} />
-            <span>Save & Load Match State</span>
+            <span>{t('saveLoad.title')}</span>
           </div>
           <button
             type="button"
@@ -155,13 +157,13 @@ export const SaveLoadModal: React.FC<SaveLoadModalProps> = ({
         <div className="modal-body">
           {/* Save Match Input */}
           <div style={{ marginBottom: '16px' }}>
-            <span className="form-label">Save Current Match</span>
+            <span className="form-label">{t('saveLoad.saveCurrent')}</span>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
                 className="form-input"
                 style={{ flex: 1 }}
-                placeholder="Match description (e.g. Turn 12 Mid-Game)"
+                placeholder={t('saveLoad.descPlaceholder')}
                 value={saveName}
                 onChange={(e) => setSaveName(e.target.value)}
               />
@@ -171,7 +173,7 @@ export const SaveLoadModal: React.FC<SaveLoadModalProps> = ({
                 onClick={handleSaveToBrowser}
               >
                 <Save size={14} style={{ marginRight: '6px' }} />
-                Save Game
+                {t('saveLoad.saveTab')}
               </button>
             </div>
             {successMsg && (
@@ -191,14 +193,14 @@ export const SaveLoadModal: React.FC<SaveLoadModalProps> = ({
               onClick={handleExportJson}
             >
               <Download size={13} style={{ marginRight: '6px' }} />
-              Export Save as JSON
+              {t('saveLoad.exportJson')}
             </button>
             <label
               className="btn btn-secondary btn-sm"
               style={{ flex: 1, cursor: 'pointer', textAlign: 'center' }}
             >
               <Upload size={13} style={{ marginRight: '6px' }} />
-              Import JSON Save
+              {t('saveLoad.importJson')}
               <input
                 type="file"
                 accept=".json"
@@ -210,10 +212,10 @@ export const SaveLoadModal: React.FC<SaveLoadModalProps> = ({
 
           {/* Saved Games List */}
           <div>
-            <span className="form-label">Saved Matches ({saves.length} / 10 slots)</span>
+            <span className="form-label">{t('saveLoad.slotsCount', { count: saves.length })}</span>
             {saves.length === 0 ? (
               <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--bg-surface-elevated)', borderRadius: 'var(--radius-sm)' }}>
-                No browser-saved matches found yet.
+                {t('saveLoad.noSaves')}
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '240px', overflowY: 'auto' }}>
@@ -236,8 +238,8 @@ export const SaveLoadModal: React.FC<SaveLoadModalProps> = ({
                       </div>
                       <div style={{ display: 'flex', gap: '10px', fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                         <span><Clock size={11} style={{ verticalAlign: 'middle', marginRight: '3px' }} />{slot.dateStr}</span>
-                        <span>{slot.playerCount} Players</span>
-                        <span>Active: {slot.activePlayer}</span>
+                        <span>{t('saveLoad.playersCount', { count: slot.playerCount })}</span>
+                        <span>{t('saveLoad.activePlayerLabel', { name: slot.activePlayer })}</span>
                       </div>
                     </div>
 
@@ -248,7 +250,7 @@ export const SaveLoadModal: React.FC<SaveLoadModalProps> = ({
                         onClick={() => handleLoadSlot(slot)}
                       >
                         <FolderOpen size={13} style={{ marginRight: '4px' }} />
-                        Load
+                        {t('saveLoad.loadBtn')}
                       </button>
                       <button
                         type="button"
@@ -269,7 +271,7 @@ export const SaveLoadModal: React.FC<SaveLoadModalProps> = ({
 
         <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Close
+            {t('common.close')}
           </button>
         </div>
       </div>
