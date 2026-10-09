@@ -3,11 +3,8 @@ import {
   User,
   Bot,
   Trophy,
-  Coins,
   TrendingUp,
-  Layers,
   Sparkles,
-  ShieldCheck,
 } from 'lucide-react';
 import type {
   CompanyDefinition,

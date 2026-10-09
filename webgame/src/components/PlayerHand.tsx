@@ -6,7 +6,6 @@ import {
   Play,
   AlertTriangle,
   Lock,
-  Sparkles,
   ShieldAlert,
 } from 'lucide-react';
 import type {
@@ -361,19 +360,24 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
               const pill = getClassificationPill(classification);
 
               return (
-                <button
+                <div
                   key={`${tile.row}-${tile.col}`}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
+                  role="button"
+                  tabIndex={disabled ? -1 : 0}
+                  aria-pressed={isSelected}
                   aria-label={`Chit ${formatted}${isDead ? ' (Dead tile, unplayable)' : ''}`}
                   className={`hand-chit-card ${isSelected ? 'is-selected' : ''} ${
                     isDead ? 'is-dead' : ''
                   } ${isHovered ? 'is-hovered' : ''}`}
                   onClick={() => handleTileClick(tile)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleTileClick(tile);
+                    }
+                  }}
                   onMouseEnter={() => handleTileMouseEnter(tile)}
                   onMouseLeave={handleTileMouseLeave}
-                  disabled={disabled}
                   title={
                     isDead
                       ? `${formatted}: DEAD TILE — Merges 2+ safe corporations. Discard to draw a replacement.`
@@ -425,7 +429,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
                       <Trash2 size={10} /> Discard
                     </button>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>

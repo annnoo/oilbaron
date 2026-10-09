@@ -33,7 +33,6 @@ export const App: React.FC = () => {
   const [muted, setMuted] = useState<boolean>(soundEffects.isMuted());
   const [slowCpuTurns, setSlowCpuTurns] = useState<boolean>(false);
   const [hideChits, setHideChits] = useState<boolean>(false);
-  const [activePlayerIsAi, setActivePlayerIsAi] = useState<boolean>(false);
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<CompanyId | null>(null);
   const [selectedHandCoord, setSelectedHandCoord] = useState<TileCoord | null>(null);
@@ -46,6 +45,9 @@ export const App: React.FC = () => {
       { name: 'Computer 1 (CPU)', isAi: true },
     ])
   );
+
+  const activePlayer = gameState.players[gameState.activePlayerIndex];
+  const activePlayerIsAi = activePlayer?.isAi ?? false;
 
   const handleToggleMute = () => {
     const nextMuted = soundEffects.toggleMute();
@@ -66,10 +68,17 @@ export const App: React.FC = () => {
         setHideChits((prev) => !prev);
         setLastAction(`Hide chits (hotseat privacy): ${!hideChits ? 'ON' : 'OFF'}`);
         break;
-      case 'toggle_player_ai':
-        setActivePlayerIsAi((prev) => !prev);
-        setLastAction(`Active player type changed to ${!activePlayerIsAi ? 'CPU' : 'Human'}`);
+      case 'toggle_player_ai': {
+        const nextAi = !activePlayerIsAi;
+        setGameState((prev) => ({
+          ...prev,
+          players: prev.players.map((p, idx) =>
+            idx === prev.activePlayerIndex ? { ...p, isAi: nextAi } : p
+          ),
+        }));
+        setLastAction(`Active player type changed to ${nextAi ? 'CPU' : 'Human'}`);
         break;
+      }
       case 'new_game_same':
         setGameState(
           createInitialGameState(DEFAULT_CONFIG, [
@@ -191,9 +200,6 @@ export const App: React.FC = () => {
       );
       return { ...prev, players: nextPlayers };
     });
-    if (playerIndex === gameState.activePlayerIndex) {
-      setActivePlayerIsAi(nextIsAi);
-    }
     const pName = gameState.players[playerIndex]?.name ?? `Player ${playerIndex + 1}`;
     setLastAction(`${pName} type changed to ${nextIsAi ? 'CPU' : 'Human'}`);
   };
@@ -275,7 +281,7 @@ export const App: React.FC = () => {
         slowCpuTurns={slowCpuTurns}
         hideChits={hideChits}
         activePlayerIsAi={activePlayerIsAi}
-        activePlayerName={activePlayerIsAi ? 'Computer 1' : 'Player 1'}
+        activePlayerName={activePlayer?.name ?? 'Player 1'}
         onAction={handleMenuAction}
       />
 
