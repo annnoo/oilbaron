@@ -160,7 +160,7 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
             {/* 10x12 Board */}
             <div className="win31-window" style={{ padding: '6px' }}>
-              <div className="win31-board-grid">
+              <div className="win31-board-grid" data-testid="classic-board">
                 {/* Column Headers */}
                 <div className="win31-coord-hdr"></div>
                 {Array.from({ length: 12 }, (_, c) => (

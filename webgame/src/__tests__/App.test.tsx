@@ -52,28 +52,15 @@ describe('App Integration', () => {
     expect(html).toContain('Change to Human');
   });
 
-  it('renders 1993 Windows 3.1 Classic View when hash is #classic', () => {
-    // Simulate window.location.hash = '#classic'
-    const origLocation = window.location;
-    // @ts-expect-error Mocking location for test
-    delete window.location;
-    window.location = {
-      ...origLocation,
-      hash: '#classic',
-      pathname: '/',
-      search: '',
-    } as any;
-
-    try {
-      const html = renderToStaticMarkup(<App />);
-      expect(html).toContain('win31-root');
-      expect(html).toContain('Oil Baron (1993 Windows 3.1 Classic Edition)');
-      expect(html).toContain('Switch to Modern Studio UI');
-      expect(html).toContain('win31-window');
-      expect(html).toContain('win31-titlebar');
-      expect(html).toContain('data-testid="classic-board"');
-    } finally {
-      window.location = origLocation as any;
-    }
+  it('renders 1993 Windows 3.1 Classic View when initialViewMode is classic', () => {
+    const html = renderToStaticMarkup(<App initialViewMode="classic" />);
+    expect(html).toContain('win31-root');
+    expect(html).toContain('Oil Baron (1993 Windows 3.1 Classic Edition)');
+    expect(html).toContain('Switch to Modern Studio UI');
+    expect(html).toContain('win31-window');
+    expect(html).toContain('win31-titlebar');
+    expect(html).toContain('data-testid="classic-board"');
+    // Retro guidance inside classic window
+    expect(html).toContain('STEP 1 OF 3: SELECT CHIT');
   });
 });
