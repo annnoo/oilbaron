@@ -1,15 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Volume2,
-  VolumeX,
   Flame,
-  Coins,
-  AlertTriangle,
-  Trophy,
-  Sparkles,
   TrendingUp,
-  ShieldCheck,
-  RotateCcw,
+  Sparkles,
+  ShoppingBag,
+  ArrowRight,
+  ShieldAlert,
+  Info,
 } from 'lucide-react';
 import {
   soundEffects,
@@ -19,26 +16,70 @@ import {
   playCashChime,
   playVictoryFanfare,
 } from './assets/audio';
-import { CLASSIC_COMPANIES, DEFAULT_CONFIG, createInitialGameState } from './engine/config';
-import type { CompanyId, GameState, TileCoord } from './engine/types';
+import { DEFAULT_CONFIG, createInitialGameState } from './engine/config';
+import type {
+  CompanyId,
+  GameAction,
+  GameConfig,
+  GameState,
+  ShareDispositionChoices,
+  SharePurchase,
+  TileCoord,
+} from './engine/types';
 import { formatCoord } from './engine/board';
 import { gameReducer } from './engine/reducer';
+import { simulateAiTurn, getBestMergerDisposition } from './engine/ai';
+
+// Core UI Components
 import { MenuBar, type MenuActionId } from './components/MenuBar';
 import { CompanyTicker } from './components/CompanyTicker';
 import { GameBoard } from './components/GameBoard';
 import { PlayerHand } from './components/PlayerHand';
 import { PlayerScoreboard } from './components/PlayerScoreboard';
 
+// Modal Dialogs
+import { NewGameModal, type PlayerConfig } from './components/modals/NewGameModal';
+import { OptionsModal } from './components/modals/OptionsModal';
+import { FoundingCompanyModal } from './components/modals/FoundingCompanyModal';
+import { DiscardedTilesModal } from './components/modals/DiscardedTilesModal';
+import { StockMarketModal } from './components/modals/StockMarketModal';
+import { CompanyStatsModal } from './components/modals/CompanyStatsModal';
+import { MergerSurvivorModal } from './components/modals/MergerSurvivorModal';
+import { MergerStatsModal } from './components/modals/MergerStatsModal';
+import { ShareDispositionModal } from './components/modals/ShareDispositionModal';
+import { WealthChartModal } from './components/modals/WealthChartModal';
+import { ShareGraphModal } from './components/modals/ShareGraphModal';
+import { WarRoomModal } from './components/modals/WarRoomModal';
+import { SaveLoadModal } from './components/modals/SaveLoadModal';
+import { HelpModal } from './components/modals/HelpModal';
+import { GameOverModal } from './components/modals/GameOverModal';
+
 export const App: React.FC = () => {
+  // Config & Audio State
+  const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
   const [muted, setMuted] = useState<boolean>(soundEffects.isMuted());
   const [slowCpuTurns, setSlowCpuTurns] = useState<boolean>(false);
   const [hideChits, setHideChits] = useState<boolean>(false);
   const [lastAction, setLastAction] = useState<string | null>(null);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<CompanyId | null>(null);
+
+  // Board & Hand Interactions
   const [selectedHandCoord, setSelectedHandCoord] = useState<TileCoord | null>(null);
   const [hoveredHandCoord, setHoveredHandCoord] = useState<TileCoord | null>(null);
 
-  // Initialize game state with standard 2-player match
+  // Modals Visibility State
+  const [newGameModalOpen, setNewGameModalOpen] = useState<boolean>(false);
+  const [optionsModalOpen, setOptionsModalOpen] = useState<boolean>(false);
+  const [stockMarketModalOpen, setStockMarketModalOpen] = useState<boolean>(false);
+  const [discardedTilesModalOpen, setDiscardedTilesModalOpen] = useState<boolean>(false);
+  const [wealthChartModalOpen, setWealthChartModalOpen] = useState<boolean>(false);
+  const [shareGraphModalOpen, setShareGraphModalOpen] = useState<boolean>(false);
+  const [companyStatsModalOpen, setCompanyStatsModalOpen] = useState<boolean>(false);
+  const [warRoomModalOpen, setWarRoomModalOpen] = useState<boolean>(false);
+  const [saveLoadModalOpen, setSaveLoadModalOpen] = useState<boolean>(false);
+  const [helpModalOpen, setHelpModalOpen] = useState<boolean>(false);
+  const [mergerStatsDismissed, setMergerStatsDismissed] = useState<boolean>(false);
+
+  // Initialize Game State
   const [gameState, setGameState] = useState<GameState>(() =>
     createInitialGameState(DEFAULT_CONFIG, [
       { name: 'Player 1', isAi: false },
@@ -49,14 +90,120 @@ export const App: React.FC = () => {
   const activePlayer = gameState.players[gameState.activePlayerIndex];
   const activePlayerIsAi = activePlayer?.isAi ?? false;
 
+  // Single dispatch reducer wrapper
+  const dispatch = useCallback((action: GameAction) => {
+    setGameState((prev) => {
+      try {
+        const next = gameReducer(prev, action);
+        return next;
+      } catch (err: any) {
+        console.error('Dispatch error:', err);
+        setLastAction(`Action Error: ${err.message}`);
+        return prev;
+      }
+    });
+  }, []);
+
+  // CPU Turn Execution Loop
+  useEffect(() => {
+    if (gameState.phase === 'game_over') return;
+
+    // 1. If currently in dispose_merger_shares, check if current shareholder is CPU
+    if (gameState.phase === 'dispose_merger_shares' && gameState.pendingMerger) {
+      const pm = gameState.pendingMerger;
+      const shareholderId = pm.shareholderQueue[pm.currentShareholderIndex];
+      const shareholder = gameState.players.find((p) => p.id === shareholderId);
+      const shareholderIdx = gameState.players.findIndex((p) => p.id === shareholderId);
+
+      if (shareholder?.isAi && pm.currentDefunctCompanyId && shareholderIdx !== -1) {
+        const timer = setTimeout(() => {
+          try {
+            const choices = getBestMergerDisposition(
+              gameState,
+              shareholderIdx,
+              pm.currentDefunctCompanyId!
+            );
+            dispatch({ type: 'DISPOSE_MERGER_SHARES', choices });
+            setLastAction(`${shareholder.name} (CPU) disposed merger shares`);
+          } catch (err: any) {
+            console.error('AI merger disposition error:', err);
+          }
+        }, slowCpuTurns ? 700 : 200);
+        return () => clearTimeout(timer);
+      }
+      return;
+    }
+
+    // 2. Main active player CPU turn loop
+    if (activePlayerIsAi) {
+      const delayMs = slowCpuTurns ? 800 : 220;
+      const timer = setTimeout(() => {
+        try {
+          const nextState = simulateAiTurn(gameState);
+          setGameState(nextState);
+          setLastAction(`${activePlayer?.name} (CPU) executed turn actions`);
+        } catch (err: any) {
+          console.error('AI turn simulation error:', err);
+        }
+      }, delayMs);
+
+      return () => clearTimeout(timer);
+    }
+  }, [gameState, activePlayerIsAi, slowCpuTurns, dispatch]);
+
+  // Audio cues on phase transitions
+  useEffect(() => {
+    if (gameState.phase === 'choose_founding_company') {
+      playFoundCompany();
+    } else if (
+      gameState.phase === 'choose_merger_survivor' ||
+      gameState.phase === 'dispose_merger_shares'
+    ) {
+      playMergerAlert();
+    } else if (gameState.phase === 'game_over') {
+      playVictoryFanfare();
+    }
+  }, [gameState.phase]);
+
+  // Reset merger stats dismissed status on new merger
+  useEffect(() => {
+    if (gameState.phase !== 'dispose_merger_shares') {
+      setMergerStatsDismissed(false);
+    }
+  }, [gameState.phase]);
+
+  // Sound toggle handler
   const handleToggleMute = () => {
     const nextMuted = soundEffects.toggleMute();
     setMuted(nextMuted);
-    setLastAction(`Sound toggled: ${nextMuted ? 'Muted' : 'Enabled'}`);
+    setLastAction(`Audio: ${nextMuted ? 'Muted' : 'Enabled'}`);
   };
 
+  // Top Menu Bar Dispatcher
   const handleMenuAction = (actionId: MenuActionId) => {
     switch (actionId) {
+      case 'new_game_same': {
+        playClick();
+        const roster = gameState.players.map((p) => ({
+          name: p.name,
+          isAi: p.isAi,
+          color: p.color,
+        }));
+        setGameState(createInitialGameState(config, roster));
+        setSelectedHandCoord(null);
+        setLastAction('Started New Match with current player roster');
+        break;
+      }
+      case 'new_game_new':
+        setNewGameModalOpen(true);
+        break;
+      case 'open_options':
+        setOptionsModalOpen(true);
+        break;
+      case 'save_game':
+      case 'load_game':
+        setSaveLoadModalOpen(true);
+        break;
       case 'toggle_sound':
         handleToggleMute();
         break;
@@ -79,120 +226,131 @@ export const App: React.FC = () => {
         setLastAction(`Active player type changed to ${nextAi ? 'CPU' : 'Human'}`);
         break;
       }
-      case 'new_game_same':
-        setGameState(
-          createInitialGameState(DEFAULT_CONFIG, [
-            { name: 'Player 1', isAi: false },
-            { name: 'Computer 1 (CPU)', isAi: true },
-          ])
-        );
-        setLastAction('New Game started (Same Options)');
-        playFoundCompany();
+      case 'buy_shares':
+        setStockMarketModalOpen(true);
+        break;
+      case 'place_chit':
+        if (selectedHandCoord) {
+          handlePlaceTile(selectedHandCoord);
+        } else {
+          setLastAction('Select a chit from your hand tray first, then click Place Chit');
+        }
+        break;
+      case 'discard_chit':
+        if (selectedHandCoord) {
+          handleDiscardDeadTile(selectedHandCoord);
+        } else {
+          setLastAction('Select a dead chit from your hand tray first');
+        }
+        break;
+      case 'end_turn':
+        if (gameState.phase === 'buy_shares') {
+          dispatch({ type: 'END_TURN' });
+          playClick();
+          setLastAction('Ended turn and passed share purchases');
+        } else {
+          setLastAction('Cannot end turn: Must place a tile first');
+        }
+        break;
+      case 'view_wealth':
+        setWealthChartModalOpen(true);
+        break;
+      case 'view_shares':
+        setShareGraphModalOpen(true);
+        break;
+      case 'view_companies':
+        setCompanyStatsModalOpen(true);
+        break;
+      case 'view_warroom':
+        setWarRoomModalOpen(true);
+        break;
+      case 'view_discarded':
+        setDiscardedTilesModalOpen(true);
+        break;
+      case 'help_rules':
+      case 'help_about':
+        setHelpModalOpen(true);
         break;
       default:
-        setLastAction(`Menu Action: ${actionId.replace(/_/g, ' ').toUpperCase()}`);
+        setLastAction(`Action: ${actionId}`);
         break;
     }
   };
 
-  // Helper interactive simulation controls to verify CompanyTicker live updates
-  const simulateFoundCompany = (companyId: CompanyId, initialSize = 2) => {
-    playFoundCompany();
-    setGameState((prev) => {
-      const target = prev.companies[companyId];
-      if (!target) return prev;
-      return {
-        ...prev,
-        companies: {
-          ...prev.companies,
-          [companyId]: {
-            ...target,
-            isActive: true,
-            size: initialSize,
-            isSafe: initialSize >= prev.config.safeThreshold,
-            availableShares: Math.max(0, target.availableShares - 1),
-          },
-        },
-      };
-    });
-    setLastAction(`Founded ${companyId.toUpperCase()} with ${initialSize} tiles`);
-  };
-
-  const simulateGrowCompany = (companyId: CompanyId, delta = 3) => {
-    playClick();
-    setGameState((prev) => {
-      const target = prev.companies[companyId];
-      if (!target || !target.isActive) return prev;
-      const nextSize = target.size + delta;
-      const isSafe = nextSize >= prev.config.safeThreshold;
-      if (isSafe && !target.isSafe) {
-        playCashChime();
-      }
-      return {
-        ...prev,
-        companies: {
-          ...prev.companies,
-          [companyId]: {
-            ...target,
-            size: nextSize,
-            isSafe,
-          },
-        },
-      };
-    });
-    setLastAction(`Expanded ${companyId.toUpperCase()} by +${delta} tiles`);
-  };
-
-  const simulateResetCompanies = () => {
-    playClick();
-    setGameState(createInitialGameState(DEFAULT_CONFIG, ['Player 1', 'Computer 1 (CPU)']));
-    setSelectedHandCoord(null);
-    setHoveredHandCoord(null);
-    setLastAction('Reset board and companies to initial state');
-  };
-
-  const handlePlaceTile = (coord: TileCoord) => {
-    try {
-      const activePlayer = gameState.players[gameState.activePlayerIndex];
-      const hasTile = activePlayer?.hand.some((t) => t.row === coord.row && t.col === coord.col);
-
-      if (!hasTile) {
-        // Free sandbox placement mode
-        setGameState((prev) => {
-          const newBoard = prev.board.map((row, r) =>
-            r === coord.row
-              ? row.map((cell, c) => (c === coord.col ? ({ type: 'unincorporated' } as const) : cell))
-              : [...row]
-          );
-          return { ...prev, board: newBoard };
-        });
-        playClick();
-        setLastAction(`Placed wildcat chit at ${formatCoord(coord)} (Sandbox mode)`);
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts inside text inputs
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) {
         return;
       }
 
-      const nextState = gameReducer(gameState, { type: 'PLACE_TILE', coord });
-      setGameState(nextState);
+      if (e.altKey) {
+        const key = e.key.toLowerCase();
+        if (key === 'b') {
+          e.preventDefault();
+          setStockMarketModalOpen(true);
+        } else if (key === 'p') {
+          e.preventDefault();
+          if (selectedHandCoord) handlePlaceTile(selectedHandCoord);
+        } else if (key === 'd') {
+          e.preventDefault();
+          if (selectedHandCoord) handleDiscardDeadTile(selectedHandCoord);
+        } else if (key === 'e') {
+          e.preventDefault();
+          if (gameState.phase === 'buy_shares') {
+            dispatch({ type: 'END_TURN' });
+            playClick();
+          }
+        } else if (key === 'n') {
+          e.preventDefault();
+          setWealthChartModalOpen(true);
+        } else if (key === 's') {
+          e.preventDefault();
+          setShareGraphModalOpen(true);
+        } else if (key === 'c') {
+          e.preventDefault();
+          setCompanyStatsModalOpen(true);
+        } else if (key === 'w') {
+          e.preventDefault();
+          setWarRoomModalOpen(true);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedHandCoord, gameState.phase, dispatch]);
+
+  // Tile Placement Handler
+  const handlePlaceTile = (coord: TileCoord) => {
+    try {
+      dispatch({ type: 'PLACE_TILE', coord });
       setSelectedHandCoord(null);
       playClick();
-      setLastAction(`Placed chit at ${formatCoord(coord)}`);
+      setLastAction(`Placed tile at ${formatCoord(coord)}`);
     } catch (err: any) {
-      setLastAction(`Cannot place at ${formatCoord(coord)}: ${err.message}`);
+      setLastAction(`Placement error: ${err.message}`);
     }
   };
 
+  // Discard Dead Tile Handler
   const handleDiscardDeadTile = (coord: TileCoord) => {
     try {
-      const nextState = gameReducer(gameState, { type: 'DISCARD_DEAD_TILE', coord });
-      setGameState(nextState);
+      dispatch({ type: 'DISCARD_DEAD_TILE', coord });
       setSelectedHandCoord(null);
       playClick();
-      setLastAction(`Discarded dead chit at ${formatCoord(coord)} and drew replacement`);
+      setLastAction(`Discarded dead tile at ${formatCoord(coord)}`);
     } catch (err: any) {
-      setLastAction(`Cannot discard dead tile: ${err.message}`);
+      setLastAction(`Discard error: ${err.message}`);
     }
   };
 
+  // Inline Player AI/Human Toggle
   const handleTogglePlayerAi = (playerIndex: number, nextIsAi: boolean) => {
     setGameState((prev) => {
       const nextPlayers = prev.players.map((p, idx) =>
@@ -204,78 +362,81 @@ export const App: React.FC = () => {
     setLastAction(`${pName} type changed to ${nextIsAi ? 'CPU' : 'Human'}`);
   };
 
-  const handleToggleHideChits = (nextHide: boolean) => {
-    setHideChits(nextHide);
-    setLastAction(`Hide chits (hotseat privacy): ${nextHide ? 'ON' : 'OFF'}`);
+  // New Game Setup Confirmation
+  const handleStartCustomGame = (players: PlayerConfig[]) => {
+    const nextState = createInitialGameState(config, players);
+    setGameState(nextState);
+    setSelectedHandCoord(null);
+    setNewGameModalOpen(false);
+    setLastAction(`Started new match with ${players.length} players!`);
   };
 
-  const seedFoundingScenario = () => {
-    playFoundCompany();
-    setGameState((prev) => {
-      const nextBoard = prev.board.map((row) => [...row]);
-      nextBoard[2]![3] = { type: 'unincorporated' }; // C-4
-      nextBoard[2]![4] = { type: 'unincorporated' }; // C-5
-      return { ...prev, board: nextBoard };
-    });
-    setLastAction('Seeded Founding Scenario: Adjacent chits at C-4 & C-5 (Hover C-6 or C-3 to preview Founding)');
+  // Options Applied
+  const handleSaveOptions = (newConfig: GameConfig, slowCpu: boolean) => {
+    setConfig(newConfig);
+    setSlowCpuTurns(slowCpu);
+    setGameState((prev) => ({
+      ...prev,
+      config: newConfig,
+    }));
+    setLastAction('Applied updated game ruleset and options');
   };
 
-  const seedMergerScenario = () => {
-    playMergerAlert();
-    setGameState((prev) => {
-      const nextBoard = prev.board.map((row) => [...row]);
-      nextBoard[3]![3] = { type: 'company', companyId: 'american' };
-      nextBoard[3]![4] = { type: 'company', companyId: 'american' };
-      nextBoard[3]![6] = { type: 'company', companyId: 'imperial' };
-      nextBoard[3]![7] = { type: 'company', companyId: 'imperial' };
-      return {
-        ...prev,
-        board: nextBoard,
-        companies: {
-          ...prev.companies,
-          american: { ...prev.companies.american!, isActive: true, size: 2, isSafe: false },
-          imperial: { ...prev.companies.imperial!, isActive: true, size: 2, isSafe: false },
-        },
-      };
-    });
-    setLastAction('Seeded Merger Scenario: American at D-4/D-7 & Imperial at D-7/D-8 (Hover D-6 to preview Merger)');
+  // Stock Market Purchases Confirmed
+  const handleConfirmPurchases = (purchases: SharePurchase[]) => {
+    if (purchases.length > 0) {
+      dispatch({ type: 'BUY_SHARES', purchases });
+      setLastAction(`Purchased ${purchases.reduce((acc, p) => acc + p.count, 0)} corporate shares`);
+    }
+    dispatch({ type: 'END_TURN' });
+    setStockMarketModalOpen(false);
   };
 
-  const seedDeadTileScenario = () => {
-    playClick();
-    setGameState((prev) => {
-      const nextBoard = prev.board.map((row) => [...row]);
-      nextBoard[5]![4] = { type: 'company', companyId: 'imperial' }; // F-5
-      nextBoard[5]![6] = { type: 'company', companyId: 'royal' };    // F-7
-
-      // Inject dead tile F-6 (row 5, col 5) into active player hand to test dead chit discarding
-      const activeIdx = prev.activePlayerIndex;
-      const deadCoord: TileCoord = { row: 5, col: 5 }; // F-6
-      const currentHand = prev.players[activeIdx]?.hand ?? [];
-      const hasF6 = currentHand.some((t) => t.row === 5 && t.col === 5);
-      const nextHand = hasF6 ? currentHand : [deadCoord, ...currentHand.slice(0, 5)];
-
-      const nextPlayers = prev.players.map((p, idx) =>
-        idx === activeIdx ? { ...p, hand: nextHand } : p
-      );
-
-      return {
-        ...prev,
-        board: nextBoard,
-        players: nextPlayers,
-        companies: {
-          ...prev.companies,
-          imperial: { ...prev.companies.imperial!, isActive: true, size: 11, isSafe: true },
-          royal: { ...prev.companies.royal!, isActive: true, size: 12, isSafe: true },
-        },
-      };
-    });
-    setLastAction('Seeded Dead Tile Scenario: Safe Imperial & Safe Royal around F-6. Added F-6 dead chit to hand!');
+  // Merger Survivor Selected
+  const handleSelectMergerSurvivor = (survivorCompanyId: CompanyId) => {
+    dispatch({ type: 'CHOOSE_MERGER_SURVIVOR', survivorCompanyId });
+    setLastAction(`Selected ${survivorCompanyId.toUpperCase()} as merger survivor`);
   };
+
+  // Merger Share Disposition Confirmed
+  const handleConfirmDisposition = (choices: ShareDispositionChoices) => {
+    dispatch({ type: 'DISPOSE_MERGER_SHARES', choices });
+    setLastAction(`Merger shares disposition confirmed`);
+  };
+
+  // Founding Company Selected
+  const handleSelectFoundedCompany = (companyId: CompanyId) => {
+    dispatch({ type: 'CHOOSE_FOUNDED_COMPANY', companyId });
+    setLastAction(`Founded ${companyId.toUpperCase()}! Founder bonus awarded.`);
+  };
+
+  // Current Shareholder for Disposition Modal
+  const pendingMerger = gameState.pendingMerger;
+  const currentShareholderId =
+    pendingMerger?.shareholderQueue[pendingMerger?.currentShareholderIndex ?? 0];
+  const currentShareholder = gameState.players.find((p) => p.id === currentShareholderId);
+
+  // Available dormant companies for founding
+  const availableCompanyIds = gameState.config.companies
+    .filter((c) => !c.isDormant && !gameState.companies[c.id]?.isActive)
+    .map((c) => c.id);
+
+  // Tied companies for merger survivor selection
+  const tiedSurvivorIds = pendingMerger
+    ? pendingMerger.participatingCompanyIds.filter(
+        (id) =>
+          gameState.companies[id]?.size ===
+          Math.max(
+            ...pendingMerger.participatingCompanyIds.map(
+              (cid) => gameState.companies[cid]?.size ?? 0
+            )
+          )
+      )
+    : [];
 
   return (
     <div className="app-container">
-      {/* Authentic Windows 3.1 & Modern Top Menu Bar */}
+      {/* Top Menu Bar */}
       <MenuBar
         soundMuted={muted}
         slowCpuTurns={slowCpuTurns}
@@ -291,47 +452,84 @@ export const App: React.FC = () => {
         definitions={gameState.config.companies}
         safeThreshold={gameState.config.safeThreshold}
         totalShares={gameState.config.totalSharesPerCompany}
-        onSelectCompany={(id) => {
-          setSelectedCompanyId(id);
-          playClick();
-          setLastAction(`Selected company in ticker: ${id.toUpperCase()}`);
-        }}
+        onSelectCompany={() => setCompanyStatsModalOpen(true)}
       />
 
-      {/* Main Container */}
+      {/* Main Workspace Layout */}
       <main className="game-main">
-        {/* Action feedback alert banner */}
-        {lastAction && (
-          <div
-            style={{
-              padding: '8px 14px',
-              backgroundColor: 'var(--bg-surface-elevated)',
-              border: '1px solid var(--border-accent)',
-              borderRadius: 'var(--radius-sm)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              color: 'var(--text-amber)',
-              fontSize: '12px',
-              fontWeight: 500,
-            }}
-          >
-            <span>▶ {lastAction}</span>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              style={{ padding: '2px 6px', fontSize: '11px' }}
-              onClick={() => setLastAction(null)}
+        {/* Turn Status & Prompt Bar */}
+        <div
+          style={{
+            padding: '10px 16px',
+            backgroundColor: 'var(--bg-surface-elevated)',
+            border: '1px solid var(--border-accent)',
+            borderRadius: 'var(--radius-sm)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span
+              style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: activePlayer?.color || 'var(--accent-gold)',
+                display: 'inline-block',
+              }}
+            />
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {activePlayer?.name}'s Turn ({activePlayerIsAi ? 'CPU' : 'Human'})
+            </span>
+            <span
+              style={{
+                fontSize: '11px',
+                padding: '2px 8px',
+                borderRadius: '10px',
+                background: 'rgba(245, 158, 11, 0.15)',
+                color: 'var(--text-amber)',
+                fontWeight: 600,
+              }}
             >
-              Dismiss
-            </button>
+              Phase: {gameState.phase.replace(/_/g, ' ').toUpperCase()}
+            </span>
           </div>
-        )}
 
-        {/* Main Game Layout: Board & Hand Tray on Left, Scoreboard Sidebar on Right */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {gameState.phase === 'buy_shares' && !activePlayerIsAi && (
+              <>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setStockMarketModalOpen(true)}
+                >
+                  <ShoppingBag size={13} style={{ marginRight: '5px' }} />
+                  Buy Shares (Alt+B)
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => dispatch({ type: 'END_TURN' })}
+                >
+                  End Turn / Pass (Alt+E)
+                </button>
+              </>
+            )}
+
+            {lastAction && (
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {lastAction}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Board & Hand Tray Layout */}
         <div className="game-workspace-layout">
           <div className="game-main-content">
-            {/* Task 3 Interactive 10x12 Game Board */}
             <GameBoard
               board={gameState.board}
               companies={gameState.companies}
@@ -343,14 +541,13 @@ export const App: React.FC = () => {
               onPlaceTile={handlePlaceTile}
             />
 
-            {/* Task 4: Player Hand Tray */}
             <PlayerHand
               hand={gameState.players[gameState.activePlayerIndex]?.hand ?? []}
               activePlayerName={gameState.players[gameState.activePlayerIndex]?.name}
               activePlayerIndex={gameState.activePlayerIndex}
-              isCurrentTurn={true}
+              isCurrentTurn={!activePlayerIsAi}
               turnPhase={gameState.phase}
-              isAi={gameState.players[gameState.activePlayerIndex]?.isAi}
+              isAi={activePlayerIsAi}
               board={gameState.board}
               companies={gameState.companies}
               definitions={gameState.config.companies}
@@ -362,57 +559,11 @@ export const App: React.FC = () => {
               onHoverTile={setHoveredHandCoord}
               onPlaceTile={handlePlaceTile}
               onDiscardDeadTile={handleDiscardDeadTile}
-              onToggleHideChits={handleToggleHideChits}
+              onToggleHideChits={setHideChits}
             />
-
-            {/* Scenario Quick-Seed Helper Toolbar */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '8px',
-                padding: '8px 12px',
-                backgroundColor: 'var(--bg-surface)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-sm)',
-              }}
-            >
-              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                SCENARIO GENERATOR:
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={seedFoundingScenario}
-                  title="Seed adjacent chits at C-4 & C-5 to test Founding preview"
-                >
-                  Seed Founding
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={seedMergerScenario}
-                  title="Seed American & Imperial at D-4/D-7 to test Merger preview"
-                >
-                  Seed Merger
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={seedDeadTileScenario}
-                  title="Seed 2 Safe companies around F-6 and add dead chit to hand"
-                >
-                  Seed Dead Tile
-                </button>
-              </div>
-            </div>
           </div>
 
           <aside className="game-sidebar-content">
-            {/* Task 4: Sidebar Scoreboard */}
             <PlayerScoreboard
               players={gameState.players}
               activePlayerIndex={gameState.activePlayerIndex}
@@ -422,163 +573,148 @@ export const App: React.FC = () => {
             />
           </aside>
         </div>
-
-        {/* Task 2 Interactive Verification Panel */}
-        <section className="panel">
-          <div className="panel-header">
-            <span>Task 2: Menu Bar & Company Ticker Controls</span>
-            <span className="badge badge-safe">Active</span>
-          </div>
-
-          <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <p style={{ color: 'var(--text-secondary)' }}>
-              Top menu bar provides authentic 1993 dropdown navigation (Game, Actions, Views, Settings, Help)
-              and keyboard shortcuts (e.g. <kbd className="menu-item-shortcut">Alt+B</kbd> Buy Shares,{' '}
-              <kbd className="menu-item-shortcut">Alt+P</kbd> Place Chit,{' '}
-              <kbd className="menu-item-shortcut">Alt+E</kbd> End Turn). The Company Ticker displays live active
-              oil corporations, sizes, market share prices, bank supply, and Safe badges (
-              <span className="badge badge-safe" style={{ display: 'inline-flex' }}>
-                <ShieldCheck size={10} /> SAFE (11+)
-              </span>
-              ).
-            </p>
-
-            {/* Live Ticker State Simulator */}
-            <div>
-              <h2 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-amber)', marginBottom: '8px' }}>
-                Company Ticker Simulation Controls
-              </h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => simulateFoundCompany('american', 2)}
-                >
-                  <Flame size={14} color="#e63946" /> Found American (2 tiles, $200)
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => simulateGrowCompany('american', 3)}
-                >
-                  <TrendingUp size={14} /> Expand American (+3 tiles)
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => simulateFoundCompany('american', 11)}
-                >
-                  <ShieldCheck size={14} color="#4ade80" /> Make American Safe (11 tiles)
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => simulateFoundCompany('imperial', 4)}
-                >
-                  <Flame size={14} color="#2a9d8f" /> Found Imperial (4 tiles, $500)
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => simulateFoundCompany('royal', 12)}
-                >
-                  <ShieldCheck size={14} color="#1d3557" /> Found Royal (12 tiles - Safe)
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={simulateResetCompanies}
-                >
-                  <RotateCcw size={14} /> Reset Companies
-                </button>
-              </div>
-            </div>
-
-            {/* Audio Testing Controls */}
-            <div>
-              <h2 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                Audio Synthesizer Triggers
-              </h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => playClick()}
-                >
-                  <Sparkles size={14} /> Click
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => playCashChime()}
-                >
-                  <Coins size={14} /> Cash Chime
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => playFoundCompany()}
-                >
-                  <Flame size={14} /> Found Company
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => playMergerAlert()}
-                >
-                  <AlertTriangle size={14} /> Merger Siren
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => playVictoryFanfare()}
-                >
-                  <Trophy size={14} /> Victory Fanfare
-                </button>
-              </div>
-            </div>
-
-            {/* Company Tokens Palette */}
-            <div>
-              <h2 style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                All 8 Oil Corporations
-              </h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {CLASSIC_COMPANIES.map((company) => (
-                  <div
-                    key={company.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '4px 10px',
-                      backgroundColor: 'var(--bg-surface-elevated)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-sm)',
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: '12px',
-                        height: '12px',
-                        borderRadius: '50%',
-                        backgroundColor: company.color,
-                        display: 'inline-block',
-                      }}
-                    />
-                    <span style={{ fontSize: '12px', fontWeight: 500 }}>{company.name}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      (${company.basePrice})
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
+
+      {/* =========================================================================
+          MODALS & DIALOGS LAYER
+         ========================================================================= */}
+
+      {/* 1. Setup & Options Modals */}
+      <NewGameModal
+        isOpen={newGameModalOpen}
+        onClose={() => setNewGameModalOpen(false)}
+        onStartGame={handleStartCustomGame}
+        initialPlayers={gameState.players.map((p) => ({
+          id: p.id,
+          name: p.name,
+          color: p.color || '#f59e0b',
+          isAi: p.isAi ?? false,
+        }))}
+      />
+
+      <OptionsModal
+        isOpen={optionsModalOpen}
+        onClose={() => setOptionsModalOpen(false)}
+        config={config}
+        onSaveConfig={handleSaveOptions}
+        slowCpu={slowCpuTurns}
+      />
+
+      {/* 2. Company Founding Modal */}
+      <FoundingCompanyModal
+        isOpen={gameState.phase === 'choose_founding_company' && !activePlayerIsAi}
+        gameState={gameState}
+        availableCompanyIds={availableCompanyIds}
+        onSelectCompany={handleSelectFoundedCompany}
+      />
+
+      {/* 3. Merger Workflow Modals */}
+      <MergerSurvivorModal
+        isOpen={gameState.phase === 'choose_merger_survivor' && !activePlayerIsAi}
+        gameState={gameState}
+        tiedCompanyIds={tiedSurvivorIds}
+        onChooseSurvivor={handleSelectMergerSurvivor}
+      />
+
+      {/* Merger Payouts Announcement Banner/Modal */}
+      {gameState.phase === 'dispose_merger_shares' &&
+        pendingMerger &&
+        pendingMerger.currentDefunctCompanyId &&
+        pendingMerger.survivingCompanyId &&
+        !mergerStatsDismissed && (
+          <MergerStatsModal
+            isOpen={true}
+            onClose={() => setMergerStatsDismissed(true)}
+            gameState={gameState}
+            defunctCompanyId={pendingMerger.currentDefunctCompanyId}
+            survivorCompanyId={pendingMerger.survivingCompanyId}
+            preMergerPrice={
+              pendingMerger.preMergerPrices[pendingMerger.currentDefunctCompanyId] || 200
+            }
+          />
+        )}
+
+      {/* Share Disposition Step-by-Step Modal */}
+      <ShareDispositionModal
+        isOpen={
+          gameState.phase === 'dispose_merger_shares' &&
+          mergerStatsDismissed &&
+          Boolean(currentShareholder && !currentShareholder.isAi)
+        }
+        gameState={gameState}
+        defunctCompanyId={pendingMerger?.currentDefunctCompanyId || ''}
+        survivorCompanyId={pendingMerger?.survivingCompanyId || ''}
+        preMergerPrice={
+          pendingMerger?.currentDefunctCompanyId
+            ? pendingMerger.preMergerPrices[pendingMerger.currentDefunctCompanyId] || 200
+            : 200
+        }
+        onConfirmDisposition={handleConfirmDisposition}
+      />
+
+      {/* 4. Stock Market Purchasing Drawer */}
+      <StockMarketModal
+        isOpen={stockMarketModalOpen}
+        onClose={() => setStockMarketModalOpen(false)}
+        gameState={gameState}
+        onConfirmPurchase={handleConfirmPurchases}
+      />
+
+      {/* 5. Inspection & Strategic Views */}
+      <CompanyStatsModal
+        isOpen={companyStatsModalOpen}
+        onClose={() => setCompanyStatsModalOpen(false)}
+        gameState={gameState}
+      />
+
+      <WealthChartModal
+        isOpen={wealthChartModalOpen}
+        onClose={() => setWealthChartModalOpen(false)}
+        gameState={gameState}
+      />
+
+      <ShareGraphModal
+        isOpen={shareGraphModalOpen}
+        onClose={() => setShareGraphModalOpen(false)}
+        gameState={gameState}
+      />
+
+      <WarRoomModal
+        isOpen={warRoomModalOpen}
+        onClose={() => setWarRoomModalOpen(false)}
+        gameState={gameState}
+      />
+
+      <DiscardedTilesModal
+        isOpen={discardedTilesModalOpen}
+        onClose={() => setDiscardedTilesModalOpen(false)}
+        gameState={gameState}
+      />
+
+      {/* 6. System Utility Modals */}
+      <SaveLoadModal
+        isOpen={saveLoadModalOpen}
+        onClose={() => setSaveLoadModalOpen(false)}
+        gameState={gameState}
+        onLoadGame={(loadedState) => {
+          setGameState(loadedState);
+          setLastAction('Loaded match state successfully!');
+        }}
+      />
+
+      <HelpModal isOpen={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
+
+      {/* 7. Game Over Leaderboard */}
+      <GameOverModal
+        isOpen={gameState.phase === 'game_over'}
+        onClose={() => {}}
+        gameState={gameState}
+        onNewGame={() => {
+          setGameState(createInitialGameState(config, gameState.players));
+          setLastAction('Started fresh match');
+        }}
+      />
     </div>
   );
 };
-
 export default App;

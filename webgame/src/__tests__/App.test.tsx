@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import App from '../App';
 
 describe('App Integration', () => {
-  it('renders App shell containing MenuBar and CompanyTicker', () => {
+  it('renders App shell containing MenuBar, CompanyTicker, Board, Hand, and Scoreboard', () => {
     const html = renderToStaticMarkup(<App />);
 
     // Top menu bar
@@ -20,27 +20,23 @@ describe('App Integration', () => {
     expect(html).toContain('MARKET');
     expect(html).toContain('Available:');
 
-    // App panel verification
-    expect(html).toContain('Company Ticker Controls');
-    expect(html).toContain('Found American');
-    expect(html).toContain('Make American Safe (11 tiles)');
+    // Turn status banner
+    expect(html).toContain('Player 1');
+    expect(html).toContain('Turn (Human)');
+    expect(html).toContain('PLACE TILE');
 
     // Game board integration
     expect(html).toContain('Oil Baron 10x12 Game Board');
     expect(html).toContain('10 × 12 Grid');
     expect(html).toContain('role="grid"');
-    expect(html).toContain('Player 1&#x27;s Hand:');
-    expect(html).toContain('Seed Founding');
-    expect(html).toContain('Seed Merger');
-    expect(html).toContain('Seed Dead Tile');
 
-    // Task 4: PlayerHand Tray
+    // PlayerHand Tray
     expect(html).toContain('data-testid="player-hand-tray"');
     expect(html).toContain('Place Chit');
     expect(html).toContain('Discard Dead Tile');
     expect(html).toContain('Hide Chits');
 
-    // Task 4: PlayerScoreboard
+    // PlayerScoreboard
     expect(html).toContain('data-testid="player-scoreboard"');
     expect(html).toContain('SCOREBOARD');
     expect(html).toContain('2 Players');
