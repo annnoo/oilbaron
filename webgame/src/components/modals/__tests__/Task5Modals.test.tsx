@@ -65,6 +65,7 @@ describe('Task 5 Modals', () => {
       expect(html).toContain('Modern Balanced');
       expect(html).toContain('Safe Company Threshold');
       expect(html).toContain('Slow Computer Turns');
+      expect(html).toContain('Show Discarded Markers (&#x27;X&#x27;)');
     });
   });
 

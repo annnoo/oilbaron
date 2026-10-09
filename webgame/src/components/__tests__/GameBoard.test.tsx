@@ -240,4 +240,17 @@ describe('GameBoard Component', () => {
     expect(html).toContain('tabindex="0"');
     expect(html).toContain('aria-label="Oil Baron 10x12 Game Board"');
   });
+
+  it('renders discarded marker ("X") on cells with type discarded', () => {
+    const board = createEmptyBoard(10, 12);
+    board[3]![4] = { type: 'discarded' };
+
+    const html = renderToStaticMarkup(<GameBoard board={board} />);
+
+    expect(html).toContain('board-cell discarded');
+    expect(html).toContain('discarded-marker');
+    expect(html).toContain('discarded-x-mark');
+    expect(html).toContain('✕');
+  });
 });
+

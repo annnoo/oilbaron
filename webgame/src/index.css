@@ -657,6 +657,28 @@ html, body {
   color: var(--text-primary);
 }
 
+.board-cell.discarded {
+  background-color: #231212;
+  border-color: #5c1d1d;
+  color: #ef4444;
+  cursor: default;
+}
+
+.discarded-tile-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.discarded-x-mark {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ef4444;
+  line-height: 1;
+}
+
 .chit-content {
   display: flex;
   flex-direction: column;

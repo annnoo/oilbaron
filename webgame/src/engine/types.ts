@@ -34,7 +34,8 @@ export interface TileCoord {
 export type CellState =
   | { type: 'empty' }
   | { type: 'unincorporated' }
-  | { type: 'company'; companyId: CompanyId };
+  | { type: 'company'; companyId: CompanyId }
+  | { type: 'discarded' };
 
 export interface PlayerState {
   id: string;
@@ -130,6 +131,7 @@ export interface GameConfig {
   hardShareLimits?: boolean;     // Enforce strict share limits during merger trade
   allowBlanks?: boolean;         // Allow blank wildcard tiles
   purchaseLimit?: boolean;       // Enable per-turn purchasing limit
+  showDiscard?: boolean;         // Show discarded markers ('X') on grid when tiles are discarded
 }
 
 export interface GameState {

@@ -1010,4 +1010,128 @@ describe('Game State Reducer & Turn Flow', () => {
       expect(state.lastDividendPayout).toBeNull();
     });
   });
+
+  describe('On-Grid Discarded Markers (showDiscard)', () => {
+    it('marks grid cell as discarded when DISCARD_DEAD_TILE is called and showDiscard is true', () => {
+      let state = createInitialGameState(
+        { ...DEFAULT_CONFIG, showDiscard: true },
+        [
+          { name: 'P1', isAi: false },
+          { name: 'P2', isAi: false },
+        ],
+        42
+      );
+
+      // Setup 2 safe companies
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 11,
+        isSafe: true,
+      };
+      state.companies.royal = {
+        ...state.companies.royal!,
+        isActive: true,
+        size: 11,
+        isSafe: true,
+      };
+      state.board[2]![2] = { type: 'company', companyId: 'american' };
+      state.board[2]![4] = { type: 'company', companyId: 'royal' };
+
+      const deadTile = { row: 2, col: 3 };
+      state.players[0]!.hand[0] = deadTile;
+
+      expect(state.board[deadTile.row]![deadTile.col]!.type).toBe('empty');
+
+      state = gameReducer(state, { type: 'DISCARD_DEAD_TILE', coord: deadTile });
+
+      expect(state.board[deadTile.row]![deadTile.col]).toEqual({ type: 'discarded' });
+    });
+
+    it('leaves cell empty on DISCARD_DEAD_TILE when showDiscard is false or undefined', () => {
+      let state = createInitialGameState(
+        { ...DEFAULT_CONFIG, showDiscard: false },
+        [
+          { name: 'P1', isAi: false },
+          { name: 'P2', isAi: false },
+        ],
+        42
+      );
+
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 11,
+        isSafe: true,
+      };
+      state.companies.royal = {
+        ...state.companies.royal!,
+        isActive: true,
+        size: 11,
+        isSafe: true,
+      };
+      state.board[2]![2] = { type: 'company', companyId: 'american' };
+      state.board[2]![4] = { type: 'company', companyId: 'royal' };
+
+      const deadTile = { row: 2, col: 3 };
+      state.players[0]!.hand[0] = deadTile;
+
+      state = gameReducer(state, { type: 'DISCARD_DEAD_TILE', coord: deadTile });
+
+      expect(state.board[deadTile.row]![deadTile.col]).toEqual({ type: 'empty' });
+    });
+
+    it('rejects tile placement on discarded cells', () => {
+      let state = createInitialGameState(
+        { ...DEFAULT_CONFIG, showDiscard: true },
+        [
+          { name: 'P1', isAi: false },
+          { name: 'P2', isAi: false },
+        ],
+        42
+      );
+
+      state.board[1]![1] = { type: 'discarded' };
+      state.players[0]!.hand[0] = { row: 1, col: 1 };
+
+      expect(() => {
+        gameReducer(state, { type: 'PLACE_TILE', coord: { row: 1, col: 1 } });
+      }).toThrow(/already occupied/);
+    });
+
+    it('marks dead tiles as discarded during END_TURN dead tile cleanup when showDiscard is true', () => {
+      let state = createInitialGameState(
+        { ...DEFAULT_CONFIG, showDiscard: true },
+        [
+          { name: 'P1', isAi: false },
+          { name: 'P2', isAi: false },
+        ],
+        42
+      );
+
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 11,
+        isSafe: true,
+      };
+      state.companies.royal = {
+        ...state.companies.royal!,
+        isActive: true,
+        size: 11,
+        isSafe: true,
+      };
+      state.board[2]![2] = { type: 'company', companyId: 'american' };
+      state.board[2]![4] = { type: 'company', companyId: 'royal' };
+
+      const deadTile = { row: 2, col: 3 };
+      state.players[0]!.hand = [deadTile, { row: 0, col: 0 }];
+      state.phase = 'buy_shares';
+
+      state = gameReducer(state, { type: 'END_TURN' });
+
+      expect(state.board[deadTile.row]![deadTile.col]).toEqual({ type: 'discarded' });
+    });
+  });
 });
+

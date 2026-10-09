@@ -4,6 +4,7 @@ import {
   CLASSIC_CHIT_BITMAP,
   CLASSIC_NOT_PLAYABLE_BITMAP,
   CLASSIC_PLAYER_INFO_BITMAP,
+  CLASSIC_DISCARD_SQUARE_BITMAP,
 } from '../../assets/classicAssets';
 import { ClassicWindow } from './ClassicWindow';
 import { TurnGuidanceBar } from '../TurnGuidanceBar';
@@ -232,6 +233,15 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
                               src={CLASSIC_CHIT_BITMAP}
                               alt="Oil Derrick"
                               className="win31-cell-bmp"
+                            />
+                          )}
+
+                          {cell?.type === 'discarded' && (
+                            <img
+                              src={CLASSIC_DISCARD_SQUARE_BITMAP}
+                              alt="Discarded X"
+                              className="win31-cell-bmp"
+                              data-testid="classic-discarded-marker"
                             />
                           )}
 

@@ -561,8 +561,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                           )}
                         </div>
                       )}
+
+                      {/* DISCARDED CELL */}
+                      {cell.type === 'discarded' && (
+                        <div className="discarded-tile-content" data-testid="discarded-marker">
+                          <span className="tile-coord-micro">{formatted}</span>
+                          <span className="discarded-x-mark">✕</span>
+                        </div>
+                      )}
                     </div>
                   );
+
                 })}
               </React.Fragment>
             );

@@ -881,8 +881,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         idx === state.activePlayerIndex ? { ...p, hand: updatedHand } : p
       );
 
+      let updatedBoard = state.board;
+      if (state.config.showDiscard) {
+        updatedBoard = applyTilePlacement(state.board, action.coord, { type: 'discarded' });
+      }
+
       const candidateState: GameState = {
         ...state,
+        board: updatedBoard,
         players: updatedPlayers,
         tilePool: updatedTilePool,
         history: [...state.history, action],
@@ -891,7 +897,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const activePlayerUpdated = updatedPlayers[state.activePlayerIndex]!;
       if (
         updatedTilePool.length === 0 &&
-        !hasPlayableTile(activePlayerUpdated, state.board, state.companies, state.config)
+        !hasPlayableTile(activePlayerUpdated, updatedBoard, state.companies, state.config)
       ) {
         if (isGameOver(candidateState)) {
           const liquidation = liquidateGame(candidateState);
@@ -929,16 +935,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       // 2. Dead tile cleanup
+      let updatedBoard = state.board;
       while (updatedTilePool.length > 0) {
         const deadIndex = updatedHand.findIndex((t) =>
-          isTileDead(state.board, t, state.companies, state.config.safeThreshold)
+          isTileDead(updatedBoard, t, state.companies, state.config.safeThreshold)
         );
         if (deadIndex === -1) break;
+        const deadTile = updatedHand[deadIndex]!;
+        if (state.config.showDiscard) {
+          updatedBoard = applyTilePlacement(updatedBoard, deadTile, { type: 'discarded' });
+        }
         updatedHand.splice(deadIndex, 1, updatedTilePool[0]!);
         updatedTilePool = updatedTilePool.slice(1);
       }
 
-        const nextPlayerIndex = (state.activePlayerIndex + 1) % state.players.length;
+      const nextPlayerIndex = (state.activePlayerIndex + 1) % state.players.length;
 
       const updatedPlayers = state.players.map((p, idx) =>
         idx === state.activePlayerIndex ? { ...p, hand: updatedHand } : p
@@ -971,6 +982,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const candidateState: GameState = {
         ...state,
+        board: updatedBoard,
         players: finalPlayers,
         tilePool: updatedTilePool,
         activePlayerIndex: nextPlayerIndex,

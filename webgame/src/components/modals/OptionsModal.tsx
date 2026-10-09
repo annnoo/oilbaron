@@ -30,6 +30,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
   const [hardShareLimits, setHardShareLimits] = useState<boolean>(config.hardShareLimits !== false);
   const [allowBlanks, setAllowBlanks] = useState<boolean>(config.allowBlanks ?? false);
   const [maxSharesPerPurchase, setMaxSharesPerPurchase] = useState<number>(config.maxSharesPerPurchase ?? 3);
+  const [showDiscard, setShowDiscard] = useState<boolean>(config.showDiscard ?? false);
 
   useEffect(() => {
     if (isOpen) {
@@ -42,6 +43,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
       setHardShareLimits(config.hardShareLimits !== false);
       setAllowBlanks(config.allowBlanks ?? false);
       setMaxSharesPerPurchase(config.maxSharesPerPurchase ?? 3);
+      setShowDiscard(config.showDiscard ?? false);
     }
   }, [isOpen, config, slowCpu]);
 
@@ -72,6 +74,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
     setHardShareLimits(true);
     setAllowBlanks(false);
     setMaxSharesPerPurchase(3);
+    setShowDiscard(false);
   };
 
   const handleSave = () => {
@@ -88,6 +91,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
       hardShareLimits,
       allowBlanks,
       maxSharesPerPurchase,
+      showDiscard,
     };
     onSaveConfig(newConfig, isSlowCpu);
     onClose();
@@ -308,6 +312,26 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
                 </span>
                 <span className="form-help" style={{ display: 'block', margin: 0 }}>
                   When checked, 2-for-1 merger stock trades are strictly capped at available bank inventory.
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={showDiscard}
+                onChange={(e) => {
+                  playClick();
+                  setShowDiscard(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Show Discarded Markers ('X')
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  Place permanent 'X' marker tiles on the grid when unplayable dead tiles are discarded.
                 </span>
               </div>
             </label>

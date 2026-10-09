@@ -57,4 +57,36 @@ describe('ClassicGameView Component', () => {
     expect(html).toContain('/classic_assets/chit.png');
     expect(html).toContain('win31-chit-card');
   });
+
+  it('renders classic discard marker square bitmap for discarded cells', () => {
+    const stateWithDiscard = {
+      ...dummyState,
+      board: dummyState.board.map((row, r) =>
+        r === 2
+          ? row.map((cell, c) => (c === 3 ? { type: 'discarded' as const } : cell))
+          : [...row]
+      ),
+    };
+
+    const html = renderToStaticMarkup(
+      <ClassicGameView
+        gameState={stateWithDiscard}
+        selectedHandCoord={null}
+        hoveredHandCoord={null}
+        showHints={true}
+        onToggleHints={vi.fn()}
+        onSelectHandCoord={vi.fn()}
+        onPlaceTile={vi.fn()}
+        onDiscardDeadTile={vi.fn()}
+        onMenuAction={vi.fn()}
+        onSwitchToModern={vi.fn()}
+        onTogglePlayerAi={vi.fn()}
+        onOpenStockMarket={vi.fn()}
+        onEndTurn={vi.fn()}
+      />
+    );
+
+    expect(html).toContain('/classic_assets/discard_square.png');
+    expect(html).toContain('data-testid="classic-discarded-marker"');
+  });
 });

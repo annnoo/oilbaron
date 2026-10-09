@@ -38,6 +38,7 @@ export const DEFAULT_CONFIG: GameConfig = {
   hardShareLimits: true,
   allowBlanks: false,
   purchaseLimit: true,
+  showDiscard: false,
 };
 
 export const CLASSIC_CONFIG = DEFAULT_CONFIG;
@@ -57,6 +58,7 @@ export const MODERN_BALANCED_CONFIG: GameConfig = {
   hardShareLimits: true,
   allowBlanks: false,
   purchaseLimit: true,
+  showDiscard: false,
 };
 
 export const DEFAULT_PLAYER_COLORS: readonly string[] = [
