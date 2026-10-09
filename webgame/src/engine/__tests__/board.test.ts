@@ -7,8 +7,6 @@ import {
   getContiguousCoordinates,
   applyTilePlacement,
 } from '../board';
-import { DEFAULT_CONFIG } from '../config';
-import { GameState } from '../types';
 
 describe('Board Adjacency & Move Classification', () => {
   it('correctly finds adjacent coordinates within bounds', () => {
@@ -23,13 +21,20 @@ describe('Board Adjacency & Move Classification', () => {
     expect(center).toHaveLength(4);
   });
 
+  it('returns empty array when coordinate is out of bounds', () => {
+    expect(getAdjacentCoords({ row: -1, col: 0 }, 10, 12)).toEqual([]);
+    expect(getAdjacentCoords({ row: 10, col: 0 }, 10, 12)).toEqual([]);
+    expect(getAdjacentCoords({ row: 0, col: -1 }, 10, 12)).toEqual([]);
+    expect(getAdjacentCoords({ row: 0, col: 12 }, 10, 12)).toEqual([]);
+  });
+
   it('classifies isolated tile placement', () => {
     const board = createEmptyBoard(10, 12);
     const result = classifyMove(board, { row: 2, col: 2 }, {}, 11);
     expect(result.type).toBe('isolated');
   });
 
-  it('classifies company expansion', () => {
+  it('classifies company expansion and populates connectedCoords', () => {
     const board = createEmptyBoard(10, 12);
     board[2]![2] = { type: 'company', companyId: 'american' };
     const companies = {
@@ -39,14 +44,42 @@ describe('Board Adjacency & Move Classification', () => {
     expect(result.type).toBe('expansion');
     if (result.type === 'expansion') {
       expect(result.companyId).toBe('american');
+      expect(result.connectedCoords).toHaveLength(1);
+      expect(result.connectedCoords).toContainEqual({ row: 2, col: 3 });
     }
   });
 
-  it('classifies company founding when touching unincorporated tiles', () => {
+  it('classifies company expansion with adjacent unincorporated tiles in connectedCoords', () => {
+    const board = createEmptyBoard(10, 12);
+    board[2]![2] = { type: 'company', companyId: 'american' };
+    board[2]![4] = { type: 'unincorporated' };
+    board[2]![5] = { type: 'unincorporated' };
+    const companies = {
+      american: { id: 'american', size: 2, isSafe: false, isActive: true } as any,
+    };
+    const result = classifyMove(board, { row: 2, col: 3 }, companies);
+    expect(result.type).toBe('expansion');
+    if (result.type === 'expansion') {
+      expect(result.companyId).toBe('american');
+      expect(result.connectedCoords).toHaveLength(3);
+      expect(result.connectedCoords).toContainEqual({ row: 2, col: 3 });
+      expect(result.connectedCoords).toContainEqual({ row: 2, col: 4 });
+      expect(result.connectedCoords).toContainEqual({ row: 2, col: 5 });
+    }
+  });
+
+  it('classifies company founding when touching unincorporated tiles and populates connectedCoords', () => {
     const board = createEmptyBoard(10, 12);
     board[2]![2] = { type: 'unincorporated' };
+    board[2]![1] = { type: 'unincorporated' };
     const result = classifyMove(board, { row: 2, col: 3 }, {}, 11);
     expect(result.type).toBe('founding');
+    if (result.type === 'founding') {
+      expect(result.connectedCoords).toHaveLength(3);
+      expect(result.connectedCoords).toContainEqual({ row: 2, col: 3 });
+      expect(result.connectedCoords).toContainEqual({ row: 2, col: 2 });
+      expect(result.connectedCoords).toContainEqual({ row: 2, col: 1 });
+    }
   });
 
   it('classifies merger when touching two active companies', () => {

@@ -1,3 +1,4 @@
+import { DEFAULT_CONFIG } from './config';
 import type { CellState, CompanyId, CompanyState, TileCoord } from './types';
 
 export type MoveClassificationType =
@@ -62,12 +63,17 @@ export function createEmptyBoard(rows: number, cols: number): CellState[][] {
 
 /**
  * Returns cardinal neighbors (N, S, W, E) that lie strictly within the board boundaries.
+ * Returns an empty array if the origin coordinate itself is out of bounds.
  */
 export function getAdjacentCoords(
   coord: TileCoord,
   rows: number,
   cols: number
 ): TileCoord[] {
+  if (coord.row < 0 || coord.row >= rows || coord.col < 0 || coord.col >= cols) {
+    return [];
+  }
+
   const deltas: readonly [number, number][] = [
     [-1, 0], // North
     [1, 0],  // South
@@ -163,10 +169,35 @@ export function getContiguousCoordinates(
  */
 export function isCompanySafe(
   company: CompanyState | undefined,
-  safeThreshold: number
+  safeThreshold: number = DEFAULT_CONFIG.safeThreshold
 ): boolean {
   if (!company) return false;
   return company.isSafe === true || (company.size !== undefined && company.size >= safeThreshold);
+}
+
+/**
+ * Collects the newly placed coordinate plus all contiguous unincorporated coordinates
+ * reachable from adjacent unincorporated tiles.
+ */
+function collectConnectedUnincorporated(
+  placedCoord: TileCoord,
+  unincorporatedNeighbors: readonly TileCoord[],
+  board: readonly (readonly CellState[])[]
+): TileCoord[] {
+  const connectedSet = new Set<string>();
+  connectedSet.add(`${placedCoord.row},${placedCoord.col}`);
+
+  for (const uninc of unincorporatedNeighbors) {
+    const cluster = getContiguousCoordinates(board, uninc);
+    for (const c of cluster) {
+      connectedSet.add(`${c.row},${c.col}`);
+    }
+  }
+
+  return Array.from(connectedSet).map((s) => {
+    const [r, c] = s.split(',').map(Number);
+    return { row: r!, col: c! };
+  });
 }
 
 /**
@@ -181,7 +212,7 @@ export function classifyMove(
   board: readonly (readonly CellState[])[],
   coord: TileCoord,
   companies: Partial<Record<CompanyId, CompanyState>> = {},
-  safeThreshold: number = 11
+  safeThreshold: number = DEFAULT_CONFIG.safeThreshold
 ): MoveClassification {
   const rows = board.length;
   const cols = board[0]?.length ?? 0;
@@ -226,20 +257,11 @@ export function classifyMove(
 
   if (adjacentCompanyIds.length === 1) {
     const companyId = adjacentCompanyIds[0]!;
-    const connectedSet = new Set<string>();
-    connectedSet.add(`${coord.row},${coord.col}`);
-
-    for (const uninc of unincorporatedNeighbors) {
-      const cluster = getContiguousCoordinates(board, uninc);
-      for (const c of cluster) {
-        connectedSet.add(`${c.row},${c.col}`);
-      }
-    }
-
-    const connectedCoords = Array.from(connectedSet).map((s) => {
-      const [r, c] = s.split(',').map(Number);
-      return { row: r!, col: c! };
-    });
+    const connectedCoords = collectConnectedUnincorporated(
+      coord,
+      unincorporatedNeighbors,
+      board
+    );
 
     return {
       type: 'expansion',
@@ -250,20 +272,11 @@ export function classifyMove(
   }
 
   if (unincorporatedNeighbors.length >= 1) {
-    const connectedSet = new Set<string>();
-    connectedSet.add(`${coord.row},${coord.col}`);
-
-    for (const uninc of unincorporatedNeighbors) {
-      const cluster = getContiguousCoordinates(board, uninc);
-      for (const c of cluster) {
-        connectedSet.add(`${c.row},${c.col}`);
-      }
-    }
-
-    const connectedCoords = Array.from(connectedSet).map((s) => {
-      const [r, c] = s.split(',').map(Number);
-      return { row: r!, col: c! };
-    });
+    const connectedCoords = collectConnectedUnincorporated(
+      coord,
+      unincorporatedNeighbors,
+      board
+    );
 
     return {
       type: 'founding',
@@ -285,7 +298,7 @@ export function isTileDead(
   board: readonly (readonly CellState[])[],
   coord: TileCoord,
   companies: Partial<Record<CompanyId, CompanyState>> = {},
-  safeThreshold: number = 11
+  safeThreshold: number = DEFAULT_CONFIG.safeThreshold
 ): boolean {
   const result = classifyMove(board, coord, companies, safeThreshold);
   return result.type === 'illegal_safe_merger';
