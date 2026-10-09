@@ -428,3 +428,404 @@ html, body {
 .table-custom tr:hover td {
   background-color: var(--bg-surface-hover);
 }
+
+/* ==========================================================================
+   MENU BAR STYLING
+   ========================================================================== */
+
+.menu-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 12px;
+  height: 38px;
+  user-select: none;
+  position: relative;
+  z-index: 200;
+}
+
+.menu-bar-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 100%;
+}
+
+.menu-bar-item {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.menu-bar-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  padding: 4px 10px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.menu-bar-btn:hover,
+.menu-bar-btn.active {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+}
+
+.menu-bar-btn .mnemonic {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 260px;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-modal);
+  padding: 4px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  animation: fadeIn 120ms ease-out;
+}
+
+.menu-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background-color var(--transition-fast);
+}
+
+.menu-dropdown-item:hover:not(:disabled) {
+  background-color: var(--bg-surface-hover);
+  color: #ffffff;
+}
+
+.menu-dropdown-item:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.menu-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-icon {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.menu-icon.text-gold {
+  color: var(--accent-gold);
+}
+
+.menu-icon.text-blue {
+  color: var(--accent-blue);
+}
+
+.menu-icon.text-muted {
+  color: var(--text-muted);
+}
+
+.menu-icon-spacer {
+  width: 14px;
+  display: inline-block;
+}
+
+.menu-item-shortcut {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  background-color: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+}
+
+.menu-item-check {
+  width: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-gold);
+}
+
+.menu-dropdown-divider {
+  height: 1px;
+  background-color: var(--border-subtle);
+  margin: 4px 2px;
+}
+
+.menu-bar-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-bar-badge {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-deep);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   COMPANY TICKER STYLING
+   ========================================================================== */
+
+.company-ticker {
+  background-color: var(--bg-deep);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  overflow-x: auto;
+  user-select: none;
+}
+
+.ticker-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent-gold);
+}
+
+.ticker-header-icon {
+  color: var(--accent-gold);
+}
+
+.ticker-counter-badge {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  letter-spacing: normal;
+}
+
+.ticker-scroll-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.ticker-empty-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+
+.ticker-empty-msg {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.ticker-unformed-pills {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.ticker-unformed-heading {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.ticker-unformed-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+}
+
+.ticker-unformed-name {
+  color: var(--text-secondary);
+}
+
+.ticker-unformed-price {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--accent-gold);
+}
+
+.ticker-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.ticker-cards-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.company-ticker-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 185px;
+  transition: all var(--transition-fast);
+}
+
+.company-ticker-card.clickable {
+  cursor: pointer;
+}
+
+.company-ticker-card.clickable:hover {
+  background-color: var(--bg-surface-hover);
+  border-color: var(--border-strong);
+}
+
+.company-ticker-card.is-safe {
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.15);
+  border-top-color: rgba(34, 197, 94, 0.3);
+  border-right-color: rgba(34, 197, 94, 0.3);
+  border-bottom-color: rgba(34, 197, 94, 0.3);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.company-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticker-safe-badge {
+  font-size: 9px;
+  padding: 1px 4px;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.card-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+}
+
+.stat-group {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.stat-label {
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-weight: 600;
+}
+
+.shares-max {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 10px;
+}
+
+.ticker-unformed-summary-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background-color: var(--bg-surface);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.unformed-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.unformed-dots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.unformed-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
