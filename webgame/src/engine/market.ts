@@ -5,6 +5,7 @@ import type {
   CompanyState,
   PlayerState,
   SharePurchase,
+  ShareSale,
 } from './types';
 
 export type CompanyDefinitionsInput =
@@ -25,6 +26,27 @@ export interface BuySharesResult {
   player: PlayerState;
   companies: Record<CompanyId, CompanyState>;
   totalCost: number;
+}
+
+export interface ShareSaleValidation {
+  valid: boolean;
+  reason?: string;
+  totalRevenue: number;
+  aggregatedCounts: Map<CompanyId, number>;
+}
+
+export interface SellSharesResult {
+  success: boolean;
+  error?: string;
+  player: PlayerState;
+  companies: Record<CompanyId, CompanyState>;
+  totalRevenue: number;
+  soldCounts: Record<CompanyId, number>;
+}
+
+export interface PlayerDividendsResult {
+  totalDividend: number;
+  breakdown: Record<CompanyId, number>;
 }
 
 /**
@@ -261,4 +283,190 @@ export function buyShares(
     companies: newCompanies,
     totalCost,
   };
+}
+
+/**
+ * Validates whether a player can legally execute the requested share sales.
+ */
+export function validateShareSales(
+  player: PlayerState,
+  companyStates: Record<CompanyId, CompanyState> | Partial<Record<CompanyId, CompanyState>>,
+  definitions: CompanyDefinitionsInput,
+  sales: readonly ShareSale[]
+): ShareSaleValidation {
+  const aggregatedCounts = new Map<CompanyId, number>();
+
+  for (const s of sales) {
+    if (typeof s.count !== 'number' || isNaN(s.count) || s.count < 0) {
+      return {
+        valid: false,
+        reason: 'Share sale count must be a non-negative number',
+        totalRevenue: 0,
+        aggregatedCounts: new Map(),
+      };
+    }
+    if (s.count === 0) continue;
+    aggregatedCounts.set(s.companyId, (aggregatedCounts.get(s.companyId) ?? 0) + s.count);
+  }
+
+  let totalRevenue = 0;
+
+  for (const [companyId, requestedCount] of aggregatedCounts.entries()) {
+    const company = companyStates[companyId];
+    const def = getCompanyDefinition(definitions, companyId);
+
+    if (!company || !def || !company.isActive || company.size < 2) {
+      return {
+        valid: false,
+        reason: `Company ${def?.name ?? companyId} is not currently active on the board`,
+        totalRevenue: 0,
+        aggregatedCounts,
+      };
+    }
+
+    const ownedShares = player.shares[companyId] ?? 0;
+    if (requestedCount > ownedShares) {
+      return {
+        valid: false,
+        reason: `Requested sale of ${requestedCount} shares in ${def.name} exceeds owned shares (${ownedShares})`,
+        totalRevenue: 0,
+        aggregatedCounts,
+      };
+    }
+
+    const price = calculateSharePrice(def, company.size);
+    totalRevenue += requestedCount * price;
+  }
+
+  return {
+    valid: true,
+    totalRevenue,
+    aggregatedCounts,
+  };
+}
+
+/**
+ * Immutably executes a share sale transaction:
+ * - Deducts shares from player portfolio
+ * - Adds proceeds to player cash
+ * - Returns sold shares to company bank inventory
+ */
+export function sellShares(
+  player: PlayerState,
+  companyStates: Record<CompanyId, CompanyState> | Partial<Record<CompanyId, CompanyState>>,
+  definitions: CompanyDefinitionsInput,
+  sales: readonly ShareSale[]
+): SellSharesResult {
+  const validation = validateShareSales(player, companyStates, definitions, sales);
+
+  if (!validation.valid) {
+    return {
+      success: false,
+      error: validation.reason,
+      player,
+      companies: { ...(companyStates as Record<CompanyId, CompanyState>) },
+      totalRevenue: 0,
+      soldCounts: {},
+    };
+  }
+
+  const { totalRevenue, aggregatedCounts } = validation;
+  const newShares: Record<CompanyId, number> = { ...player.shares };
+  const newCompanies: Record<CompanyId, CompanyState> = {
+    ...(companyStates as Record<CompanyId, CompanyState>),
+  };
+  const soldCounts: Record<CompanyId, number> = {};
+
+  for (const [companyId, count] of aggregatedCounts.entries()) {
+    newShares[companyId] = (newShares[companyId] ?? 0) - count;
+    soldCounts[companyId] = count;
+    const company = companyStates[companyId]!;
+    newCompanies[companyId] = {
+      ...company,
+      availableShares: company.availableShares + count,
+    };
+  }
+
+  const newPlayer: PlayerState = {
+    ...player,
+    cash: player.cash + totalRevenue,
+    shares: newShares,
+    hand: [...player.hand],
+  };
+
+  return {
+    success: true,
+    player: newPlayer,
+    companies: newCompanies,
+    totalRevenue,
+    soldCounts,
+  };
+}
+
+/**
+ * Sells all shares held by a player in all currently active companies.
+ */
+export function sellAllShares(
+  player: PlayerState,
+  companyStates: Record<CompanyId, CompanyState> | Partial<Record<CompanyId, CompanyState>>,
+  definitions: CompanyDefinitionsInput
+): SellSharesResult {
+  const sales: ShareSale[] = [];
+
+  for (const [companyId, count] of Object.entries(player.shares)) {
+    if (count > 0) {
+      const company = companyStates[companyId];
+      if (company && company.isActive && company.size >= 2) {
+        sales.push({ companyId, count });
+      }
+    }
+  }
+
+  return sellShares(player, companyStates, definitions, sales);
+}
+
+/**
+ * Calculates the dividend per share for an active company.
+ */
+export function calculateCompanyDividend(
+  definition: CompanyDefinition,
+  size: number
+): number {
+  if (size < 2) return 0;
+  const price = calculateSharePrice(definition, size);
+  const yieldRate =
+    definition.dividendYield ??
+    (definition.tier === 'high' ? 0.125 : definition.tier === 'mid' ? 0.10 : 0.067);
+  return Math.round(price * yieldRate);
+}
+
+/**
+ * Calculates total dividend earnings for a player across all active holdings.
+ */
+export function calculatePlayerDividends(
+  player: PlayerState,
+  companyStates: Record<CompanyId, CompanyState> | Partial<Record<CompanyId, CompanyState>>,
+  definitions: CompanyDefinitionsInput
+): PlayerDividendsResult {
+  let totalDividend = 0;
+  const breakdown: Record<CompanyId, number> = {};
+
+  for (const [companyId, count] of Object.entries(player.shares)) {
+    if (count > 0) {
+      const company = companyStates[companyId];
+      if (company && company.isActive && company.size >= 2) {
+        const def = getCompanyDefinition(definitions, companyId);
+        if (def) {
+          const divPerShare = calculateCompanyDividend(def, company.size);
+          const compTotal = count * divPerShare;
+          if (compTotal > 0) {
+            breakdown[companyId] = compTotal;
+            totalDividend += compTotal;
+          }
+        }
+      }
+    }
+  }
+
+  return { totalDividend, breakdown };
 }

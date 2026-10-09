@@ -801,4 +801,213 @@ describe('Game State Reducer & Turn Flow', () => {
     expect(stateB.phase).toBe('game_over');
     expect(stateB.winnerPlayerId).toBeDefined();
   });
+
+  describe('Share Selling and Dividend Lifecycle in Reducer', () => {
+    it('executes SELL_SHARES during buy_shares phase, updating cash and bank inventory', () => {
+      let state = createInitialGameState(
+        DEFAULT_CONFIG,
+        [
+          { name: 'P1', isAi: false },
+          { name: 'P2', isAi: false },
+        ],
+        42
+      );
+
+      // Set up American as active of size 2 ($200)
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 2,
+        availableShares: 15,
+      };
+      // Give P1 5 shares of American and $1000 cash
+      state.players[0]!.shares.american = 5;
+      state.players[0]!.cash = 1000;
+      state.phase = 'buy_shares';
+
+      state = gameReducer(state, {
+        type: 'SELL_SHARES',
+        sales: [{ companyId: 'american', count: 3 }],
+      });
+
+      expect(state.players[0]!.cash).toBe(1000 + 3 * 200); // $1600
+      expect(state.players[0]!.shares.american).toBe(2);
+      expect(state.companies.american?.availableShares).toBe(18); // 15 + 3
+      expect(state.turnSoldShares.american).toBe(3);
+      expect(state.history[state.history.length - 1]).toEqual({
+        type: 'SELL_SHARES',
+        sales: [{ companyId: 'american', count: 3 }],
+      });
+    });
+
+    it('rejects SELL_SHARES during invalid turn phases', () => {
+      let state = createInitialGameState(
+        DEFAULT_CONFIG,
+        [
+          { name: 'P1', isAi: false },
+          { name: 'P2', isAi: false },
+        ],
+        42
+      );
+      state.phase = 'place_tile';
+      state.players[0]!.shares.american = 5;
+
+      expect(() =>
+        gameReducer(state, {
+          type: 'SELL_SHARES',
+          sales: [{ companyId: 'american', count: 1 }],
+        })
+      ).toThrow("Cannot sell shares during phase 'place_tile'");
+    });
+
+    it('executes SELL_ALL_SHARES to liquidate all active holdings of the active player', () => {
+      let state = createInitialGameState(
+        DEFAULT_CONFIG,
+        [
+          { name: 'P1', isAi: false },
+          { name: 'P2', isAi: false },
+        ],
+        42
+      );
+
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 2, // $200
+        availableShares: 15,
+      };
+      state.companies.royal = {
+        ...state.companies.royal!,
+        isActive: true,
+        size: 2, // $400
+        availableShares: 18,
+      };
+      state.companies.imperial = {
+        ...state.companies.imperial!,
+        isActive: false, // Inactive: should NOT be sold!
+        size: 0,
+        availableShares: 25,
+      };
+
+      state.players[0]!.shares.american = 3; // $600
+      state.players[0]!.shares.royal = 2; // $800
+      state.players[0]!.shares.imperial = 4; // inactive
+      state.players[0]!.cash = 500;
+      state.phase = 'buy_shares';
+
+      state = gameReducer(state, { type: 'SELL_ALL_SHARES' });
+
+      expect(state.players[0]!.cash).toBe(500 + 600 + 800); // $1900
+      expect(state.players[0]!.shares.american).toBe(0);
+      expect(state.players[0]!.shares.royal).toBe(0);
+      expect(state.players[0]!.shares.imperial).toBe(4); // Inactive kept
+      expect(state.companies.american?.availableShares).toBe(18);
+      expect(state.companies.royal?.availableShares).toBe(20);
+      expect(state.turnSoldShares.american).toBe(3);
+      expect(state.turnSoldShares.royal).toBe(2);
+    });
+
+    it('allows repurchasing shares sold within the same turn beyond maxSharesPerPurchase limit', () => {
+      let state = createInitialGameState(
+        DEFAULT_CONFIG, // maxSharesPerPurchase = 3
+        [
+          { name: 'P1', isAi: false },
+          { name: 'P2', isAi: false },
+        ],
+        42
+      );
+
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 2, // $200
+        availableShares: 20,
+      };
+      state.players[0]!.shares.american = 4;
+      state.players[0]!.cash = 10000;
+      state.phase = 'buy_shares';
+
+      // P1 sells 2 shares of American -> turnSoldShares.american = 2
+      state = gameReducer(state, {
+        type: 'SELL_SHARES',
+        sales: [{ companyId: 'american', count: 2 }],
+      });
+
+      // Allowed to buy up to 3 + 2 = 5 shares of American!
+      state = gameReducer(state, {
+        type: 'BUY_SHARES',
+        purchases: [{ companyId: 'american', count: 5 }],
+      });
+
+      expect(state.players[0]!.shares.american).toBe(4 - 2 + 5); // 7 shares
+      expect(state.turnPurchasedSharesCount).toBe(5);
+    });
+
+    it('pays dividends to active player upon END_TURN when payDividends is enabled', () => {
+      let state = createInitialGameState(
+        { ...DEFAULT_CONFIG, payDividends: true },
+        [
+          { name: 'P1', isAi: false },
+          { name: 'P2', isAi: false },
+        ],
+        42
+      );
+
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 2, // $200, yield 0.10 = $20 per share
+      };
+      state.companies.royal = {
+        ...state.companies.royal!,
+        isActive: true,
+        size: 2, // $400, yield 0.125 = $50 per share
+      };
+
+      state.players[0]!.shares.american = 10; // 10 * 20 = $200
+      state.players[0]!.shares.royal = 4; // 4 * 50 = $200
+      state.players[0]!.cash = 5000;
+      state.phase = 'buy_shares';
+
+      state = gameReducer(state, { type: 'END_TURN' });
+
+      // P1 should receive $400 in dividends
+      expect(state.players[0]!.cash).toBe(5400);
+      expect(state.lastDividendPayout).toEqual({
+        playerId: 'p1',
+        totalDividend: 400,
+        breakdown: {
+          american: 200,
+          royal: 200,
+        },
+      });
+      // turnSoldShares should be reset
+      expect(state.turnSoldShares).toEqual({});
+    });
+
+    it('does not pay dividends upon END_TURN when payDividends is disabled', () => {
+      let state = createInitialGameState(
+        { ...DEFAULT_CONFIG, payDividends: false },
+        [
+          { name: 'P1', isAi: false },
+          { name: 'P2', isAi: false },
+        ],
+        42
+      );
+
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 2,
+      };
+      state.players[0]!.shares.american = 10;
+      state.players[0]!.cash = 5000;
+      state.phase = 'buy_shares';
+
+      state = gameReducer(state, { type: 'END_TURN' });
+
+      expect(state.players[0]!.cash).toBe(5000);
+      expect(state.lastDividendPayout).toBeNull();
+    });
+  });
 });

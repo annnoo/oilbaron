@@ -26,6 +26,10 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
   const [safeThreshold, setSafeThreshold] = useState<number>(config.safeThreshold);
   const [startingCash, setStartingCash] = useState<number>(config.startingCash);
   const [isSlowCpu, setIsSlowCpu] = useState<boolean>(slowCpu);
+  const [payDividends, setPayDividends] = useState<boolean>(config.payDividends ?? false);
+  const [hardShareLimits, setHardShareLimits] = useState<boolean>(config.hardShareLimits !== false);
+  const [allowBlanks, setAllowBlanks] = useState<boolean>(config.allowBlanks ?? false);
+  const [maxSharesPerPurchase, setMaxSharesPerPurchase] = useState<number>(config.maxSharesPerPurchase ?? 3);
 
   useEffect(() => {
     if (isOpen) {
@@ -34,6 +38,10 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
       setSafeThreshold(config.safeThreshold);
       setStartingCash(config.startingCash);
       setIsSlowCpu(slowCpu);
+      setPayDividends(config.payDividends ?? false);
+      setHardShareLimits(config.hardShareLimits !== false);
+      setAllowBlanks(config.allowBlanks ?? false);
+      setMaxSharesPerPurchase(config.maxSharesPerPurchase ?? 3);
     }
   }, [isOpen, config, slowCpu]);
 
@@ -60,6 +68,10 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
     setSafeThreshold(defaults.safeThreshold);
     setStartingCash(defaults.startingCash);
     setIsSlowCpu(false);
+    setPayDividends(false);
+    setHardShareLimits(true);
+    setAllowBlanks(false);
+    setMaxSharesPerPurchase(3);
   };
 
   const handleSave = () => {
@@ -72,6 +84,10 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
       safeThreshold,
       startingCash,
       founderBonusShares: ruleset === 'oilbaron_classic' ? 10 : 1,
+      payDividends,
+      hardShareLimits,
+      allowBlanks,
+      maxSharesPerPurchase,
     };
     onSaveConfig(newConfig, isSlowCpu);
     onClose();
@@ -235,8 +251,70 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
             <span className="form-help">{t('options.startingCashDesc')}</span>
           </div>
 
+          {/* Purchasing Limit */}
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <div className="form-label">
+              <span>Shares Allowed Per Turn</span>
+              <span className="slider-value-badge">{maxSharesPerPurchase} shares</span>
+            </div>
+            <div className="slider-container">
+              <input
+                type="range"
+                min={1}
+                max={10}
+                value={maxSharesPerPurchase}
+                onChange={(e) => setMaxSharesPerPurchase(Number(e.target.value))}
+                className="slider-input"
+              />
+            </div>
+            <span className="form-help">Maximum shares purchasable per turn before repurchase allowances (Default: 3).</span>
+          </div>
+
+          {/* Gameplay Rule Toggles: Dividends, Hard Limits, Blanks */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px', padding: '12px', background: 'var(--bg-surface-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={payDividends}
+                onChange={(e) => {
+                  playClick();
+                  setPayDividends(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Pay Dividends
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  Active corporations pay end-of-turn cash yields proportional to share price (High tier: 12.5%, Mid tier: 10%, Low tier: 6.7%).
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={hardShareLimits}
+                onChange={(e) => {
+                  playClick();
+                  setHardShareLimits(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Hard Share Limits
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  When checked, 2-for-1 merger stock trades are strictly capped at available bank inventory.
+                </span>
+              </div>
+            </label>
+          </div>
+
           {/* Slow Computer Turns Toggle */}
-          <div className="form-group" style={{ marginTop: '16px' }}>
+          <div className="form-group" style={{ marginTop: '14px' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
               <input
                 type="checkbox"
@@ -262,6 +340,7 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
             type="button"
             className="btn btn-secondary"
             onClick={handleResetDefaults}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
             <RotateCcw size={14} style={{ marginRight: '6px' }} />
             {t('common.reset')}

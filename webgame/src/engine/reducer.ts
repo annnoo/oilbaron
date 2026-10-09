@@ -7,6 +7,9 @@ import {
   buyShares,
   calculateSharePrice,
   getCompanyDefinition,
+  sellShares,
+  sellAllShares,
+  calculatePlayerDividends,
 } from './market';
 import {
   applyShareDisposition,
@@ -20,6 +23,7 @@ import type {
   CellState,
   CompanyId,
   CompanyState,
+  DividendPayout,
   GameAction,
   GameConfig,
   GameState,
@@ -643,7 +647,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         currentDefunctCompanyId,
         defunctPrice,
         survivorCompany,
-        action.choices
+        action.choices,
+        state.config.hardShareLimits !== false
       );
 
       const updatedPlayers = state.players.map((p, idx) =>
@@ -730,8 +735,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
       const totalRequested = action.purchases.reduce((sum, p) => sum + p.count, 0);
-      const remainingPurchases =
-        state.config.maxSharesPerPurchase - state.turnPurchasedSharesCount;
+      const totalSoldSharesThisTurn = Object.values(state.turnSoldShares ?? {}).reduce(
+        (sum, n) => sum + n,
+        0
+      );
+      const allowedTotal = state.config.maxSharesPerPurchase + totalSoldSharesThisTurn;
+      const remainingPurchases = allowedTotal - state.turnPurchasedSharesCount;
 
       if (totalRequested > remainingPurchases) {
         throw new Error(
@@ -761,6 +770,82 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         players: updatedPlayers,
         companies: result.companies,
         turnPurchasedSharesCount: state.turnPurchasedSharesCount + totalRequested,
+        history: [...state.history, action],
+      };
+    }
+
+    case 'SELL_SHARES': {
+      if (state.phase !== 'buy_shares') {
+        throw new Error(`Cannot sell shares during phase '${state.phase}'`);
+      }
+
+      if (action.sales.length === 0) {
+        return {
+          ...state,
+          history: [...state.history, action],
+        };
+      }
+
+      const activePlayer = state.players[state.activePlayerIndex]!;
+      const result = sellShares(
+        activePlayer,
+        state.companies,
+        state.config.companies,
+        action.sales
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      const updatedPlayers = state.players.map((p, idx) =>
+        idx === state.activePlayerIndex ? result.player : p
+      );
+
+      const updatedTurnSold = { ...(state.turnSoldShares ?? {}) };
+      for (const [compId, count] of Object.entries(result.soldCounts)) {
+        updatedTurnSold[compId] = (updatedTurnSold[compId] ?? 0) + count;
+      }
+
+      return {
+        ...state,
+        players: updatedPlayers,
+        companies: result.companies,
+        turnSoldShares: updatedTurnSold,
+        history: [...state.history, action],
+      };
+    }
+
+    case 'SELL_ALL_SHARES': {
+      if (state.phase !== 'buy_shares') {
+        throw new Error(`Cannot sell shares during phase '${state.phase}'`);
+      }
+
+      const activePlayer = state.players[state.activePlayerIndex]!;
+      const result = sellAllShares(
+        activePlayer,
+        state.companies,
+        state.config.companies
+      );
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      const updatedPlayers = state.players.map((p, idx) =>
+        idx === state.activePlayerIndex ? result.player : p
+      );
+
+      const updatedTurnSold = { ...(state.turnSoldShares ?? {}) };
+      for (const [compId, count] of Object.entries(result.soldCounts)) {
+        updatedTurnSold[compId] = (updatedTurnSold[compId] ?? 0) + count;
+      }
+
+      return {
+        ...state,
+        players: updatedPlayers,
+        companies: result.companies,
+        turnSoldShares: updatedTurnSold,
         history: [...state.history, action],
       };
     }
@@ -853,19 +938,46 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         updatedTilePool = updatedTilePool.slice(1);
       }
 
-      const nextPlayerIndex = (state.activePlayerIndex + 1) % state.players.length;
+        const nextPlayerIndex = (state.activePlayerIndex + 1) % state.players.length;
 
       const updatedPlayers = state.players.map((p, idx) =>
         idx === state.activePlayerIndex ? { ...p, hand: updatedHand } : p
       );
 
+      // 3. Dividend Payout for active player
+      let lastDividendPayout: DividendPayout | null = null;
+      let finalPlayers = updatedPlayers;
+
+      if (state.config.payDividends) {
+        const activeP = updatedPlayers[state.activePlayerIndex]!;
+        const divResult = calculatePlayerDividends(
+          activeP,
+          state.companies,
+          state.config.companies
+        );
+        if (divResult.totalDividend > 0) {
+          lastDividendPayout = {
+            playerId: activeP.id,
+            totalDividend: divResult.totalDividend,
+            breakdown: divResult.breakdown,
+          };
+          finalPlayers = updatedPlayers.map((p, idx) =>
+            idx === state.activePlayerIndex
+              ? { ...p, cash: p.cash + divResult.totalDividend }
+              : p
+          );
+        }
+      }
+
       const candidateState: GameState = {
         ...state,
-        players: updatedPlayers,
+        players: finalPlayers,
         tilePool: updatedTilePool,
         activePlayerIndex: nextPlayerIndex,
         phase: 'place_tile',
         turnPurchasedSharesCount: 0,
+        turnSoldShares: {},
+        lastDividendPayout,
         history: [...state.history, action],
       };
 

@@ -430,4 +430,43 @@ describe('Merger Resolution & Shareholder Payouts', () => {
       })
     ).toThrow(/integer/i);
   });
+
+  it('honors hardShareLimits toggle: enforces bank capacity by default, allows soft trading when false', () => {
+    const player: PlayerState = {
+      id: 'p1',
+      name: 'Alice',
+      cash: 1000,
+      shares: { american: 4, imperial: 0 },
+      hand: [],
+      isAi: false,
+    };
+    const survivorEmptyBank: CompanyState = {
+      id: 'imperial',
+      availableShares: 0, // Bank exhausted
+    } as any;
+
+    // Hard share limit active: trading 4 shares (needs 2 survivor shares) must throw error
+    expect(() =>
+      applyShareDisposition(
+        player,
+        'american',
+        400,
+        survivorEmptyBank,
+        { trade: 4 },
+        true
+      )
+    ).toThrow(/Insufficient survivor shares/i);
+
+    // Soft share limit (hardShareLimits = false): trading is permitted
+    const softResult = applyShareDisposition(
+      player,
+      'american',
+      400,
+      survivorEmptyBank,
+      { trade: 4 },
+      false
+    );
+    expect(softResult.player.shares.imperial).toBe(2);
+    expect(softResult.survivorCompany.availableShares).toBe(0);
+  });
 });

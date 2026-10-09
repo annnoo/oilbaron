@@ -11,7 +11,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { playClick } from '../assets/audio';
-import type { TileCoord, TurnPhase } from '../engine/types';
+import type { TileCoord, TurnPhase, DividendPayout } from '../engine/types';
 import { formatCoord } from '../engine/board';
 
 export interface TurnGuidanceBarProps {
@@ -22,6 +22,8 @@ export interface TurnGuidanceBarProps {
   selectedCoord: TileCoord | null;
   cash?: number;
   showHints: boolean;
+  repurchaseAllowance?: number;
+  lastDividendPayout?: DividendPayout | null;
   onToggleHints: (hints: boolean) => void;
   onPlaceSelected?: () => void;
   onOpenStockMarket?: () => void;
@@ -36,6 +38,8 @@ export const TurnGuidanceBar: React.FC<TurnGuidanceBarProps> = ({
   selectedCoord,
   cash = 6000,
   showHints,
+  repurchaseAllowance,
+  lastDividendPayout,
   onToggleHints,
   onPlaceSelected,
   onOpenStockMarket,
@@ -113,9 +117,13 @@ export const TurnGuidanceBar: React.FC<TurnGuidanceBarProps> = ({
         return {
           badge: 'STEP 3 OF 3: STOCK MARKET',
           badgeColor: '#22c55e',
-          title: `Drilling complete! Buy up to 3 corporate shares ($${cash.toLocaleString()} cash available)`,
+          title: `Drilling complete! Buy up to 3 corporate shares ($${cash.toLocaleString()} cash available${
+            repurchaseAllowance && repurchaseAllowance > 0
+              ? ` • Repurchase Allowance: +${repurchaseAllowance}`
+              : ''
+          })`,
           detail:
-            'You may purchase stock in any active corporations to build portfolio value, or click End Turn to pass.',
+            'You may purchase or sell stock in any active corporations to build portfolio value, or click End Turn to pass.',
           actions: (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {onOpenStockMarket && (
@@ -221,6 +229,22 @@ export const TurnGuidanceBar: React.FC<TurnGuidanceBarProps> = ({
               />
             )}
             <span>{guidance.title}</span>
+            {lastDividendPayout && lastDividendPayout.totalDividend > 0 && (
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  padding: '2px 7px',
+                  borderRadius: '4px',
+                  background: 'rgba(34, 197, 94, 0.2)',
+                  color: '#4ade80',
+                  border: '1px solid rgba(34, 197, 94, 0.4)',
+                }}
+                title={`Recent dividends paid: $${lastDividendPayout.totalDividend.toLocaleString()}`}
+              >
+                +${lastDividendPayout.totalDividend.toLocaleString()} Dividends
+              </span>
+            )}
           </span>
         </div>
 
