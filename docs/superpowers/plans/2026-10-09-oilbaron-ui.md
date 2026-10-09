@@ -31,22 +31,22 @@
 - Create: `webgame/src/main.tsx`
 - Test: Build verification via `npm run build`
 
-- [ ] **Step 1: Install React & UI dependencies**
+- [x] **Step 1: Install React & UI dependencies**
 Install `react`, `react-dom`, `@types/react`, `@types/react-dom`, `@vitejs/plugin-react`, `lucide-react`.
 
-- [ ] **Step 2: Configure Vite & TypeScript**
+- [x] **Step 2: Configure Vite & TypeScript**
 Configure `@vitejs/plugin-react` in `vite.config.ts` and set `"jsx": "react-jsx"` in `tsconfig.json`.
 
-- [ ] **Step 3: Setup `index.html` & `src/index.css`**
+- [x] **Step 3: Setup `index.html` & `src/index.css`**
 Add rich styling, dark industrial oil-tycoon theme, CSS variables for company colors, and responsive grid layout.
 
-- [ ] **Step 4: Implement Procedural Audio Synthesizer (`src/assets/audio.ts`)**
+- [x] **Step 4: Implement Procedural Audio Synthesizer (`src/assets/audio.ts`)**
 Implement Web Audio API synthesizer for: `click`, `foundCompany`, `mergerAlert`, `cashChime`, `victoryFanfare`.
 
-- [ ] **Step 5: Verify build**
+- [x] **Step 5: Verify build**
 Run `npm run build` to confirm setup works.
 
-- [ ] **Step 6: Commit Task 1**
+- [x] **Step 6: Commit Task 1**
 Commit with: `chore(ui): scaffold react frontend, audio synthesizer, and styling tokens`
 
 ---
@@ -58,7 +58,7 @@ Commit with: `chore(ui): scaffold react frontend, audio synthesizer, and styling
 - Create: `webgame/src/components/CompanyTicker.tsx`
 - Test: Component rendering in `App.tsx`
 
-- [ ] **Step 1: Implement `MenuBar.tsx`**
+- [x] **Step 1: Implement `MenuBar.tsx`**
 Replicate original menus:
 - Game: New Game (Same Options), New Game (New Options), Save Game, Load Game, Sound Toggle.
 - Actions: Buy/Sell Shares (`Alt+B`), Discard Chit (`Alt+D`), Place Chit (`Alt+P`), End Turn (`Alt+E`).
@@ -66,10 +66,10 @@ Replicate original menus:
 - Settings: Options, Change Active Player to CPU/Human, Slow Computer Turns toggle, Hide Chits toggle.
 - Help: Rules, About Oil Baron.
 
-- [ ] **Step 2: Implement `CompanyTicker.tsx`**
+- [x] **Step 2: Implement `CompanyTicker.tsx`**
 Display active oil companies, tile counts, live share prices, bank share inventory, and Safe badges ($\ge 11$ tiles).
 
-- [ ] **Step 3: Verify & Commit Task 2**
+- [x] **Step 3: Verify & Commit Task 2**
 Commit with: `feat(ui): implement classic menu bar with keyboard shortcuts and company ticker`
 
 ---
@@ -81,16 +81,16 @@ Commit with: `feat(ui): implement classic menu bar with keyboard shortcuts and c
 - Create: `webgame/src/components/TileInspector.tsx`
 - Test: Board tile rendering and coordinate mapping
 
-- [ ] **Step 1: Implement `GameBoard.tsx`**
+- [x] **Step 1: Implement `GameBoard.tsx`**
 - 10 rows (A–J) $\times$ 12 columns (1–12) responsive grid.
 - Render empty grid slots, unincorporated placed chits, and company-controlled tiles with logos/initials.
 - Move classification hover previews: color highlights showing whether hovering a chit would result in an isolated placement, company expansion, company founding, merger, or illegal safe merger (dead tile).
 - Interactive click to place selected tile.
 
-- [ ] **Step 2: Implement `TileInspector.tsx`**
+- [x] **Step 2: Implement `TileInspector.tsx`**
 Quick peek tooltip / inspector modal showing cell coordinates, company owner, chain size, and connectivity.
 
-- [ ] **Step 3: Verify & Commit Task 3**
+- [x] **Step 3: Verify & Commit Task 3**
 Commit with: `feat(ui): implement interactive 10x12 game board with move previews and inspector`
 
 ---
@@ -102,17 +102,17 @@ Commit with: `feat(ui): implement interactive 10x12 game board with move preview
 - Create: `webgame/src/components/PlayerScoreboard.tsx`
 - Test: Hand selection and scoreboard updates
 
-- [ ] **Step 1: Implement `PlayerHand.tsx`**
+- [x] **Step 1: Implement `PlayerHand.tsx`**
 - Chits tray displaying active player's tiles with coordinate tags (e.g., `C-4`, `F-8`).
 - Selected tile highlight; "Place Chit" button.
 - "Discard Dead Tile" button enabled when holding dead tiles.
 - "Hide Chits" toggle for pass-and-play hotseat privacy.
 
-- [ ] **Step 2: Implement `PlayerScoreboard.tsx`**
+- [x] **Step 2: Implement `PlayerScoreboard.tsx`**
 - Sidebar listing all 2–6 players with cash reserves, total net worth, active turn badge, and Human vs CPU badge.
 - Inline "Change to Human / Change to CPU" button per player (faithful to original Computer menu).
 
-- [ ] **Step 3: Verify & Commit Task 4**
+- [x] **Step 3: Verify & Commit Task 4**
 Commit with: `feat(ui): implement player hand tray and interactive scoreboard with CPU toggle`
 
 ---
@@ -125,19 +125,19 @@ Commit with: `feat(ui): implement player hand tray and interactive scoreboard wi
 - Create: `webgame/src/components/modals/FoundingCompanyModal.tsx`
 - Create: `webgame/src/components/modals/DiscardedTilesModal.tsx`
 
-- [ ] **Step 1: Implement `NewGameModal.tsx`**
+- [x] **Step 1: Implement `NewGameModal.tsx`**
 Configure 2–6 players, player names, colors, and Human vs CPU toggle.
 
-- [ ] **Step 2: Implement `OptionsModal.tsx`**
+- [x] **Step 2: Implement `OptionsModal.tsx`**
 Ruleset selection (Classic 10 founder shares vs Modern 1 founder share), hand size (4–10), safe threshold (11), starting cash ($6,000), slow computer turns toggle.
 
-- [ ] **Step 3: Implement `FoundingCompanyModal.tsx`**
+- [x] **Step 3: Implement `FoundingCompanyModal.tsx`**
 Dialog triggered when a move forms a company, allowing player to pick which available company to found and awarding the founder bonus.
 
-- [ ] **Step 4: Implement `DiscardedTilesModal.tsx`**
+- [x] **Step 4: Implement `DiscardedTilesModal.tsx`**
 Modal displaying all permanently dead and discarded tiles throughout match history.
 
-- [ ] **Step 5: Verify & Commit Task 5**
+- [x] **Step 5: Verify & Commit Task 5**
 Commit with: `feat(ui): implement game setup, options, company founding, and discard modals`
 
 ---
@@ -148,16 +148,16 @@ Commit with: `feat(ui): implement game setup, options, company founding, and dis
 - Create: `webgame/src/components/modals/StockMarketModal.tsx`
 - Create: `webgame/src/components/modals/CompanyStatsModal.tsx`
 
-- [ ] **Step 1: Implement `StockMarketModal.tsx`**
+- [x] **Step 1: Implement `StockMarketModal.tsx`**
 - Modal/drawer opened during `buy_shares` phase or via `Alt+B`.
 - Buy up to 3 shares per turn across active companies with remaining stock.
 - Live cost tally, cash budget check, and "Confirm Purchase" or "Skip" buttons.
 
-- [ ] **Step 2: Implement `CompanyStatsModal.tsx`**
+- [x] **Step 2: Implement `CompanyStatsModal.tsx`**
 - Overview of all 7 companies: current size, share price, available bank shares, Safe status.
 - Shareholder rankings table showing top shareholders for each company.
 
-- [ ] **Step 3: Verify & Commit Task 6**
+- [x] **Step 3: Verify & Commit Task 6**
 Commit with: `feat(ui): implement stock market purchasing drawer and company statistics modal`
 
 ---
@@ -169,20 +169,20 @@ Commit with: `feat(ui): implement stock market purchasing drawer and company sta
 - Create: `webgame/src/components/modals/MergerStatsModal.tsx`
 - Create: `webgame/src/components/modals/ShareDispositionModal.tsx`
 
-- [ ] **Step 1: Implement `MergerSurvivorModal.tsx`**
+- [x] **Step 1: Implement `MergerSurvivorModal.tsx`**
 Picker dialog when 2 or more merging companies tie for largest size.
 
-- [ ] **Step 2: Implement `MergerStatsModal.tsx`**
+- [x] **Step 2: Implement `MergerStatsModal.tsx`**
 Visual breakdown showing 1st place majority bonus ($10 \times P$) and 2nd place minority bonus ($5 \times P$), and cash credited to players.
 
-- [ ] **Step 3: Implement `ShareDispositionModal.tsx`**
+- [x] **Step 3: Implement `ShareDispositionModal.tsx`**
 Interactive step-by-step modal for each shareholder of the defunct company:
 - Sell for cash at pre-merger price.
 - Trade 2-for-1 for surviving company shares (if available).
 - Hold shares.
 - Real-time calculation of shares remaining and cash gained.
 
-- [ ] **Step 4: Verify & Commit Task 7**
+- [x] **Step 4: Verify & Commit Task 7**
 Commit with: `feat(ui): implement complete merger workflow modals for survivor, payouts, and share disposition`
 
 ---
@@ -197,22 +197,22 @@ Commit with: `feat(ui): implement complete merger workflow modals for survivor, 
 - Create: `webgame/src/components/modals/HelpModal.tsx`
 - Create: `webgame/src/components/modals/GameOverModal.tsx`
 
-- [ ] **Step 1: Implement `WealthChartModal.tsx`**
+- [x] **Step 1: Implement `WealthChartModal.tsx`**
 Interactive SVG/CSS bar graph comparing players' Cash vs Stock Value.
 
-- [ ] **Step 2: Implement `ShareGraphModal.tsx`**
+- [x] **Step 2: Implement `ShareGraphModal.tsx`**
 Matrix chart showing share distribution per company across all players, with toggle for **Percentages** vs **Totals**!
 
-- [ ] **Step 3: Implement `WarRoomModal.tsx`**
+- [x] **Step 3: Implement `WarRoomModal.tsx`**
 Strategic overview dashboard displaying board territory control, safe company dominance, and leader rankings.
 
-- [ ] **Step 4: Implement `SaveLoadModal.tsx` & `HelpModal.tsx`**
+- [x] **Step 4: Implement `SaveLoadModal.tsx` & `HelpModal.tsx`**
 Save to / load from `localStorage`, export/import JSON files, and comprehensive in-game rulebook.
 
-- [ ] **Step 5: Implement `GameOverModal.tsx`**
+- [x] **Step 5: Implement `GameOverModal.tsx`**
 Final leaderboard, portfolio liquidation breakdown, winner celebration, and "New Game" button.
 
-- [ ] **Step 6: Verify & Commit Task 8**
+- [x] **Step 6: Verify & Commit Task 8**
 Commit with: `feat(ui): implement wealth chart, share graph, war room, save/load, and game over screens`
 
 ---
@@ -223,13 +223,13 @@ Commit with: `feat(ui): implement wealth chart, share graph, war room, save/load
 - Modify: `webgame/src/App.tsx`
 - Test: Full build, lint, and browser verification
 
-- [ ] **Step 1: Wire up `App.tsx` state orchestrator**
+- [x] **Step 1: Wire up `App.tsx` state orchestrator**
 - Connect `useReducer` to `gameReducer`.
 - Integrate AI turn execution with adjustable delay when active player is a CPU.
 - Bind global keyboard shortcuts (`Alt+P`, `Alt+B`, `Alt+D`, `Alt+E`, `Alt+N`, `Alt+S`, `Alt+C`, `Alt+W`, `Space`).
 - Integrate sound effects triggers on placements, mergers, purchases, and game over.
 
-- [ ] **Step 2: Run test suite & build**
+- [x] **Step 2: Run test suite & build**
 Run:
 ```bash
 cd webgame
@@ -238,5 +238,5 @@ npm run build
 ```
 Expected: 100% tests pass, build completes with 0 errors.
 
-- [ ] **Step 3: Commit Task 9**
+- [x] **Step 3: Commit Task 9**
 Commit with: `feat(ui): wire main application orchestrator, CPU turn loop, and keyboard shortcuts`
