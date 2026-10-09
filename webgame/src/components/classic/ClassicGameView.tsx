@@ -159,7 +159,7 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
           {/* Layout: Board on Left, Scoreboard on Right */}
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
             {/* 10x12 Board */}
-            <div className="win31-window" style={{ padding: '6px' }}>
+            <div className="win31-window" style={{ padding: '6px' }} data-testid="classic-board">
               <div className="win31-board-grid">
                 {/* Column Headers */}
                 <div className="win31-coord-hdr"></div>

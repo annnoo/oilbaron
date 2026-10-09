@@ -54,15 +54,18 @@ describe('App Integration', () => {
 
   it('renders 1993 Windows 3.1 Classic View when hash is #classic', () => {
     // Simulate window.location.hash = '#classic'
-    const origLocation = window.location;
-    // @ts-expect-error Mocking location for test
-    delete window.location;
-    window.location = {
-      ...origLocation,
-      hash: '#classic',
-      pathname: '/',
-      search: '',
-    } as any;
+    const hadWindow = typeof (globalThis as any).window !== 'undefined';
+    const origLocation = hadWindow ? (globalThis as any).window.location : undefined;
+    (globalThis as any).window = {
+      ...(hadWindow ? (globalThis as any).window : {}),
+      location: {
+        hash: '#classic',
+        pathname: '/',
+        search: '',
+      },
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    };
 
     try {
       const html = renderToStaticMarkup(<App />);
@@ -73,7 +76,11 @@ describe('App Integration', () => {
       expect(html).toContain('win31-titlebar');
       expect(html).toContain('data-testid="classic-board"');
     } finally {
-      window.location = origLocation as any;
+      if (hadWindow) {
+        (globalThis as any).window.location = origLocation;
+      } else {
+        delete (globalThis as any).window;
+      }
     }
   });
 });
