@@ -225,170 +225,296 @@ export const SaveLoadModal: React.FC<SaveLoadModalProps> = ({
             </div>
           )}
 
-          {/* Quick Preset Slot Buttons */}
-          <div style={{ marginBottom: '16px' }}>
-            <span className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>
-              Quick Slots
-            </span>
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-              {PRESET_SLOTS.map((preset) => {
-                const isSelected = slotName === preset;
-                const slotData = slots.find((s) => s.slot === preset);
-                return (
-                  <button
-                    key={preset}
-                    type="button"
-                    className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{ flex: 1, minWidth: '70px', fontSize: '11px' }}
-                    onClick={() => {
-                      playClick();
-                      setSlotName(preset);
-                    }}
-                    title={slotData ? `Saved on ${slotData.date}` : 'Empty slot'}
-                  >
-                    {preset}
-                    {slotData ? ' *' : ''}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Save Match Input */}
-          <div style={{ marginBottom: '16px' }}>
-            <span className="form-label">{t('saveLoad.saveCurrent')}</span>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input
-                type="text"
-                className="form-input"
-                style={{ flex: 1 }}
-                placeholder={t('saveLoad.descPlaceholder')}
-                value={slotName}
-                onChange={(e) => setSlotName(e.target.value)}
-              />
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={() => handleSave()}
-              >
-                <Save size={14} style={{ marginRight: '6px' }} />
-                {t('saveLoad.saveTab')}
-              </button>
-            </div>
-          </div>
-
-          {/* JSON Export / Import */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              style={{ flex: 1 }}
-              onClick={handleExportJson}
-            >
-              <Download size={13} style={{ marginRight: '6px' }} />
-              {t('saveLoad.exportJson')}
-            </button>
-            <label
-              className="btn btn-secondary btn-sm"
-              style={{ flex: 1, cursor: 'pointer', textAlign: 'center' }}
-            >
-              <Upload size={13} style={{ marginRight: '6px' }} />
-              {t('saveLoad.importJson')}
-              <input
-                type="file"
-                accept=".json"
-                style={{ display: 'none' }}
-                onChange={handleImportJson}
-              />
-            </label>
-          </div>
-
-          {/* Saved Games List */}
-          <div>
-            <span className="form-label">{t('saveLoad.slotsCount', { count: slots.length })}</span>
-            {slots.length === 0 ? (
-              <div
-                style={{
-                  padding: '24px',
-                  textAlign: 'center',
-                  color: 'var(--text-muted)',
-                  background: 'var(--bg-surface-elevated)',
-                  borderRadius: 'var(--radius-sm)',
-                }}
-              >
-                {t('saveLoad.noSaves')}
+          {activeTab === 'save' ? (
+            <div className="tab-pane-save">
+              {/* Quick Preset Slot Buttons */}
+              <div style={{ marginBottom: '16px' }}>
+                <span className="form-label" style={{ fontSize: '11px', textTransform: 'uppercase' }}>
+                  Quick Slots
+                </span>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {PRESET_SLOTS.map((preset) => {
+                    const isSelected = slotName === preset;
+                    const slotData = slots.find((s) => s.slot === preset);
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ flex: 1, minWidth: '70px', fontSize: '11px' }}
+                        onClick={() => {
+                          playClick();
+                          setSlotName(preset);
+                        }}
+                        title={
+                          slotData
+                            ? `Saved on ${slotData.date ? (slotData.date.includes('T') ? new Date(slotData.date).toLocaleString() : slotData.date) : ''}`
+                            : 'Empty slot'
+                        }
+                      >
+                        {preset}
+                        {slotData ? ' *' : ''}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            ) : (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                  maxHeight: '220px',
-                  overflowY: 'auto',
-                }}
-              >
-                {slots.map((item) => (
+
+              {/* Save Match Input */}
+              <div style={{ marginBottom: '16px' }}>
+                <span className="form-label">{t('saveLoad.saveCurrent')}</span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ flex: 1 }}
+                    placeholder={t('saveLoad.descPlaceholder')}
+                    value={slotName}
+                    onChange={(e) => setSlotName(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => handleSave()}
+                  >
+                    <Save size={14} style={{ marginRight: '6px' }} />
+                    {t('saveLoad.saveTab')}
+                  </button>
+                </div>
+              </div>
+
+              {/* JSON Export / Import toolbar */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '18px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  style={{ flex: 1 }}
+                  onClick={handleExportJson}
+                >
+                  <Download size={13} style={{ marginRight: '6px' }} />
+                  {t('saveLoad.exportJson')}
+                </button>
+                <label
+                  className="btn btn-secondary btn-sm"
+                  style={{ flex: 1, cursor: 'pointer', textAlign: 'center' }}
+                >
+                  <Upload size={13} style={{ marginRight: '6px' }} />
+                  {t('saveLoad.importJson')}
+                  <input
+                    type="file"
+                    accept=".json"
+                    style={{ display: 'none' }}
+                    onChange={handleImportJson}
+                  />
+                </label>
+              </div>
+
+              {/* Saved Slots Overview */}
+              <div>
+                <span className="form-label">{t('saveLoad.slotsCount', { count: slots.length })}</span>
+                {slots.length === 0 ? (
                   <div
-                    key={item.slot}
                     style={{
-                      padding: '10px 12px',
+                      padding: '24px',
+                      textAlign: 'center',
+                      color: 'var(--text-muted)',
                       background: 'var(--bg-surface-elevated)',
-                      border: '1px solid var(--border-default)',
                       borderRadius: 'var(--radius-sm)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
                     }}
                   >
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>
-                        {item.slot}
-                      </div>
+                    {t('saveLoad.noSaves')}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    {slots.map((item) => (
                       <div
+                        key={item.slot}
                         style={{
+                          padding: '8px 12px',
+                          background: 'var(--bg-surface-elevated)',
+                          border: '1px solid var(--border-default)',
+                          borderRadius: 'var(--radius-sm)',
                           display: 'flex',
-                          gap: '10px',
-                          fontSize: '11px',
-                          color: 'var(--text-muted)',
-                          marginTop: '2px',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
                         }}
                       >
-                        {item.date && (
-                          <span>
-                            <Clock size={11} style={{ verticalAlign: 'middle', marginRight: '3px' }} />
-                            {item.date.includes('T') ? new Date(item.date).toLocaleDateString() : item.date}
-                          </span>
-                        )}
-                        <span>{t('saveLoad.playersCount', { count: item.players.length })}</span>
-                        <span>{item.players.join(', ')}</span>
-                      </div>
-                    </div>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>
+                            {item.slot}
+                          </div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              gap: '10px',
+                              fontSize: '11px',
+                              color: 'var(--text-muted)',
+                              marginTop: '2px',
+                            }}
+                          >
+                            {item.date && (
+                              <span>
+                                <Clock size={11} style={{ verticalAlign: 'middle', marginRight: '3px' }} />
+                                {item.date.includes('T') ? new Date(item.date).toLocaleString() : item.date}
+                              </span>
+                            )}
+                            <span>{t('saveLoad.playersCount', { count: item.players.length })}</span>
+                            <span>{item.players.join(', ')}</span>
+                          </div>
+                        </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        onClick={() => handleLoad(item.slot)}
-                      >
-                        <FolderOpen size={13} style={{ marginRight: '4px' }} />
-                        {t('saveLoad.loadBtn')}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-sm"
-                        style={{ padding: '5px', color: 'var(--text-muted)' }}
-                        onClick={() => handleDelete(item.slot)}
-                        aria-label="Delete save"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => {
+                              setSlotName(item.slot);
+                              handleSave(item.slot);
+                            }}
+                            title="Overwrite this slot"
+                          >
+                            <Save size={12} style={{ marginRight: '4px' }} />
+                            {t('saveLoad.saveTab')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            style={{ padding: '5px', color: 'var(--text-muted)' }}
+                            onClick={() => handleDelete(item.slot)}
+                            aria-label="Delete save"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="tab-pane-load">
+              {/* Load Mode: Emphasize Import & Saved Games List */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                <label
+                  className="btn btn-primary btn-sm"
+                  style={{ flex: 1, cursor: 'pointer', textAlign: 'center' }}
+                >
+                  <Upload size={13} style={{ marginRight: '6px' }} />
+                  {t('saveLoad.importJson')}
+                  <input
+                    type="file"
+                    accept=".json"
+                    style={{ display: 'none' }}
+                    onChange={handleImportJson}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  style={{ flex: 1 }}
+                  onClick={handleExportJson}
+                >
+                  <Download size={13} style={{ marginRight: '6px' }} />
+                  {t('saveLoad.exportJson')}
+                </button>
+              </div>
+
+              <div>
+                <span className="form-label">{t('saveLoad.slotsCount', { count: slots.length })}</span>
+                {slots.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '24px',
+                      textAlign: 'center',
+                      color: 'var(--text-muted)',
+                      background: 'var(--bg-surface-elevated)',
+                      borderRadius: 'var(--radius-sm)',
+                    }}
+                  >
+                    {t('saveLoad.noSaves')}
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      maxHeight: '260px',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    {slots.map((item) => (
+                      <div
+                        key={item.slot}
+                        style={{
+                          padding: '10px 12px',
+                          background: 'var(--bg-surface-elevated)',
+                          border: '1px solid var(--border-default)',
+                          borderRadius: 'var(--radius-sm)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>
+                            {item.slot}
+                          </div>
+                          <div
+                            style={{
+                              display: 'flex',
+                              gap: '10px',
+                              fontSize: '11px',
+                              color: 'var(--text-muted)',
+                              marginTop: '2px',
+                            }}
+                          >
+                            {item.date && (
+                              <span>
+                                <Clock size={11} style={{ verticalAlign: 'middle', marginRight: '3px' }} />
+                                {item.date.includes('T') ? new Date(item.date).toLocaleString() : item.date}
+                              </span>
+                            )}
+                            <span>{t('saveLoad.playersCount', { count: item.players.length })}</span>
+                            <span>{item.players.join(', ')}</span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-sm"
+                            onClick={() => handleLoad(item.slot)}
+                          >
+                            <FolderOpen size={13} style={{ marginRight: '4px' }} />
+                            {t('saveLoad.loadBtn')}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            style={{ padding: '5px', color: 'var(--text-muted)' }}
+                            onClick={() => handleDelete(item.slot)}
+                            aria-label="Delete save"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end' }}>

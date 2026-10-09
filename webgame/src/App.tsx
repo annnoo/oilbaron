@@ -881,6 +881,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
         onClose={() => setSaveLoadModalOpen(false)}
         gameState={gameState}
         onLoadGame={(loadedState) => {
+          setSelectedHandCoord(null);
           setGameState(loadedState);
           setLastAction('Loaded match state successfully!');
         }}

@@ -110,7 +110,7 @@ describe('SaveLoadModal Component', () => {
     expect(html).toContain('Load');
   });
 
-  it('supports initialMode="save" vs initialMode="load"', () => {
+  it('supports initialMode="save" vs initialMode="load" conditional pane rendering', () => {
     const saveHtml = renderToStaticMarkup(
       <SaveLoadModal
         isOpen={true}
@@ -120,7 +120,8 @@ describe('SaveLoadModal Component', () => {
         onLoadGame={vi.fn()}
       />
     );
-    expect(saveHtml).toContain('Save Game');
+    expect(saveHtml).toContain('tab-pane-save');
+    expect(saveHtml).toContain('Save Current Match');
 
     const loadHtml = renderToStaticMarkup(
       <SaveLoadModal
@@ -131,6 +132,7 @@ describe('SaveLoadModal Component', () => {
         onLoadGame={vi.fn()}
       />
     );
+    expect(loadHtml).toContain('tab-pane-load');
     expect(loadHtml).toContain('Load');
   });
 
