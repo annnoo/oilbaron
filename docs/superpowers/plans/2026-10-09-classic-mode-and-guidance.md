@@ -6,7 +6,7 @@
 
 ---
 
-### Task 1: Turn Guidance Bar & Beginner Hints (`TurnGuidanceBar.tsx`)
+### Task 1: Turn Guidance Bar & Beginner Hints (`TurnGuidanceBar.tsx`) ✅ COMPLETED
 **Files:**
 - Create: `webgame/src/components/TurnGuidanceBar.tsx`
 - Create: `webgame/src/components/__tests__/TurnGuidanceBar.test.tsx`
@@ -22,7 +22,7 @@
 
 ---
 
-### Task 2: Classic 1993 Windows 3.1 Assets & Styling Tokens (`classic.css`)
+### Task 2: Classic 1993 Windows 3.1 Assets & Styling Tokens (`classic.css`) ✅ COMPLETED
 **Files:**
 - Create: `webgame/src/assets/classicAssets.ts`
 - Create: `webgame/src/styles/classic.css`
@@ -42,7 +42,7 @@
 
 ---
 
-### Task 3: Classic Windows 3.1 Game View (`ClassicGameView.tsx`)
+### Task 3: Classic Windows 3.1 Game View (`ClassicGameView.tsx`) ✅ COMPLETED
 **Files:**
 - Create: `webgame/src/components/classic/ClassicGameView.tsx`
 - Create: `webgame/src/components/classic/ClassicWindow.tsx`
@@ -58,7 +58,7 @@
 
 ---
 
-### Task 4: View Routing, Modern Polish & Full Integration in `App.tsx`
+### Task 4: View Routing, Modern Polish & Full Integration in `App.tsx` ✅ COMPLETED
 **Files:**
 - Modify: `webgame/src/App.tsx`
 - Modify: `webgame/src/__tests__/App.test.tsx`
