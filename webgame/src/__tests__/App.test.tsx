@@ -24,5 +24,14 @@ describe('App Integration', () => {
     expect(html).toContain('Company Ticker Controls');
     expect(html).toContain('Found American');
     expect(html).toContain('Make American Safe (11 tiles)');
+
+    // Game board integration
+    expect(html).toContain('Oil Baron 10x12 Game Board');
+    expect(html).toContain('10 × 12 Grid');
+    expect(html).toContain('role="grid"');
+    expect(html).toContain('Player 1&#x27;s Hand:');
+    expect(html).toContain('Seed Founding');
+    expect(html).toContain('Seed Merger');
+    expect(html).toContain('Seed Dead Tile');
   });
 });

@@ -6,6 +6,10 @@ import {
   isTileDead,
   getContiguousCoordinates,
   applyTilePlacement,
+  formatCoord,
+  parseCoord,
+  coordEquals,
+  getNeighborDetails,
 } from '../board';
 
 describe('Board Adjacency & Move Classification', () => {
@@ -177,4 +181,54 @@ describe('Board Adjacency & Move Classification', () => {
     expect(unincCoords).toContainEqual({ row: 7, col: 7 });
     expect(unincCoords).toContainEqual({ row: 7, col: 8 });
   });
+
+  it('correctly formats and parses board coordinates (A-1 through J-12)', () => {
+    expect(formatCoord({ row: 0, col: 0 })).toBe('A-1');
+    expect(formatCoord({ row: 2, col: 3 })).toBe('C-4');
+    expect(formatCoord({ row: 9, col: 11 })).toBe('J-12');
+
+    expect(parseCoord('A-1')).toEqual({ row: 0, col: 0 });
+    expect(parseCoord('a1')).toEqual({ row: 0, col: 0 });
+    expect(parseCoord('C-4')).toEqual({ row: 2, col: 3 });
+    expect(parseCoord('c4')).toEqual({ row: 2, col: 3 });
+    expect(parseCoord('J-12')).toEqual({ row: 9, col: 11 });
+    expect(parseCoord('j12')).toEqual({ row: 9, col: 11 });
+
+    // Invalid coordinates
+    expect(parseCoord('K-1')).toBeNull();
+    expect(parseCoord('A-13')).toBeNull();
+    expect(parseCoord('invalid')).toBeNull();
+
+    // Coordinate equality
+    expect(coordEquals({ row: 1, col: 2 }, { row: 1, col: 2 })).toBe(true);
+    expect(coordEquals({ row: 1, col: 2 }, { row: 1, col: 3 })).toBe(false);
+    expect(coordEquals(null, { row: 1, col: 2 })).toBe(false);
+  });
+
+  it('provides comprehensive 4-way neighbor details including edges', () => {
+    const board = createEmptyBoard(10, 12);
+    board[0]![1] = { type: 'unincorporated' };
+    board[1]![0] = { type: 'company', companyId: 'american' };
+
+    // Corner (0, 0)
+    const cornerNeighbors = getNeighborDetails(board, { row: 0, col: 0 });
+    expect(cornerNeighbors).toHaveLength(4);
+
+    const north = cornerNeighbors.find((n) => n.direction === 'north')!;
+    expect(north.isEdge).toBe(true);
+    expect(north.cell).toBeNull();
+
+    const west = cornerNeighbors.find((n) => n.direction === 'west')!;
+    expect(west.isEdge).toBe(true);
+    expect(west.cell).toBeNull();
+
+    const east = cornerNeighbors.find((n) => n.direction === 'east')!;
+    expect(east.isEdge).toBe(false);
+    expect(east.cell?.type).toBe('unincorporated');
+
+    const south = cornerNeighbors.find((n) => n.direction === 'south')!;
+    expect(south.isEdge).toBe(false);
+    expect(south.cell?.type).toBe('company');
+  });
 });
+

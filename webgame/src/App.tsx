@@ -20,9 +20,12 @@ import {
   playVictoryFanfare,
 } from './assets/audio';
 import { CLASSIC_COMPANIES, DEFAULT_CONFIG, createInitialGameState } from './engine/config';
-import type { CompanyId, GameState } from './engine/types';
+import type { CompanyId, GameState, TileCoord } from './engine/types';
+import { formatCoord } from './engine/board';
+import { gameReducer } from './engine/reducer';
 import { MenuBar, type MenuActionId } from './components/MenuBar';
 import { CompanyTicker } from './components/CompanyTicker';
+import { GameBoard } from './components/GameBoard';
 
 export const App: React.FC = () => {
   const [muted, setMuted] = useState<boolean>(soundEffects.isMuted());
@@ -31,6 +34,8 @@ export const App: React.FC = () => {
   const [activePlayerIsAi, setActivePlayerIsAi] = useState<boolean>(false);
   const [lastAction, setLastAction] = useState<string | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<CompanyId | null>(null);
+  const [selectedHandCoord, setSelectedHandCoord] = useState<TileCoord | null>(null);
+  const [hoveredHandCoord, setHoveredHandCoord] = useState<TileCoord | null>(null);
 
   // Initialize game state with standard 2-player match
   const [gameState, setGameState] = useState<GameState>(() =>
@@ -122,7 +127,90 @@ export const App: React.FC = () => {
   const simulateResetCompanies = () => {
     playClick();
     setGameState(createInitialGameState(DEFAULT_CONFIG, ['Player 1', 'Computer 1 (CPU)']));
-    setLastAction('Reset all company board sizes to unformed state');
+    setSelectedHandCoord(null);
+    setHoveredHandCoord(null);
+    setLastAction('Reset board and companies to initial state');
+  };
+
+  const handlePlaceTile = (coord: TileCoord) => {
+    try {
+      const activePlayer = gameState.players[gameState.activePlayerIndex];
+      const hasTile = activePlayer?.hand.some((t) => t.row === coord.row && t.col === coord.col);
+
+      if (!hasTile) {
+        // Free sandbox placement mode
+        setGameState((prev) => {
+          const newBoard = prev.board.map((row, r) =>
+            r === coord.row
+              ? row.map((cell, c) => (c === coord.col ? ({ type: 'unincorporated' } as const) : cell))
+              : [...row]
+          );
+          return { ...prev, board: newBoard };
+        });
+        playClick();
+        setLastAction(`Placed wildcat chit at ${formatCoord(coord)} (Sandbox mode)`);
+        return;
+      }
+
+      const nextState = gameReducer(gameState, { type: 'PLACE_TILE', coord });
+      setGameState(nextState);
+      setSelectedHandCoord(null);
+      playClick();
+      setLastAction(`Placed chit at ${formatCoord(coord)}`);
+    } catch (err: any) {
+      setLastAction(`Cannot place at ${formatCoord(coord)}: ${err.message}`);
+    }
+  };
+
+  const seedFoundingScenario = () => {
+    playFoundCompany();
+    setGameState((prev) => {
+      const nextBoard = prev.board.map((row) => [...row]);
+      nextBoard[2]![3] = { type: 'unincorporated' }; // C-4
+      nextBoard[2]![4] = { type: 'unincorporated' }; // C-5
+      return { ...prev, board: nextBoard };
+    });
+    setLastAction('Seeded Founding Scenario: Adjacent chits at C-4 & C-5 (Hover C-6 or C-3 to preview Founding)');
+  };
+
+  const seedMergerScenario = () => {
+    playMergerAlert();
+    setGameState((prev) => {
+      const nextBoard = prev.board.map((row) => [...row]);
+      nextBoard[3]![3] = { type: 'company', companyId: 'american' };
+      nextBoard[3]![4] = { type: 'company', companyId: 'american' };
+      nextBoard[3]![6] = { type: 'company', companyId: 'imperial' };
+      nextBoard[3]![7] = { type: 'company', companyId: 'imperial' };
+      return {
+        ...prev,
+        board: nextBoard,
+        companies: {
+          ...prev.companies,
+          american: { ...prev.companies.american!, isActive: true, size: 2, isSafe: false },
+          imperial: { ...prev.companies.imperial!, isActive: true, size: 2, isSafe: false },
+        },
+      };
+    });
+    setLastAction('Seeded Merger Scenario: American at D-4/D-5 & Imperial at D-7/D-8 (Hover D-6 to preview Merger)');
+  };
+
+  const seedDeadTileScenario = () => {
+    playClick();
+    setGameState((prev) => {
+      const nextBoard = prev.board.map((row) => [...row]);
+      nextBoard[5]![4] = { type: 'company', companyId: 'imperial' }; // F-5
+      nextBoard[5]![6] = { type: 'company', companyId: 'royal' };    // F-7
+      return {
+        ...prev,
+        board: nextBoard,
+        companies: {
+          ...prev.companies,
+          imperial: { ...prev.companies.imperial!, isActive: true, size: 11, isSafe: true },
+          royal: { ...prev.companies.royal!, isActive: true, size: 12, isSafe: true },
+        },
+      };
+    });
+    setLastAction('Seeded Dead Tile Scenario: Safe Imperial & Safe Royal (Hover F-6 to preview Dead Tile / Illegal Safe Merger)');
   };
 
   return (
@@ -179,6 +267,92 @@ export const App: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* Task 3 Interactive 10x12 Game Board */}
+        <GameBoard
+          board={gameState.board}
+          companies={gameState.companies}
+          definitions={gameState.config.companies}
+          safeThreshold={gameState.config.safeThreshold}
+          selectedTileCoord={selectedHandCoord}
+          previewTileCoord={hoveredHandCoord}
+          playerHand={gameState.players[gameState.activePlayerIndex]?.hand}
+          onPlaceTile={handlePlaceTile}
+        />
+
+        {/* Active Player Hand Preview Strip */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '10px',
+            padding: '10px 14px',
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-md)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-gold)' }}>
+              {gameState.players[gameState.activePlayerIndex]?.name}'s Hand:
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {gameState.players[gameState.activePlayerIndex]?.hand.map((tile) => {
+                const formatted = formatCoord(tile);
+                const isSelected =
+                  selectedHandCoord &&
+                  selectedHandCoord.row === tile.row &&
+                  selectedHandCoord.col === tile.col;
+                return (
+                  <button
+                    key={`${tile.row}-${tile.col}`}
+                    type="button"
+                    className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', padding: '3px 8px' }}
+                    onClick={() => {
+                      playClick();
+                      setSelectedHandCoord(isSelected ? null : tile);
+                    }}
+                    onMouseEnter={() => setHoveredHandCoord(tile)}
+                    onMouseLeave={() => setHoveredHandCoord(null)}
+                    title={`Click to select ${formatted} for placement; hover to preview on board`}
+                  >
+                    {formatted}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={seedFoundingScenario}
+              title="Seed adjacent chits at C-4 & C-5 to test Founding preview"
+            >
+              Seed Founding
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={seedMergerScenario}
+              title="Seed American & Imperial at D-4/D-7 to test Merger preview"
+            >
+              Seed Merger
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={seedDeadTileScenario}
+              title="Seed 2 Safe companies around F-6 to test Dead Tile preview"
+            >
+              Seed Dead Tile
+            </button>
+          </div>
+        </div>
 
         {/* Task 2 Interactive Verification Panel */}
         <section className="panel">

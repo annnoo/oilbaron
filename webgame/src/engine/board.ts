@@ -325,3 +325,77 @@ export function applyTilePlacement(
       : [...row]
   );
 }
+
+export const ROW_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] as const;
+
+/**
+ * Formats a TileCoord into standard grid notation (e.g. { row: 2, col: 4 } -> "C-5").
+ */
+export function formatCoord(coord: TileCoord): string {
+  const rowLabel = ROW_LABELS[coord.row] ?? String.fromCharCode(65 + coord.row);
+  return `${rowLabel}-${coord.col + 1}`;
+}
+
+/**
+ * Parses coordinate text (e.g. "C-5", "c5", "A-1") into a TileCoord.
+ * Returns null if invalid or out of bounds.
+ */
+export function parseCoord(text: string): TileCoord | null {
+  const trimmed = text.trim().toUpperCase();
+  const match = trimmed.match(/^([A-J])-?([1-9]|1[0-2])$/);
+  if (!match) return null;
+  const row = match[1]!.charCodeAt(0) - 65;
+  const col = parseInt(match[2]!, 10) - 1;
+  return { row, col };
+}
+
+/**
+ * Checks whether two coordinates represent the exact same board cell.
+ */
+export function coordEquals(
+  a: TileCoord | null | undefined,
+  b: TileCoord | null | undefined
+): boolean {
+  if (!a || !b) return false;
+  return a.row === b.row && a.col === b.col;
+}
+
+export interface NeighborDetail {
+  direction: 'north' | 'south' | 'west' | 'east';
+  coord: TileCoord;
+  isEdge: boolean;
+  cell: CellState | null;
+}
+
+/**
+ * Returns detailed state for all 4 cardinal neighbors (N, S, W, E), including border edges.
+ */
+export function getNeighborDetails(
+  board: readonly (readonly CellState[])[],
+  coord: TileCoord
+): NeighborDetail[] {
+  const rows = board.length;
+  const cols = board[0]?.length ?? 0;
+
+  const directions: readonly [NeighborDetail['direction'], number, number][] = [
+    ['north', -1, 0],
+    ['south', 1, 0],
+    ['west', 0, -1],
+    ['east', 0, 1],
+  ];
+
+  return directions.map(([dir, dr, dc]) => {
+    const nr = coord.row + dr;
+    const nc = coord.col + dc;
+    const isEdge = nr < 0 || nr >= rows || nc < 0 || nc >= cols;
+    const neighborCoord = { row: nr, col: nc };
+    const cell = isEdge ? null : (board[nr]?.[nc] ?? null);
+    return {
+      direction: dir,
+      coord: neighborCoord,
+      isEdge,
+      cell,
+    };
+  });
+}
+
