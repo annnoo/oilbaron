@@ -36,6 +36,8 @@ export const DEFAULT_CONFIG: GameConfig = {
   companies: CLASSIC_COMPANIES,
 };
 
+export const CLASSIC_CONFIG = DEFAULT_CONFIG;
+
 export const MODERN_BALANCED_CONFIG: GameConfig = {
   ruleset: 'modern_balanced',
   founderBonusShares: 1,
@@ -48,6 +50,15 @@ export const MODERN_BALANCED_CONFIG: GameConfig = {
   startingCash: 6000,
   companies: CLASSIC_COMPANIES,
 };
+
+export const DEFAULT_PLAYER_COLORS: readonly string[] = [
+  '#f59e0b', // Gold / Amber
+  '#38bdf8', // Cyan / Sky Blue
+  '#22c55e', // Emerald Green
+  '#a855f7', // Violet / Purple
+  '#f97316', // Coral / Orange
+  '#ef4444', // Crimson / Red
+];
 
 /**
  * Creates a deterministic pseudo-random number generator (Mulberry32).
@@ -131,6 +142,11 @@ export function createInitialGameState(
       shares[company.id] = 0;
     }
 
+    const color =
+      typeof input === 'string'
+        ? DEFAULT_PLAYER_COLORS[i % DEFAULT_PLAYER_COLORS.length]
+        : (input.color ?? DEFAULT_PLAYER_COLORS[i % DEFAULT_PLAYER_COLORS.length]);
+
     playerStates.push({
       id,
       name,
@@ -138,6 +154,7 @@ export function createInitialGameState(
       cash: config.startingCash,
       shares,
       hand,
+      color,
     });
   }
 

@@ -10,6 +10,8 @@ export interface CompanyDefinition {
   priceDelta: number;    // e.g. $100 per size tier
   color: string;
   icon?: string;
+  shortName?: string;
+  isDormant?: boolean;
 }
 
 export interface CompanyState {
@@ -40,12 +42,14 @@ export interface PlayerState {
   cash: number;
   shares: Record<CompanyId, number>;
   hand: TileCoord[];
+  color?: string;
 }
 
 export interface PlayerInit {
   id?: string;
   name: string;
   isAi?: boolean;
+  color?: string;
 }
 
 export type PlayerInput = string | PlayerInit;
