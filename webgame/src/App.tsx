@@ -24,6 +24,7 @@ import type {
   GameState,
   ShareDispositionChoices,
   SharePurchase,
+  ShareSale,
   TileCoord,
 } from './engine/types';
 import { formatCoord } from './engine/board';
@@ -448,6 +449,20 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
     setStockMarketModalOpen(false);
   };
 
+  // Stock Market Sales Confirmed
+  const handleConfirmSales = (sales: ShareSale[]) => {
+    if (sales.length > 0) {
+      dispatch({ type: 'SELL_SHARES', sales });
+      const totalCount = sales.reduce((acc, s) => acc + s.count, 0);
+      setLastAction(`Liquidated ${totalCount} shares across ${sales.length} companies for cash`);
+    }
+  };
+
+  const handleSellAllShares = () => {
+    dispatch({ type: 'SELL_ALL_SHARES' });
+    setLastAction('Liquidated all active stock holdings for immediate cash');
+  };
+
   // Merger Survivor Selected
   const handleSelectMergerSurvivor = (survivorCompanyId: CompanyId) => {
     dispatch({ type: 'CHOOSE_MERGER_SURVIVOR', survivorCompanyId });
@@ -489,6 +504,11 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
           )
       )
     : [];
+
+  // Total sold shares repurchase allowance this turn
+  const turnSoldAllowance = gameState.turnSoldShares
+    ? Object.values(gameState.turnSoldShares).reduce((acc, c) => acc + c, 0)
+    : 0;
 
   return (
     <div className={`app-container ${viewMode === 'classic' ? 'classic-mode' : ''}`}>
@@ -563,7 +583,13 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
             definitions={gameState.config.companies}
             safeThreshold={gameState.config.safeThreshold}
             totalShares={gameState.config.totalSharesPerCompany}
-            onSelectCompany={() => setCompanyStatsModalOpen(true)}
+            onSelectCompany={() => {
+              if (gameState.phase === 'buy_shares') {
+                setStockMarketModalOpen(true);
+              } else {
+                setCompanyStatsModalOpen(true);
+              }
+            }}
           />
 
           {/* Main Workspace Layout */}
@@ -577,6 +603,8 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
               selectedCoord={selectedHandCoord}
               cash={activePlayer?.cash}
               showHints={showBeginnerHints}
+              repurchaseAllowance={turnSoldAllowance}
+              lastDividendPayout={gameState.lastDividendPayout}
               onToggleHints={setShowBeginnerHints}
               onPlaceSelected={() => {
                 if (selectedHandCoord) handlePlaceTile(selectedHandCoord);
@@ -794,6 +822,8 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
         onClose={() => setStockMarketModalOpen(false)}
         gameState={gameState}
         onConfirmPurchase={handleConfirmPurchases}
+        onConfirmSale={handleConfirmSales}
+        onSellAll={handleSellAllShares}
       />
 
       {/* 5. Inspection & Strategic Views */}

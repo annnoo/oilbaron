@@ -180,7 +180,8 @@ export function validateShareDisposition(
   player: PlayerState,
   defunctCompanyId: CompanyId,
   survivorCompany: CompanyState,
-  choices: Partial<ShareDispositionChoices>
+  choices: Partial<ShareDispositionChoices>,
+  hardShareLimits: boolean = true
 ): ShareDispositionValidation {
   const currentDefunctShares = player.shares[defunctCompanyId] ?? 0;
   const sell = choices.sell ?? 0;
@@ -230,7 +231,7 @@ export function validateShareDisposition(
   }
 
   const survivorSharesNeeded = Math.floor(trade / 2);
-  if (survivorSharesNeeded > survivorCompany.availableShares) {
+  if (hardShareLimits && survivorSharesNeeded > survivorCompany.availableShares) {
     return {
       valid: false,
       reason: `Insufficient survivor shares available in bank (needed ${survivorSharesNeeded}, available ${survivorCompany.availableShares})`,
@@ -251,7 +252,8 @@ export function applyShareDisposition(
   defunctCompanyId: CompanyId,
   defunctPrice: number,
   survivorCompany: CompanyState,
-  choices: Partial<ShareDispositionChoices>
+  choices: Partial<ShareDispositionChoices>,
+  hardShareLimits: boolean = true
 ): ShareDispositionResult {
   const currentDefunctShares = player.shares[defunctCompanyId] ?? 0;
   const sell = choices.sell ?? 0;
@@ -270,7 +272,8 @@ export function applyShareDisposition(
     player,
     defunctCompanyId,
     survivorCompany,
-    normalizedChoices
+    normalizedChoices,
+    hardShareLimits
   );
 
   if (!validation.valid) {
@@ -294,9 +297,13 @@ export function applyShareDisposition(
     hand: [...player.hand],
   };
 
+  const newAvailableShares = hardShareLimits
+    ? survivorCompany.availableShares - survivorSharesGained
+    : Math.max(0, survivorCompany.availableShares - survivorSharesGained);
+
   const newSurvivorCompany: CompanyState = {
     ...survivorCompany,
-    availableShares: survivorCompany.availableShares - survivorSharesGained,
+    availableShares: newAvailableShares,
   };
 
   return {

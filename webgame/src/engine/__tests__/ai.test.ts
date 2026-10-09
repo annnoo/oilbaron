@@ -334,4 +334,13 @@ describe('AI Player Decision Engine', () => {
       expect(player.cash).toBeGreaterThan(0);
     }
   });
+
+  it('plays an AI match with payDividends enabled, accumulating dividends across turns', () => {
+    const config = { ...DEFAULT_CONFIG, boardRows: 6, boardCols: 6, payDividends: true };
+    const finalState = playFullGameAi(config, 2, 8888, 500);
+
+    expect(finalState.phase).toBe('game_over');
+    expect(finalState.winnerPlayerId).toBeDefined();
+    expect(finalState.players.every((p) => p.cash > 0)).toBe(true);
+  });
 });

@@ -63,6 +63,45 @@ describe('Task 6 Modals', () => {
       expect(html).toContain('Size: <strong>5</strong>');
       expect(html).toContain('Bank: <strong>20</strong> left');
     });
+
+    it('renders Sell Mode with owned shares and liquidation options', () => {
+      const activeCompany = dummyState.companies.american!;
+      const stateWithShares: typeof dummyState = {
+        ...dummyState,
+        companies: {
+          ...dummyState.companies,
+          american: {
+            ...activeCompany,
+            isActive: true,
+            size: 4,
+            availableShares: 15,
+          },
+        },
+        players: [
+          {
+            ...dummyState.players[0]!,
+            shares: { american: 6 },
+          },
+          dummyState.players[1]!,
+        ],
+      };
+
+      const html = renderToStaticMarkup(
+        <StockMarketModal
+          isOpen={true}
+          onClose={vi.fn()}
+          gameState={stateWithShares}
+          onConfirmPurchase={vi.fn()}
+          onConfirmSale={vi.fn()}
+          onSellAll={vi.fn()}
+          initialMode="sell"
+        />
+      );
+      expect(html).toContain('Stock Exchange — Sell Shares');
+      expect(html).toContain('Seller Portfolio');
+      expect(html).toContain('Owned: <strong>6</strong>');
+      expect(html).toContain('Sell All Shares');
+    });
   });
 
   describe('CompanyStatsModal', () => {

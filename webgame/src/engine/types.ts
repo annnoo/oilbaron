@@ -12,6 +12,7 @@ export interface CompanyDefinition {
   icon?: string;
   shortName?: string;
   isDormant?: boolean;
+  dividendYield?: number; // e.g. 0.125 (high), 0.10 (mid), 0.067 (low)
 }
 
 export interface CompanyState {
@@ -84,6 +85,17 @@ export interface SharePurchase {
   count: number;
 }
 
+export interface ShareSale {
+  companyId: CompanyId;
+  count: number;
+}
+
+export interface DividendPayout {
+  playerId: string;
+  totalDividend: number;
+  breakdown: Record<CompanyId, number>;
+}
+
 export interface ShareDispositionChoices {
   sell: number;
   trade: number;
@@ -96,6 +108,8 @@ export type GameAction =
   | { type: 'CHOOSE_MERGER_SURVIVOR'; survivorCompanyId: CompanyId }
   | { type: 'DISPOSE_MERGER_SHARES'; choices: ShareDispositionChoices }
   | { type: 'BUY_SHARES'; purchases: SharePurchase[] }
+  | { type: 'SELL_SHARES'; sales: ShareSale[] }
+  | { type: 'SELL_ALL_SHARES' }
   | { type: 'DISCARD_DEAD_TILE'; coord: TileCoord }
   | { type: 'END_TURN' };
 
@@ -112,6 +126,10 @@ export interface GameConfig {
   companies: CompanyDefinition[];// Data-driven list of company templates
   majorityBonusMultiplier?: number; // Default 10x
   minorityBonusMultiplier?: number; // Default 5x
+  payDividends?: boolean;        // Pay dividends at end of turn (1993 Oil Baron feature)
+  hardShareLimits?: boolean;     // Enforce strict share limits during merger trade
+  allowBlanks?: boolean;         // Allow blank wildcard tiles
+  purchaseLimit?: boolean;       // Enable per-turn purchasing limit
 }
 
 export interface GameState {
@@ -125,6 +143,8 @@ export interface GameState {
   pendingFounding: PendingFoundingState | null;
   pendingMerger: PendingMergerState | null;
   turnPurchasedSharesCount: number;
+  turnSoldShares: Record<CompanyId, number>;
+  lastDividendPayout?: DividendPayout | null;
   history: GameAction[];
   winnerPlayerId: string | null;
 }

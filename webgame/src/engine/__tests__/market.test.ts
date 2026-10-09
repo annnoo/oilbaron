@@ -4,8 +4,13 @@ import {
   calculateNetWorth,
   canBuyShares,
   buyShares,
+  validateShareSales,
+  sellShares,
+  sellAllShares,
+  calculateCompanyDividend,
+  calculatePlayerDividends,
 } from '../market';
-import type { CompanyDefinition, CompanyState, PlayerState, SharePurchase } from '../types';
+import type { CompanyDefinition, CompanyState, PlayerState, SharePurchase, ShareSale } from '../types';
 
 describe('Stock Market & Pricing Formulas', () => {
   const lowDef: CompanyDefinition = {
@@ -347,5 +352,146 @@ describe('Stock Market & Pricing Formulas', () => {
     expect(result.player.cash).toBe(4400);
     expect(result.player.shares.american).toBe(5); // 2 previous + 3
     expect(result.companies.american?.availableShares).toBe(17); // 20 - 3
+  });
+
+  describe('Selling Shares Mechanics', () => {
+    it('validates selling shares: checks ownership and active status', () => {
+      const player: PlayerState = {
+        id: 'p1',
+        name: 'Player 1',
+        isAi: false,
+        cash: 1000,
+        shares: { american: 5, royal: 2, imperial: 10 },
+        hand: [],
+      };
+      const companies: Record<string, CompanyState> = {
+        american: { id: 'american', size: 5, isActive: true, availableShares: 15 } as any, // Price = 200 + 3*100 = 500
+        royal: { id: 'royal', size: 2, isActive: true, availableShares: 20 } as any, // Price = 400
+        imperial: { id: 'imperial', size: 0, isActive: false, availableShares: 25 } as any, // Inactive
+      };
+      const defs = { american: lowDef, royal: highDef, imperial: midDef };
+
+      // Valid sale: 2 American ($1000) and 1 Royal ($400)
+      const sales: ShareSale[] = [
+        { companyId: 'american', count: 2 },
+        { companyId: 'royal', count: 1 },
+      ];
+      const validRes = validateShareSales(player, companies, defs, sales);
+      expect(validRes.valid).toBe(true);
+      expect(validRes.totalRevenue).toBe(1400);
+
+      // Invalid: selling more shares than owned
+      const excessSale: ShareSale[] = [{ companyId: 'american', count: 6 }];
+      const excessRes = validateShareSales(player, companies, defs, excessSale);
+      expect(excessRes.valid).toBe(false);
+      expect(excessRes.reason).toContain('exceeds owned shares');
+
+      // Invalid: selling shares in an inactive company
+      const inactiveSale: ShareSale[] = [{ companyId: 'imperial', count: 2 }];
+      const inactiveRes = validateShareSales(player, companies, defs, inactiveSale);
+      expect(inactiveRes.valid).toBe(false);
+      expect(inactiveRes.reason).toContain('not currently active');
+
+      // Invalid: negative count
+      const negSale: ShareSale[] = [{ companyId: 'american', count: -1 }];
+      expect(validateShareSales(player, companies, defs, negSale).valid).toBe(false);
+    });
+
+    it('executes sellShares immutably, crediting cash and replenishing bank inventory', () => {
+      const player: PlayerState = {
+        id: 'p1',
+        name: 'Player 1',
+        isAi: false,
+        cash: 1000,
+        shares: { american: 5 },
+        hand: [],
+      };
+      const companies: Record<string, CompanyState> = {
+        american: { id: 'american', size: 4, isActive: true, availableShares: 10 } as any, // Price = 200 + 2*100 = 400
+      };
+      const defs = { american: lowDef };
+
+      const sales: ShareSale[] = [{ companyId: 'american', count: 3 }];
+      const result = sellShares(player, companies, defs, sales);
+
+      expect(result.success).toBe(true);
+      expect(result.totalRevenue).toBe(1200); // 3 * 400
+      expect(result.player.cash).toBe(2200); // 1000 + 1200
+      expect(result.player.shares.american).toBe(2); // 5 - 3
+      expect(result.companies.american?.availableShares).toBe(13); // 10 + 3
+    });
+
+    it('executes sellAllShares to fully liquidate all active holdings', () => {
+      const player: PlayerState = {
+        id: 'p1',
+        name: 'Player 1',
+        isAi: false,
+        cash: 500,
+        shares: { american: 4, royal: 2, imperial: 8 },
+        hand: [],
+      };
+      const companies: Record<string, CompanyState> = {
+        american: { id: 'american', size: 2, isActive: true, availableShares: 10 } as any, // Price = 200 => 4 * 200 = 800
+        royal: { id: 'royal', size: 3, isActive: true, availableShares: 15 } as any, // Price = 400 + 100 = 500 => 2 * 500 = 1000
+        imperial: { id: 'imperial', size: 0, isActive: false, availableShares: 20 } as any, // Inactive, not sold!
+      };
+      const defs = { american: lowDef, royal: highDef, imperial: midDef };
+
+      const result = sellAllShares(player, companies, defs);
+      expect(result.success).toBe(true);
+      expect(result.totalRevenue).toBe(1800); // 800 + 1000
+      expect(result.player.cash).toBe(2300); // 500 + 1800
+      expect(result.player.shares.american).toBe(0);
+      expect(result.player.shares.royal).toBe(0);
+      expect(result.player.shares.imperial).toBe(8); // Inactive remains
+      expect(result.companies.american?.availableShares).toBe(14); // 10 + 4
+      expect(result.companies.royal?.availableShares).toBe(17); // 15 + 2
+    });
+  });
+
+  describe('Dividends System', () => {
+    it('calculates company dividend yield proportionally to share price', () => {
+      const highWithYield: CompanyDefinition = {
+        ...highDef,
+        dividendYield: 0.125, // 12.5% for high tier
+      };
+      const lowWithYield: CompanyDefinition = {
+        ...lowDef,
+        dividendYield: 0.067, // 6.7% for low tier
+      };
+
+      // Royal at size 2 has price $400. 12.5% of 400 = $50 per share
+      expect(calculateCompanyDividend(highWithYield, 2)).toBe(50);
+
+      // American at size 2 has price $200. 6.7% of 200 = round(13.4) = $13 per share
+      expect(calculateCompanyDividend(lowWithYield, 2)).toBe(13);
+
+      // Inactive company (size 0) yields $0
+      expect(calculateCompanyDividend(highWithYield, 0)).toBe(0);
+    });
+
+    it('calculates total dividends for a player across active companies', () => {
+      const defs = {
+        american: { ...lowDef, dividendYield: 0.067 },
+        royal: { ...highDef, dividendYield: 0.125 },
+      };
+      const player: PlayerState = {
+        id: 'p1',
+        name: 'Player 1',
+        isAi: false,
+        cash: 1000,
+        shares: { american: 10, royal: 4 },
+        hand: [],
+      };
+      const companies: Record<string, CompanyState> = {
+        american: { id: 'american', size: 2, isActive: true } as any, // $13 per share * 10 = $130
+        royal: { id: 'royal', size: 2, isActive: true } as any, // $50 per share * 4 = $200
+      };
+
+      const result = calculatePlayerDividends(player, companies, defs);
+      expect(result.totalDividend).toBe(330);
+      expect(result.breakdown.american).toBe(130);
+      expect(result.breakdown.royal).toBe(200);
+    });
   });
 });

@@ -13,14 +13,14 @@ import type {
 export type { GameConfig };
 
 export const CLASSIC_COMPANIES: CompanyDefinition[] = [
-  { id: 'american', name: 'American Natural Gas', tier: 'low', basePrice: 200, priceDelta: 100, color: '#e63946' },
-  { id: 'arabian', name: 'Arabian Oil', tier: 'low', basePrice: 200, priceDelta: 100, color: '#f4a261' },
-  { id: 'imperial', name: 'Imperial Petroleum', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#2a9d8f' },
-  { id: 'supra', name: 'Supra Oil', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#e76f51' },
-  { id: 'tower', name: 'Tower Drilling', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#457b9d' },
-  { id: 'royal', name: 'Royal Dutch', tier: 'high', basePrice: 400, priceDelta: 100, color: '#1d3557' },
-  { id: 'weemoco', name: 'Weemoco Oil', tier: 'high', basePrice: 400, priceDelta: 100, color: '#38b000' },
-  { id: 'purple', name: 'Purple Oil', tier: 'high', basePrice: 400, priceDelta: 100, color: '#7209b7' },
+  { id: 'american', name: 'American Natural Gas', tier: 'low', basePrice: 200, priceDelta: 100, color: '#e63946', dividendYield: 0.10 },
+  { id: 'arabian', name: 'Arabian Oil', tier: 'low', basePrice: 200, priceDelta: 100, color: '#f4a261', dividendYield: 0.10 },
+  { id: 'imperial', name: 'Imperial Petroleum', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#2a9d8f', dividendYield: 0.125 },
+  { id: 'supra', name: 'Supra Oil', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#e76f51', dividendYield: 0.067 },
+  { id: 'tower', name: 'Tower Drilling', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#457b9d', dividendYield: 0.10 },
+  { id: 'royal', name: 'Royal Dutch', tier: 'high', basePrice: 400, priceDelta: 100, color: '#1d3557', dividendYield: 0.125 },
+  { id: 'weemoco', name: 'Weemoco Oil', tier: 'high', basePrice: 400, priceDelta: 100, color: '#38b000', dividendYield: 0.067 },
+  { id: 'purple', name: 'Purple Oil', tier: 'high', basePrice: 400, priceDelta: 100, color: '#7209b7', dividendYield: 0.067 },
 ];
 
 export const DEFAULT_CONFIG: GameConfig = {
@@ -34,6 +34,10 @@ export const DEFAULT_CONFIG: GameConfig = {
   totalSharesPerCompany: 25,
   startingCash: 6000,
   companies: CLASSIC_COMPANIES,
+  payDividends: false,
+  hardShareLimits: true,
+  allowBlanks: false,
+  purchaseLimit: true,
 };
 
 export const CLASSIC_CONFIG = DEFAULT_CONFIG;
@@ -49,6 +53,10 @@ export const MODERN_BALANCED_CONFIG: GameConfig = {
   totalSharesPerCompany: 25,
   startingCash: 6000,
   companies: CLASSIC_COMPANIES,
+  payDividends: false,
+  hardShareLimits: true,
+  allowBlanks: false,
+  purchaseLimit: true,
 };
 
 export const DEFAULT_PLAYER_COLORS: readonly string[] = [
@@ -186,6 +194,8 @@ export function createInitialGameState(
     pendingFounding: null,
     pendingMerger: null,
     turnPurchasedSharesCount: 0,
+    turnSoldShares: {},
+    lastDividendPayout: null,
     history: [],
     winnerPlayerId: null,
   };

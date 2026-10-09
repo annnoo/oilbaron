@@ -50,6 +50,10 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
   const rows = gameState.board.length;
   const cols = gameState.board[0]?.length ?? 12;
 
+  const turnSoldAllowance = gameState.turnSoldShares
+    ? Object.values(gameState.turnSoldShares).reduce((acc, c) => acc + c, 0)
+    : 0;
+
   return (
     <div className="win31-root">
       {/* Top Retro Switcher Toolbar */}
@@ -105,6 +109,8 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
             selectedCoord={selectedHandCoord}
             cash={activePlayer?.cash}
             showHints={showHints}
+            repurchaseAllowance={turnSoldAllowance}
+            lastDividendPayout={gameState.lastDividendPayout}
             onToggleHints={onToggleHints}
             onPlaceSelected={() => {
               if (selectedHandCoord) onPlaceTile(selectedHandCoord);
@@ -142,7 +148,19 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
                       alignItems: 'center',
                       gap: '6px',
                       minWidth: '110px',
+                      cursor: 'pointer',
                     }}
+                    onClick={() => {
+                      playClick();
+                      if (gameState.phase === 'buy_shares') {
+                        onOpenStockMarket();
+                      }
+                    }}
+                    title={
+                      gameState.phase === 'buy_shares'
+                        ? `Click to Buy/Sell shares in ${def.name}`
+                        : `${def.name} • Size: ${comp?.size ?? 0} • $${price}`
+                    }
                   >
                     {bmp && <img src={bmp} alt={def.name} className="win31-cell-bmp" />}
                     <div>

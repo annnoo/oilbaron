@@ -76,4 +76,28 @@ describe('TurnGuidanceBar Component', () => {
     expect(html).toContain('Computer 1 (Computer) is calculating move');
     expect(html).toContain('Hints: OFF');
   });
+
+  it('renders repurchase allowance and dividend payout banner when available', () => {
+    const html = renderToStaticMarkup(
+      <TurnGuidanceBar
+        phase="buy_shares"
+        activePlayerName="Player 1"
+        isAi={false}
+        selectedCoord={null}
+        cash={3000}
+        showHints={true}
+        repurchaseAllowance={2}
+        lastDividendPayout={{
+          playerId: 'p1',
+          totalDividend: 450,
+          breakdown: { texaco: 450 },
+        }}
+        onToggleHints={vi.fn()}
+      />
+    );
+
+    expect(html).toContain('Repurchase Allowance: +2');
+    expect(html).toContain('+$450 Dividends');
+  });
 });
+
