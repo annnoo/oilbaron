@@ -72,4 +72,29 @@ describe('Game Configuration & State Factory', () => {
       expect(p1?.shares[companyDef.id]).toBe(0);
     }
   });
+
+  it('injects 4 blank tiles into the tile pool when allowBlanks is true', () => {
+    const players = [
+      { name: 'Alice', isAi: false },
+      { name: 'Bob', isAi: false },
+    ];
+    const normalState = createInitialGameState({ ...DEFAULT_CONFIG, allowBlanks: false }, players, 1);
+    const blanksState = createInitialGameState({ ...DEFAULT_CONFIG, allowBlanks: true }, players, 1);
+
+    const normalBlankCount =
+      normalState.tilePool.filter((t) => t.isBlank).length +
+      normalState.players.reduce((sum, p) => sum + p.hand.filter((t) => t.isBlank).length, 0);
+
+    const blanksTotalCount =
+      blanksState.tilePool.filter((t) => t.isBlank).length +
+      blanksState.players.reduce((sum, p) => sum + p.hand.filter((t) => t.isBlank).length, 0);
+
+    expect(normalBlankCount).toBe(0);
+    expect(blanksTotalCount).toBe(4);
+    // Total tiles (pool + hands) should be 120 + 4 = 124
+    const totalTilesWithBlanks =
+      blanksState.tilePool.length +
+      blanksState.players.reduce((sum, p) => sum + p.hand.length, 0);
+    expect(totalTilesWithBlanks).toBe(124);
+  });
 });

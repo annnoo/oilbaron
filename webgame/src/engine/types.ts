@@ -29,6 +29,7 @@ export interface CompanyState {
 export interface TileCoord {
   row: number; // 0..rows-1
   col: number; // 0..cols-1
+  isBlank?: boolean;
 }
 
 export type CellState =
@@ -105,6 +106,7 @@ export interface ShareDispositionChoices {
 
 export type GameAction =
   | { type: 'PLACE_TILE'; coord: TileCoord }
+  | { type: 'PLACE_BLANK_TILE'; blankTileCoord: TileCoord; targetCoord: TileCoord }
   | { type: 'CHOOSE_FOUNDED_COMPANY'; companyId: CompanyId }
   | { type: 'CHOOSE_MERGER_SURVIVOR'; survivorCompanyId: CompanyId }
   | { type: 'DISPOSE_MERGER_SHARES'; choices: ShareDispositionChoices }

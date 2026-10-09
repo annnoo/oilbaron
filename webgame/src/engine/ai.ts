@@ -589,6 +589,33 @@ export function simulateAiTurn(state: GameState): GameState {
           break;
         }
 
+        // 2b. If active AI holds a wildcard blank piece, find the highest utility legal target
+        const blankTileInHand = activePlayer.hand.find((t) => t.isBlank);
+        if (blankTileInHand) {
+          let bestTarget: TileCoord | null = null;
+          let bestTargetScore = -Infinity;
+          for (let r = 0; r < currentState.config.boardRows; r++) {
+            for (let c = 0; c < currentState.config.boardCols; c++) {
+              const target: TileCoord = { row: r, col: c };
+              if (isTileLegalToPlay(target, currentState.board, currentState.companies, currentState.config)) {
+                const score = evaluateTileMoveUtility(currentState, activePlayer, target);
+                if (score > bestTargetScore) {
+                  bestTargetScore = score;
+                  bestTarget = target;
+                }
+              }
+            }
+          }
+          if (bestTarget) {
+            currentState = gameReducer(currentState, {
+              type: 'PLACE_BLANK_TILE',
+              blankTileCoord: blankTileInHand,
+              targetCoord: bestTarget,
+            });
+            break;
+          }
+        }
+
         // 3. No playable tiles and no dead tiles
         if (isGameOver(currentState)) {
           const liquidation = liquidateGame(currentState);

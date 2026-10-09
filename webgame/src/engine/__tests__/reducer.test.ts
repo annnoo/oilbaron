@@ -1133,5 +1133,230 @@ describe('Game State Reducer & Turn Flow', () => {
       expect(state.board[deadTile.row]![deadTile.col]).toEqual({ type: 'discarded' });
     });
   });
+
+  describe('PLACE_BLANK_TILE & Wildcard Blank Pieces', () => {
+    it('places blank tile as isolated wildcat, removes blank from hand, removes targetCoord from pool, and advances phase to buy_shares', () => {
+      let state = createInitialGameState(
+        { ...DEFAULT_CONFIG, allowBlanks: true },
+        [
+          { name: 'P1', isAi: false },
+          { name: 'P2', isAi: false },
+        ],
+        42
+      );
+
+      const blankTile = { row: -1, col: -1, isBlank: true };
+      const targetCoord = { row: 5, col: 5 };
+      state.players[0]!.hand = [blankTile, { row: 0, col: 0 }];
+      state.tilePool = [targetCoord, { row: 1, col: 1 }];
+
+      const nextState = gameReducer(state, {
+        type: 'PLACE_BLANK_TILE',
+        blankTileCoord: blankTile,
+        targetCoord,
+      });
+
+      expect(nextState.board[targetCoord.row]![targetCoord.col]!.type).toBe('unincorporated');
+      expect(nextState.phase).toBe('buy_shares');
+      expect(nextState.players[0]!.hand).not.toContainEqual(blankTile);
+      // targetCoord must be purged from tilePool so it cannot be drawn again
+      expect(nextState.tilePool).not.toContainEqual(targetCoord);
+      expect(nextState.tilePool).toContainEqual({ row: 1, col: 1 });
+      expect(nextState.history).toHaveLength(1);
+      expect(nextState.history[0]).toEqual({
+        type: 'PLACE_BLANK_TILE',
+        blankTileCoord: blankTile,
+        targetCoord,
+      });
+    });
+
+    it('founds company when blank tile is placed adjacent to unincorporated tile', () => {
+      let state = createInitialGameState(DEFAULT_CONFIG, [
+        { name: 'P1', isAi: false },
+        { name: 'P2', isAi: false },
+      ]);
+
+      const blankTile = { row: -1, col: -1, isBlank: true };
+      state.board[2]![2] = { type: 'unincorporated' };
+      state.players[0]!.hand = [blankTile];
+
+      const nextState = gameReducer(state, {
+        type: 'PLACE_BLANK_TILE',
+        blankTileCoord: blankTile,
+        targetCoord: { row: 2, col: 3 },
+      });
+
+      expect(nextState.phase).toBe('choose_founding_company');
+      expect(nextState.pendingFounding).toBeDefined();
+      expect(nextState.pendingFounding?.coord).toEqual({ row: 2, col: 3 });
+      expect(nextState.players[0]!.hand).not.toContainEqual(blankTile);
+    });
+
+    it('expands active company when blank tile is placed adjacent to it', () => {
+      let state = createInitialGameState(DEFAULT_CONFIG, [
+        { name: 'P1', isAi: false },
+        { name: 'P2', isAi: false },
+      ]);
+
+      state.board[2]![2] = { type: 'company', companyId: 'american' };
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 1,
+      };
+      const blankTile = { row: -1, col: -1, isBlank: true };
+      state.players[0]!.hand = [blankTile];
+
+      const nextState = gameReducer(state, {
+        type: 'PLACE_BLANK_TILE',
+        blankTileCoord: blankTile,
+        targetCoord: { row: 2, col: 3 },
+      });
+
+      expect(nextState.phase).toBe('buy_shares');
+      expect(nextState.board[2]![3]).toEqual({ type: 'company', companyId: 'american' });
+      expect(nextState.companies.american?.size).toBe(2);
+      expect(nextState.players[0]!.hand).not.toContainEqual(blankTile);
+    });
+
+    it('triggers merger when blank tile connects two active companies', () => {
+      let state = createInitialGameState(DEFAULT_CONFIG, [
+        { name: 'P1', isAi: false },
+        { name: 'P2', isAi: false },
+      ]);
+
+      state.board[2]![2] = { type: 'company', companyId: 'american' };
+      state.board[2]![4] = { type: 'company', companyId: 'royal' };
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 3,
+      };
+      state.companies.royal = {
+        ...state.companies.royal!,
+        isActive: true,
+        size: 2,
+      };
+      const blankTile = { row: -1, col: -1, isBlank: true };
+      state.players[0]!.hand = [blankTile];
+
+      const nextState = gameReducer(state, {
+        type: 'PLACE_BLANK_TILE',
+        blankTileCoord: blankTile,
+        targetCoord: { row: 2, col: 3 },
+      });
+
+      // American (size 3) > Royal (size 2), American survives, so royal goes into defunct queue
+      expect(['choose_merger_survivor', 'dispose_merger_shares', 'buy_shares']).toContain(nextState.phase);
+      expect(nextState.board[2]![3]!.type).toBe('company');
+      expect(nextState.players[0]!.hand).not.toContainEqual(blankTile);
+    });
+
+    it('rejects placing blank tile if player does not have a blank tile in hand', () => {
+      const state = createInitialGameState(DEFAULT_CONFIG, [
+        { name: 'P1', isAi: false },
+        { name: 'P2', isAi: false },
+      ]);
+
+      state.players[0]!.hand = [{ row: 0, col: 0 }];
+
+      expect(() => {
+        gameReducer(state, {
+          type: 'PLACE_BLANK_TILE',
+          blankTileCoord: { row: -1, col: -1, isBlank: true },
+          targetCoord: { row: 5, col: 5 },
+        });
+      }).toThrow(/not in active player's hand/i);
+    });
+
+    it('rejects placing blank tile on an occupied cell', () => {
+      const state = createInitialGameState(DEFAULT_CONFIG, [
+        { name: 'P1', isAi: false },
+        { name: 'P2', isAi: false },
+      ]);
+
+      const blankTile = { row: -1, col: -1, isBlank: true };
+      state.players[0]!.hand = [blankTile];
+      state.board[5]![5] = { type: 'unincorporated' };
+
+      expect(() => {
+        gameReducer(state, {
+          type: 'PLACE_BLANK_TILE',
+          blankTileCoord: blankTile,
+          targetCoord: { row: 5, col: 5 },
+        });
+      }).toThrow(/already occupied/i);
+    });
+
+    it('rejects placing blank tile out of bounds', () => {
+      const state = createInitialGameState(DEFAULT_CONFIG, [
+        { name: 'P1', isAi: false },
+        { name: 'P2', isAi: false },
+      ]);
+
+      const blankTile = { row: -1, col: -1, isBlank: true };
+      state.players[0]!.hand = [blankTile];
+
+      expect(() => {
+        gameReducer(state, {
+          type: 'PLACE_BLANK_TILE',
+          blankTileCoord: blankTile,
+          targetCoord: { row: -1, col: 5 },
+        });
+      }).toThrow(/out of bounds/i);
+    });
+
+    it('rejects placing blank tile on illegal safe merger coordinate', () => {
+      const state = createInitialGameState(DEFAULT_CONFIG, [
+        { name: 'P1', isAi: false },
+        { name: 'P2', isAi: false },
+      ]);
+
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 11,
+        isSafe: true,
+      };
+      state.companies.royal = {
+        ...state.companies.royal!,
+        isActive: true,
+        size: 11,
+        isSafe: true,
+      };
+      state.board[2]![2] = { type: 'company', companyId: 'american' };
+      state.board[2]![4] = { type: 'company', companyId: 'royal' };
+
+      const blankTile = { row: -1, col: -1, isBlank: true };
+      state.players[0]!.hand = [blankTile];
+
+      expect(() => {
+        gameReducer(state, {
+          type: 'PLACE_BLANK_TILE',
+          blankTileCoord: blankTile,
+          targetCoord: { row: 2, col: 3 },
+        });
+      }).toThrow(/illegal|dead/i);
+    });
+
+    it('rejects placing blank tile during wrong phase', () => {
+      const state = createInitialGameState(DEFAULT_CONFIG, [
+        { name: 'P1', isAi: false },
+        { name: 'P2', isAi: false },
+      ]);
+
+      const blankTile = { row: -1, col: -1, isBlank: true };
+      state.players[0]!.hand = [blankTile];
+      state.phase = 'buy_shares';
+
+      expect(() => {
+        gameReducer(state, {
+          type: 'PLACE_BLANK_TILE',
+          blankTileCoord: blankTile,
+          targetCoord: { row: 2, col: 3 },
+        });
+      }).toThrow(/Cannot place.*phase/i);
+    });
+  });
 });
 

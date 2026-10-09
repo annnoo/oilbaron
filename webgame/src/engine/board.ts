@@ -300,6 +300,7 @@ export function isTileDead(
   companies: Partial<Record<CompanyId, CompanyState>> = {},
   safeThreshold: number = DEFAULT_CONFIG.safeThreshold
 ): boolean {
+  if (coord.isBlank) return false;
   const result = classifyMove(board, coord, companies, safeThreshold);
   return result.type === 'illegal_safe_merger';
 }
@@ -329,9 +330,12 @@ export function applyTilePlacement(
 export const ROW_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] as const;
 
 /**
- * Formats a TileCoord into standard grid notation (e.g. { row: 2, col: 4 } -> "C-5").
+ * Formats a TileCoord into standard grid notation (e.g. { row: 2, col: 4 } -> "C-5", blank -> "BLANK").
  */
 export function formatCoord(coord: TileCoord): string {
+  if (coord.isBlank) {
+    return 'BLANK';
+  }
   const rowLabel = ROW_LABELS[coord.row] ?? String.fromCharCode(65 + coord.row);
   return `${rowLabel}-${coord.col + 1}`;
 }
@@ -357,6 +361,7 @@ export function coordEquals(
   b: TileCoord | null | undefined
 ): boolean {
   if (!a || !b) return false;
+  if (a.isBlank || b.isBlank) return Boolean(a.isBlank && b.isBlank);
   return a.row === b.row && a.col === b.col;
 }
 

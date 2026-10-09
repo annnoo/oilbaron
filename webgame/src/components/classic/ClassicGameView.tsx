@@ -5,6 +5,7 @@ import {
   CLASSIC_NOT_PLAYABLE_BITMAP,
   CLASSIC_PLAYER_INFO_BITMAP,
   CLASSIC_DISCARD_SQUARE_BITMAP,
+  CLASSIC_BLANK_BITMAP,
 } from '../../assets/classicAssets';
 import { ClassicWindow } from './ClassicWindow';
 import { TurnGuidanceBar } from '../TurnGuidanceBar';
@@ -23,6 +24,7 @@ export interface ClassicGameViewProps {
   onSelectHandCoord: (coord: TileCoord | null) => void;
   onPlaceTile: (coord: TileCoord) => void;
   onDiscardDeadTile: (coord: TileCoord) => void;
+  onPlayBlankTile?: (coord: TileCoord) => void;
   onMenuAction: (actionId: MenuActionId) => void;
   onSwitchToModern: () => void;
   onTogglePlayerAi: (playerIndex: number, isAi: boolean) => void;
@@ -39,6 +41,7 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
   onSelectHandCoord,
   onPlaceTile,
   onDiscardDeadTile,
+  onPlayBlankTile,
   onMenuAction,
   onSwitchToModern,
   onTogglePlayerAi,
@@ -114,7 +117,13 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
             lastDividendPayout={gameState.lastDividendPayout}
             onToggleHints={onToggleHints}
             onPlaceSelected={() => {
-              if (selectedHandCoord) onPlaceTile(selectedHandCoord);
+              if (selectedHandCoord) {
+                if (selectedHandCoord.isBlank) {
+                  onPlayBlankTile?.(selectedHandCoord);
+                } else {
+                  onPlaceTile(selectedHandCoord);
+                }
+              }
             }}
             onOpenStockMarket={onOpenStockMarket}
             onEndTurn={onEndTurn}
@@ -265,27 +274,33 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
 
                 <div className="win31-hand-tray">
                   {activePlayer?.hand.map((tile, idx) => {
+                    const isBlank = Boolean(tile.isBlank);
                     const isSelected =
                       selectedHandCoord &&
-                      selectedHandCoord.row === tile.row &&
-                      selectedHandCoord.col === tile.col;
+                      (isBlank && selectedHandCoord.isBlank
+                        ? true
+                        : selectedHandCoord.row === tile.row && selectedHandCoord.col === tile.col);
 
                     return (
                       <div
-                        key={`hand-${tile.row}-${tile.col}-${idx}`}
+                        key={isBlank ? `hand-blank-${idx}` : `hand-${tile.row}-${tile.col}-${idx}`}
                         className={`win31-chit-card ${isSelected ? 'is-selected' : ''}`}
+                        title={isBlank ? 'Wildcard Blank Piece: Click to place on any vacant square' : undefined}
                         onClick={() => {
                           playClick();
+                          if (isBlank && onPlayBlankTile) {
+                            onPlayBlankTile(tile);
+                          }
                           onSelectHandCoord(isSelected ? null : tile);
                         }}
                       >
                         <img
-                          src={CLASSIC_CHIT_BITMAP}
-                          alt="Chit"
+                          src={isBlank ? CLASSIC_BLANK_BITMAP : CLASSIC_CHIT_BITMAP}
+                          alt={isBlank ? 'Blank Piece' : 'Chit'}
                           style={{ width: '24px', height: '24px', imageRendering: 'pixelated' }}
                         />
                         <span style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '2px' }}>
-                          {formatCoord(tile)}
+                          {isBlank ? 'BLANK' : formatCoord(tile)}
                         </span>
                       </div>
                     );

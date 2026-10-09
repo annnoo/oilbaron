@@ -89,4 +89,40 @@ describe('ClassicGameView Component', () => {
     expect(html).toContain('/classic_assets/discard_square.png');
     expect(html).toContain('data-testid="classic-discarded-marker"');
   });
+
+  it('renders classic blank tile bitmap and label for blank tiles in player rack', () => {
+    const stateWithBlank = {
+      ...dummyState,
+      players: dummyState.players.map((p, idx) =>
+        idx === 0
+          ? {
+              ...p,
+              hand: [{ row: -1, col: -1, isBlank: true }, ...p.hand.slice(1)],
+            }
+          : p
+      ),
+    };
+
+    const html = renderToStaticMarkup(
+      <ClassicGameView
+        gameState={stateWithBlank}
+        selectedHandCoord={{ row: -1, col: -1, isBlank: true }}
+        hoveredHandCoord={null}
+        showHints={true}
+        onToggleHints={vi.fn()}
+        onSelectHandCoord={vi.fn()}
+        onPlaceTile={vi.fn()}
+        onDiscardDeadTile={vi.fn()}
+        onPlayBlankTile={vi.fn()}
+        onMenuAction={vi.fn()}
+        onSwitchToModern={vi.fn()}
+        onTogglePlayerAi={vi.fn()}
+        onOpenStockMarket={vi.fn()}
+        onEndTurn={vi.fn()}
+      />
+    );
+
+    expect(html).toContain('/classic_assets/blank.png');
+    expect(html).toContain('BLANK');
+  });
 });

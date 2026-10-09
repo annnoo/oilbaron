@@ -67,6 +67,28 @@ export function hasPlayableTile(
 ): boolean {
   if (player.hand.length === 0) return false;
   return player.hand.some((tile) => {
+    if (tile.isBlank) {
+      for (let r = 0; r < config.boardRows; r++) {
+        for (let c = 0; c < config.boardCols; c++) {
+          const cell = board[r]?.[c];
+          if (cell && cell.type === 'empty') {
+            const target: TileCoord = { row: r, col: c };
+            if (!isTileDead(board, target, companies, config.safeThreshold)) {
+              const classification = classifyMove(board, target, companies, config.safeThreshold);
+              if (classification.type !== 'illegal_safe_merger') {
+                if (classification.type === 'founding') {
+                  const anyAvailable = config.companies.some((def) => !companies[def.id]?.isActive);
+                  if (anyAvailable) return true;
+                } else {
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+      return false;
+    }
     if (
       tile.row < 0 ||
       tile.row >= config.boardRows ||
@@ -304,6 +326,172 @@ function processNextDefunctCompany(
 }
 
 /**
+ * Resolves consequences of placing a tile onto the board at targetCoord:
+ * Handles isolated wildcat, expansion, founding, and merger flows.
+ */
+function resolveTilePlacementConsequences(
+  state: GameState,
+  coord: TileCoord,
+  updatedPlayers: PlayerState[],
+  updatedTilePool: TileCoord[],
+  action: GameAction
+): GameState {
+  const classification = classifyMove(
+    state.board,
+    coord,
+    state.companies,
+    state.config.safeThreshold
+  );
+
+  if (classification.type === 'illegal_safe_merger') {
+    throw new Error('Cannot place dead tile');
+  }
+
+  if (classification.type === 'isolated') {
+    const newBoard = applyTilePlacement(state.board, coord, { type: 'unincorporated' });
+    return {
+      ...state,
+      board: newBoard,
+      players: updatedPlayers,
+      tilePool: updatedTilePool,
+      phase: 'buy_shares',
+      history: [...state.history, action],
+    };
+  }
+
+  if (classification.type === 'expansion') {
+    const newBoard = state.board.map((r) => [...r]);
+    for (const c of classification.connectedCoords) {
+      newBoard[c.row]![c.col] = { type: 'company', companyId: classification.companyId };
+    }
+
+    const company = state.companies[classification.companyId]!;
+    const newSize = company.size + classification.connectedCoords.length;
+    const isSafe = newSize >= state.config.safeThreshold;
+
+    const newCompanies = {
+      ...state.companies,
+      [classification.companyId]: {
+        ...company,
+        size: newSize,
+        isSafe,
+      },
+    };
+
+    return {
+      ...state,
+      board: newBoard,
+      companies: newCompanies,
+      players: updatedPlayers,
+      tilePool: updatedTilePool,
+      phase: 'buy_shares',
+      history: [...state.history, action],
+    };
+  }
+
+  if (classification.type === 'founding') {
+    const newBoard = applyTilePlacement(state.board, coord, { type: 'unincorporated' });
+    const availableCompanyIds = state.config.companies
+      .filter((def) => !state.companies[def.id]?.isActive)
+      .map((def) => def.id);
+
+    if (availableCompanyIds.length === 0) {
+      throw new Error('No available companies to found');
+    }
+
+    return {
+      ...state,
+      board: newBoard,
+      players: updatedPlayers,
+      tilePool: updatedTilePool,
+      phase: 'choose_founding_company',
+      pendingFounding: {
+        coord,
+        connectedCoords: classification.connectedCoords,
+        availableCompanyIds,
+      },
+      history: [...state.history, action],
+    };
+  }
+
+  if (classification.type === 'merger') {
+    const newBoard = applyTilePlacement(state.board, coord, { type: 'unincorporated' });
+    const preMergerPrices: Record<CompanyId, number> = {};
+    for (const id of classification.participatingCompanyIds) {
+      const comp = state.companies[id]!;
+      const def = getCompanyDefinition(state.config.companies, id)!;
+      preMergerPrices[id] = calculateSharePrice(def, comp.size);
+    }
+
+    const survivorResult = determineSurvivingCompany(
+      classification.participatingCompanyIds,
+      state.companies
+    );
+
+    if (survivorResult.hasTie) {
+      return {
+        ...state,
+        board: newBoard,
+        players: updatedPlayers,
+        tilePool: updatedTilePool,
+        phase: 'choose_merger_survivor',
+        pendingMerger: {
+          coord,
+          participatingCompanyIds: classification.participatingCompanyIds,
+          survivingCompanyId: null,
+          defunctCompanyQueue: [],
+          currentDefunctCompanyId: null,
+          shareholderQueue: [],
+          currentShareholderIndex: 0,
+          preMergerPrices,
+        },
+        history: [...state.history, action],
+      };
+    }
+
+    const survivingCompanyId = survivorResult.survivorId!;
+    const defunctQueue = getDefunctCompanyQueue(
+      classification.participatingCompanyIds,
+      survivingCompanyId,
+      state.companies
+    );
+
+    const initialPendingMerger: PendingMergerState = {
+      coord,
+      participatingCompanyIds: classification.participatingCompanyIds,
+      survivingCompanyId,
+      defunctCompanyQueue: defunctQueue,
+      currentDefunctCompanyId: null,
+      shareholderQueue: [],
+      currentShareholderIndex: 0,
+      preMergerPrices,
+    };
+
+    const stepResult = processNextDefunctCompany(
+      newBoard,
+      state.companies,
+      updatedPlayers,
+      initialPendingMerger,
+      state.activePlayerIndex,
+      state.config
+    );
+
+    return {
+      ...state,
+      board: stepResult.board,
+      companies: stepResult.companies,
+      players: stepResult.players,
+      tilePool: updatedTilePool,
+      pendingMerger: stepResult.pendingMerger,
+      phase: stepResult.phase,
+      history: [...state.history, action],
+    };
+  }
+
+  throw new Error(`Unhandled classification: ${(classification as any).type}`);
+}
+
+/**
  * Pure immutable game state reducer for Oil Baron.
  * Handles all player actions, phase transitions, merger resolution, and game-over evaluation.
  */
@@ -330,7 +518,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const activePlayer = state.players[state.activePlayerIndex]!;
       const inHandIndex = activePlayer.hand.findIndex(
-        (t) => t.row === coord.row && t.col === coord.col
+        (t) => !t.isBlank && t.row === coord.row && t.col === coord.col
       );
       if (inHandIndex === -1) {
         throw new Error(`Tile (${coord.row}, ${coord.col}) is not in active player's hand`);
@@ -350,154 +538,63 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         idx === state.activePlayerIndex ? { ...p, hand: updatedHand } : p
       );
 
-      const classification = classifyMove(
-        state.board,
+      return resolveTilePlacementConsequences(
+        state,
         coord,
-        state.companies,
-        state.config.safeThreshold
+        updatedPlayers,
+        state.tilePool,
+        action
+      );
+    }
+
+    case 'PLACE_BLANK_TILE': {
+      if (state.phase !== 'place_tile') {
+        throw new Error(`Cannot place blank tile during phase '${state.phase}'`);
+      }
+
+      const { blankTileCoord, targetCoord } = action;
+      if (
+        targetCoord.row < 0 ||
+        targetCoord.row >= state.config.boardRows ||
+        targetCoord.col < 0 ||
+        targetCoord.col >= state.config.boardCols
+      ) {
+        throw new Error(`Target coordinate (${targetCoord.row}, ${targetCoord.col}) out of bounds`);
+      }
+
+      const activePlayer = state.players[state.activePlayerIndex]!;
+      const inHandIndex = activePlayer.hand.findIndex(
+        (t) => Boolean(t.isBlank) || Boolean(blankTileCoord?.isBlank && t.isBlank) || (t.row === blankTileCoord.row && t.col === blankTileCoord.col)
+      );
+      if (inHandIndex === -1) {
+        throw new Error(`Blank tile is not in active player's hand`);
+      }
+
+      const targetCell = state.board[targetCoord.row]?.[targetCoord.col];
+      if (!targetCell || targetCell.type !== 'empty') {
+        throw new Error(`Cell (${targetCoord.row}, ${targetCoord.col}) is already occupied`);
+      }
+
+      if (isTileDead(state.board, targetCoord, state.companies, state.config.safeThreshold)) {
+        throw new Error('Cannot place blank tile on illegal merger coordinate');
+      }
+
+      const updatedHand = activePlayer.hand.filter((_, idx) => idx !== inHandIndex);
+      const updatedPlayers = state.players.map((p, idx) =>
+        idx === state.activePlayerIndex ? { ...p, hand: updatedHand } : p
       );
 
-      if (classification.type === 'illegal_safe_merger') {
-        throw new Error('Cannot place dead tile');
-      }
+      const updatedTilePool = state.tilePool.filter(
+        (t) => !(t.row === targetCoord.row && t.col === targetCoord.col && !t.isBlank)
+      );
 
-      if (classification.type === 'isolated') {
-        const newBoard = applyTilePlacement(state.board, coord, { type: 'unincorporated' });
-        return {
-          ...state,
-          board: newBoard,
-          players: updatedPlayers,
-          phase: 'buy_shares',
-          history: [...state.history, action],
-        };
-      }
-
-      if (classification.type === 'expansion') {
-        const newBoard = state.board.map((r) => [...r]);
-        for (const c of classification.connectedCoords) {
-          newBoard[c.row]![c.col] = { type: 'company', companyId: classification.companyId };
-        }
-
-        const company = state.companies[classification.companyId]!;
-        const newSize = company.size + classification.connectedCoords.length;
-        const isSafe = newSize >= state.config.safeThreshold;
-
-        const newCompanies = {
-          ...state.companies,
-          [classification.companyId]: {
-            ...company,
-            size: newSize,
-            isSafe,
-          },
-        };
-
-        return {
-          ...state,
-          board: newBoard,
-          companies: newCompanies,
-          players: updatedPlayers,
-          phase: 'buy_shares',
-          history: [...state.history, action],
-        };
-      }
-
-      if (classification.type === 'founding') {
-        const newBoard = applyTilePlacement(state.board, coord, { type: 'unincorporated' });
-        const availableCompanyIds = state.config.companies
-          .filter((def) => !state.companies[def.id]?.isActive)
-          .map((def) => def.id);
-
-        if (availableCompanyIds.length === 0) {
-          throw new Error('No available companies to found');
-        }
-
-        return {
-          ...state,
-          board: newBoard,
-          players: updatedPlayers,
-          phase: 'choose_founding_company',
-          pendingFounding: {
-            coord,
-            connectedCoords: classification.connectedCoords,
-            availableCompanyIds,
-          },
-          history: [...state.history, action],
-        };
-      }
-
-      if (classification.type === 'merger') {
-        const newBoard = applyTilePlacement(state.board, coord, { type: 'unincorporated' });
-        const preMergerPrices: Record<CompanyId, number> = {};
-        for (const id of classification.participatingCompanyIds) {
-          const comp = state.companies[id]!;
-          const def = getCompanyDefinition(state.config.companies, id)!;
-          preMergerPrices[id] = calculateSharePrice(def, comp.size);
-        }
-
-        const survivorResult = determineSurvivingCompany(
-          classification.participatingCompanyIds,
-          state.companies
-        );
-
-        if (survivorResult.hasTie) {
-          return {
-            ...state,
-            board: newBoard,
-            players: updatedPlayers,
-            phase: 'choose_merger_survivor',
-            pendingMerger: {
-              coord,
-              participatingCompanyIds: classification.participatingCompanyIds,
-              survivingCompanyId: null,
-              defunctCompanyQueue: [],
-              currentDefunctCompanyId: null,
-              shareholderQueue: [],
-              currentShareholderIndex: 0,
-              preMergerPrices,
-            },
-            history: [...state.history, action],
-          };
-        }
-
-        const survivingCompanyId = survivorResult.survivorId!;
-        const defunctQueue = getDefunctCompanyQueue(
-          classification.participatingCompanyIds,
-          survivingCompanyId,
-          state.companies
-        );
-
-        const initialPendingMerger: PendingMergerState = {
-          coord,
-          participatingCompanyIds: classification.participatingCompanyIds,
-          survivingCompanyId,
-          defunctCompanyQueue: defunctQueue,
-          currentDefunctCompanyId: null,
-          shareholderQueue: [],
-          currentShareholderIndex: 0,
-          preMergerPrices,
-        };
-
-        const stepResult = processNextDefunctCompany(
-          newBoard,
-          state.companies,
-          updatedPlayers,
-          initialPendingMerger,
-          state.activePlayerIndex,
-          state.config
-        );
-
-        return {
-          ...state,
-          board: stepResult.board,
-          companies: stepResult.companies,
-          players: stepResult.players,
-          pendingMerger: stepResult.pendingMerger,
-          phase: stepResult.phase,
-          history: [...state.history, action],
-        };
-      }
-
-      throw new Error(`Unhandled classification: ${(classification as any).type}`);
+      return resolveTilePlacementConsequences(
+        state,
+        targetCoord,
+        updatedPlayers,
+        updatedTilePool,
+        action
+      );
     }
 
     case 'CHOOSE_FOUNDED_COMPANY': {

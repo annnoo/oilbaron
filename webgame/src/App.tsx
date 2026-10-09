@@ -57,6 +57,7 @@ import { WarRoomModal } from './components/modals/WarRoomModal';
 import { SaveLoadModal } from './components/modals/SaveLoadModal';
 import { HelpModal } from './components/modals/HelpModal';
 import { GameOverModal } from './components/modals/GameOverModal';
+import { BlankPieceModal } from './components/modals/BlankPieceModal';
 
 export interface AppProps {
   initialViewMode?: 'modern' | 'classic';
@@ -89,6 +90,8 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
   const [saveLoadModalMode, setSaveLoadModalMode] = useState<'save' | 'load'>('save');
   const [helpModalOpen, setHelpModalOpen] = useState<boolean>(false);
   const [mergerStatsDismissed, setMergerStatsDismissed] = useState<boolean>(false);
+  const [blankPieceModalOpen, setBlankPieceModalOpen] = useState<boolean>(false);
+  const [activeBlankCoord, setActiveBlankCoord] = useState<TileCoord | null>(null);
 
   // View Mode & Turn Guidance Coaching
   const [viewMode, setViewMode] = useState<'modern' | 'classic'>(() => {
@@ -391,8 +394,31 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedHandCoord, gameState.phase, dispatch]);
 
+  // Wildcard Blank Piece Handlers
+  const handleOpenBlankModal = (blankCoord: TileCoord) => {
+    setActiveBlankCoord(blankCoord);
+    setBlankPieceModalOpen(true);
+  };
+
+  const handleConfirmBlankPlacement = (blankTileCoord: TileCoord, targetCoord: TileCoord) => {
+    try {
+      dispatch({ type: 'PLACE_BLANK_TILE', blankTileCoord, targetCoord });
+      setBlankPieceModalOpen(false);
+      setActiveBlankCoord(null);
+      setSelectedHandCoord(null);
+      playClick();
+      setLastAction(`Placed wildcard blank piece at ${formatCoord(targetCoord)}`);
+    } catch (err: any) {
+      setLastAction(`Blank placement error: ${err.message}`);
+    }
+  };
+
   // Tile Placement Handler
   const handlePlaceTile = (coord: TileCoord) => {
+    if (coord.isBlank) {
+      handleOpenBlankModal(coord);
+      return;
+    }
     try {
       dispatch({ type: 'PLACE_TILE', coord });
       setSelectedHandCoord(null);
@@ -530,6 +556,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
           onSelectHandCoord={setSelectedHandCoord}
           onPlaceTile={handlePlaceTile}
           onDiscardDeadTile={handleDiscardDeadTile}
+          onPlayBlankTile={handleOpenBlankModal}
           onMenuAction={handleMenuAction}
           onSwitchToModern={() => setViewMode('modern')}
           onTogglePlayerAi={handleTogglePlayerAi}
@@ -738,6 +765,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
                   onHoverTile={setHoveredHandCoord}
                   onPlaceTile={handlePlaceTile}
                   onDiscardDeadTile={handleDiscardDeadTile}
+                  onPlayBlankTile={handleOpenBlankModal}
                   onToggleHideChits={setHideChits}
                 />
               </div>
@@ -873,6 +901,20 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
         onClose={() => setDiscardedTilesModalOpen(false)}
         gameState={gameState}
       />
+
+      {/* Wildcard Blank Piece (BLANK_MOVE) Modal */}
+      {blankPieceModalOpen && activeBlankCoord && (
+        <BlankPieceModal
+          isOpen={blankPieceModalOpen}
+          onClose={() => {
+            setBlankPieceModalOpen(false);
+            setActiveBlankCoord(null);
+          }}
+          gameState={gameState}
+          blankTileCoord={activeBlankCoord}
+          onConfirmPlacement={handleConfirmBlankPlacement}
+        />
+      )}
 
       {/* 6. System Utility Modals */}
       <SaveLoadModal

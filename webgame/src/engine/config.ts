@@ -131,6 +131,14 @@ export function createInitialGameState(
     }
   }
 
+  // Inject wildcard blank pieces if enabled (classic 1993 Oil Baron: 4 blank pieces)
+  if (config.allowBlanks) {
+    const blankCount = 4;
+    for (let i = 0; i < blankCount; i++) {
+      allTiles.push({ row: -1, col: -1, isBlank: true });
+    }
+  }
+
   // Shuffle tile pool
   const shuffledTiles = shuffle(allTiles, rng);
 
