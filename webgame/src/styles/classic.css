@@ -1,0 +1,242 @@
+/* ==========================================================================
+   OIL BARON — Authentic 1993 Windows 3.1 Classic Stylesheet
+   ========================================================================== */
+
+.win31-root {
+  background-color: #008080; /* Windows 3.1 Teal Desktop */
+  color: #000000;
+  font-family: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, Arial, sans-serif;
+  font-size: 11px;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 10px;
+  image-rendering: pixelated;
+}
+
+/* Authentic Windows 3.1 Window Container */
+.win31-window {
+  background-color: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #808080;
+  border-bottom: 2px solid #808080;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.4);
+  box-sizing: border-box;
+}
+
+/* Sunken 3D Box */
+.win31-sunken {
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  background-color: #ffffff;
+  box-sizing: border-box;
+}
+
+/* Sunken Grey Box */
+.win31-sunken-grey {
+  border-top: 2px solid #808080;
+  border-left: 2px solid #808080;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  background-color: #c0c0c0;
+  box-sizing: border-box;
+}
+
+/* Titlebar */
+.win31-titlebar {
+  background-color: #000080; /* Windows 3.1 Active Title Navy */
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 12px;
+  padding: 3px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  letter-spacing: 0.02em;
+}
+
+.win31-titlebar-btn {
+  width: 16px;
+  height: 14px;
+  background-color: #c0c0c0;
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #000000;
+  border-bottom: 1px solid #000000;
+  color: #000000;
+  font-size: 10px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.win31-titlebar-btn:active {
+  border-top: 1px solid #000000;
+  border-left: 1px solid #000000;
+  border-right: 1px solid #ffffff;
+  border-bottom: 1px solid #ffffff;
+}
+
+/* Classic Button */
+.win31-btn {
+  background-color: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  color: #000000;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 4px 12px;
+  cursor: pointer;
+  outline: none;
+  box-sizing: border-box;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.win31-btn:active {
+  border-top: 2px solid #000000;
+  border-left: 2px solid #000000;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  padding: 5px 11px 3px 13px;
+}
+
+.win31-btn:disabled {
+  color: #808080;
+  text-shadow: 1px 1px 0px #ffffff;
+  cursor: not-allowed;
+}
+
+/* Classic Menu Bar */
+.win31-menubar {
+  background-color: #c0c0c0;
+  border-bottom: 1px solid #808080;
+  display: flex;
+  padding: 2px 4px;
+  gap: 12px;
+  font-size: 11px;
+  user-select: none;
+}
+
+.win31-menu-item {
+  color: #000000;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.win31-menu-item:hover {
+  background-color: #000080;
+  color: #ffffff;
+}
+
+/* Classic 10x12 Grid */
+.win31-board-grid {
+  display: grid;
+  grid-template-columns: 26px repeat(12, 38px);
+  grid-template-rows: 20px repeat(10, 38px);
+  gap: 2px;
+  background-color: #808080;
+  padding: 4px;
+  border: 2px solid #000000;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.win31-coord-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: bold;
+  color: #ffffff;
+  background-color: #000080;
+}
+
+.win31-board-cell {
+  background-color: #c0c0c0;
+  border-top: 1px solid #ffffff;
+  border-left: 1px solid #ffffff;
+  border-right: 1px solid #404040;
+  border-bottom: 1px solid #404040;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.win31-board-cell:hover {
+  border-color: #ffff00;
+  background-color: #dfdfdf;
+}
+
+.win31-board-cell.is-target {
+  background-color: #ffff80 !important;
+  border: 2px solid #ff0000 !important;
+}
+
+.win31-board-cell.is-dead {
+  background-color: #ffcccc !important;
+}
+
+.win31-cell-bmp {
+  width: 32px;
+  height: 32px;
+  image-rendering: pixelated;
+}
+
+.win31-cell-label {
+  font-size: 9px;
+  font-weight: bold;
+  color: #404040;
+}
+
+/* Classic Chit Rack */
+.win31-hand-tray {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  background-color: #c0c0c0;
+  border: 2px solid #808080;
+  box-sizing: border-box;
+}
+
+.win31-chit-card {
+  width: 44px;
+  height: 52px;
+  background-color: #c0c0c0;
+  border-top: 2px solid #ffffff;
+  border-left: 2px solid #ffffff;
+  border-right: 2px solid #000000;
+  border-bottom: 2px solid #000000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.win31-chit-card.is-selected {
+  border-top: 2px solid #000000;
+  border-left: 2px solid #000000;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  background-color: #ffffc0;
+}

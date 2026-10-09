@@ -36,6 +36,8 @@ import { CompanyTicker } from './components/CompanyTicker';
 import { GameBoard } from './components/GameBoard';
 import { PlayerHand } from './components/PlayerHand';
 import { PlayerScoreboard } from './components/PlayerScoreboard';
+import { TurnGuidanceBar } from './components/TurnGuidanceBar';
+import { ClassicGameView } from './components/classic/ClassicGameView';
 
 // Modal Dialogs
 import { NewGameModal, type PlayerConfig } from './components/modals/NewGameModal';
@@ -54,7 +56,11 @@ import { SaveLoadModal } from './components/modals/SaveLoadModal';
 import { HelpModal } from './components/modals/HelpModal';
 import { GameOverModal } from './components/modals/GameOverModal';
 
-export const App: React.FC = () => {
+export interface AppProps {
+  initialViewMode?: 'modern' | 'classic';
+}
+
+export const App: React.FC<AppProps> = ({ initialViewMode }) => {
   // Config & Audio State
   const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
   const [muted, setMuted] = useState<boolean>(soundEffects.isMuted());
@@ -78,6 +84,52 @@ export const App: React.FC = () => {
   const [saveLoadModalOpen, setSaveLoadModalOpen] = useState<boolean>(false);
   const [helpModalOpen, setHelpModalOpen] = useState<boolean>(false);
   const [mergerStatsDismissed, setMergerStatsDismissed] = useState<boolean>(false);
+
+  // View Mode & Turn Guidance Coaching
+  const [viewMode, setViewMode] = useState<'modern' | 'classic'>(() => {
+    if (initialViewMode) return initialViewMode;
+    if (typeof window !== 'undefined') {
+      if (
+        window.location.hash === '#classic' ||
+        window.location.pathname.endsWith('/classic')
+      ) {
+        return 'classic';
+      }
+    }
+    return 'modern';
+  });
+  const [showBeginnerHints, setShowBeginnerHints] = useState<boolean>(true);
+
+  // Sync viewMode with URL hash
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (viewMode === 'classic') {
+      if (window.location.hash !== '#classic') {
+        window.location.hash = 'classic';
+      }
+    } else {
+      if (window.location.hash === '#classic') {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    }
+  }, [viewMode]);
+
+  // Handle external hash changes (e.g. browser back/forward)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleHashChange = () => {
+      if (
+        window.location.hash === '#classic' ||
+        window.location.pathname.endsWith('/classic')
+      ) {
+        setViewMode('classic');
+      } else {
+        setViewMode('modern');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Initialize Game State
   const [gameState, setGameState] = useState<GameState>(() =>
@@ -267,6 +319,10 @@ export const App: React.FC = () => {
       case 'view_discarded':
         setDiscardedTilesModalOpen(true);
         break;
+      case 'view_classic':
+        setViewMode('classic');
+        setLastAction('Switched to 1993 Windows 3.1 Classic View');
+        break;
       case 'help_rules':
       case 'help_about':
         setHelpModalOpen(true);
@@ -435,145 +491,225 @@ export const App: React.FC = () => {
     : [];
 
   return (
-    <div className="app-container">
-      {/* Top Menu Bar */}
-      <MenuBar
-        soundMuted={muted}
-        slowCpuTurns={slowCpuTurns}
-        hideChits={hideChits}
-        activePlayerIsAi={activePlayerIsAi}
-        activePlayerName={activePlayer?.name ?? 'Player 1'}
-        onAction={handleMenuAction}
-      />
-
-      {/* Live Company Stock Ticker */}
-      <CompanyTicker
-        companies={gameState.companies}
-        definitions={gameState.config.companies}
-        safeThreshold={gameState.config.safeThreshold}
-        totalShares={gameState.config.totalSharesPerCompany}
-        onSelectCompany={() => setCompanyStatsModalOpen(true)}
-      />
-
-      {/* Main Workspace Layout */}
-      <main className="game-main">
-        {/* Turn Status & Prompt Bar */}
-        <div
-          style={{
-            padding: '10px 16px',
-            backgroundColor: 'var(--bg-surface-elevated)',
-            border: '1px solid var(--border-accent)',
-            borderRadius: 'var(--radius-sm)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-            flexWrap: 'wrap',
+    <div className={`app-container ${viewMode === 'classic' ? 'classic-mode' : ''}`}>
+      {viewMode === 'classic' ? (
+        <ClassicGameView
+          gameState={gameState}
+          selectedHandCoord={selectedHandCoord}
+          hoveredHandCoord={hoveredHandCoord}
+          showHints={showBeginnerHints}
+          onToggleHints={setShowBeginnerHints}
+          onSelectHandCoord={setSelectedHandCoord}
+          onPlaceTile={handlePlaceTile}
+          onDiscardDeadTile={handleDiscardDeadTile}
+          onMenuAction={handleMenuAction}
+          onSwitchToModern={() => setViewMode('modern')}
+          onTogglePlayerAi={handleTogglePlayerAi}
+          onOpenStockMarket={() => setStockMarketModalOpen(true)}
+          onEndTurn={() => {
+            if (gameState.phase === 'buy_shares') {
+              dispatch({ type: 'END_TURN' });
+              playClick();
+              setLastAction('Ended turn and passed share purchases');
+            }
           }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span
+        />
+      ) : (
+        <>
+          {/* Top Menu Bar & Switcher */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              backgroundColor: 'var(--bg-surface)',
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <MenuBar
+                soundMuted={muted}
+                slowCpuTurns={slowCpuTurns}
+                hideChits={hideChits}
+                activePlayerIsAi={activePlayerIsAi}
+                activePlayerName={activePlayer?.name ?? 'Player 1'}
+                onAction={handleMenuAction}
+                onViewClassic={() => setViewMode('classic')}
+              />
+            </div>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
               style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                backgroundColor: activePlayer?.color || 'var(--accent-gold)',
-                display: 'inline-block',
+                marginRight: '12px',
+                fontSize: '11px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                whiteSpace: 'nowrap',
+              }}
+              onClick={() => {
+                playClick();
+                setViewMode('classic');
+              }}
+              title="Switch to original 1993 Windows 3.1 pixelated view"
+            >
+              <span>🕹️ 1993 Classic View</span>
+            </button>
+          </div>
+
+          {/* Live Company Stock Ticker */}
+          <CompanyTicker
+            companies={gameState.companies}
+            definitions={gameState.config.companies}
+            safeThreshold={gameState.config.safeThreshold}
+            totalShares={gameState.config.totalSharesPerCompany}
+            onSelectCompany={() => setCompanyStatsModalOpen(true)}
+          />
+
+          {/* Main Workspace Layout */}
+          <main className="game-main">
+            {/* Interactive Turn Guidance Bar */}
+            <TurnGuidanceBar
+              phase={gameState.phase}
+              activePlayerName={activePlayer?.name ?? 'Player 1'}
+              activePlayerColor={activePlayer?.color}
+              isAi={activePlayerIsAi}
+              selectedCoord={selectedHandCoord}
+              cash={activePlayer?.cash}
+              showHints={showBeginnerHints}
+              onToggleHints={setShowBeginnerHints}
+              onPlaceSelected={() => {
+                if (selectedHandCoord) handlePlaceTile(selectedHandCoord);
+              }}
+              onOpenStockMarket={() => setStockMarketModalOpen(true)}
+              onEndTurn={() => {
+                if (gameState.phase === 'buy_shares') {
+                  dispatch({ type: 'END_TURN' });
+                  playClick();
+                  setLastAction('Ended turn and passed share purchases');
+                }
               }}
             />
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {activePlayer?.name}'s Turn ({activePlayerIsAi ? 'CPU' : 'Human'})
-            </span>
-            <span
+
+            {/* Turn Status & Prompt Bar */}
+            <div
               style={{
-                fontSize: '11px',
-                padding: '2px 8px',
-                borderRadius: '10px',
-                background: 'rgba(245, 158, 11, 0.15)',
-                color: 'var(--text-amber)',
-                fontWeight: 600,
+                padding: '10px 16px',
+                backgroundColor: 'var(--bg-surface-elevated)',
+                border: '1px solid var(--border-accent)',
+                borderRadius: 'var(--radius-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                flexWrap: 'wrap',
               }}
             >
-              Phase: {gameState.phase.replace(/_/g, ' ').toUpperCase()}
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {gameState.phase === 'buy_shares' && !activePlayerIsAi && (
-              <>
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm"
-                  onClick={() => setStockMarketModalOpen(true)}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span
+                  style={{
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    backgroundColor: activePlayer?.color || 'var(--accent-gold)',
+                    display: 'inline-block',
+                  }}
+                />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {activePlayer?.name}'s Turn ({activePlayerIsAi ? 'CPU' : 'Human'})
+                </span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    padding: '2px 8px',
+                    borderRadius: '10px',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    color: 'var(--text-amber)',
+                    fontWeight: 600,
+                  }}
                 >
-                  <ShoppingBag size={13} style={{ marginRight: '5px' }} />
-                  Buy Shares (Alt+B)
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => dispatch({ type: 'END_TURN' })}
-                >
-                  End Turn / Pass (Alt+E)
-                </button>
-              </>
-            )}
+                  Phase: {gameState.phase.replace(/_/g, ' ').toUpperCase()}
+                </span>
+              </div>
 
-            {lastAction && (
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                {lastAction}
-              </span>
-            )}
-          </div>
-        </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {gameState.phase === 'buy_shares' && !activePlayerIsAi && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => setStockMarketModalOpen(true)}
+                    >
+                      <ShoppingBag size={13} style={{ marginRight: '5px' }} />
+                      Buy Shares (Alt+B)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => dispatch({ type: 'END_TURN' })}
+                    >
+                      End Turn / Pass (Alt+E)
+                    </button>
+                  </>
+                )}
 
-        {/* Board & Hand Tray Layout */}
-        <div className="game-workspace-layout">
-          <div className="game-main-content">
-            <GameBoard
-              board={gameState.board}
-              companies={gameState.companies}
-              definitions={gameState.config.companies}
-              safeThreshold={gameState.config.safeThreshold}
-              selectedTileCoord={selectedHandCoord}
-              previewTileCoord={hoveredHandCoord}
-              playerHand={gameState.players[gameState.activePlayerIndex]?.hand}
-              onPlaceTile={handlePlaceTile}
-            />
+                {lastAction && (
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    {lastAction}
+                  </span>
+                )}
+              </div>
+            </div>
 
-            <PlayerHand
-              hand={gameState.players[gameState.activePlayerIndex]?.hand ?? []}
-              activePlayerName={gameState.players[gameState.activePlayerIndex]?.name}
-              activePlayerIndex={gameState.activePlayerIndex}
-              isCurrentTurn={!activePlayerIsAi}
-              turnPhase={gameState.phase}
-              isAi={activePlayerIsAi}
-              board={gameState.board}
-              companies={gameState.companies}
-              definitions={gameState.config.companies}
-              safeThreshold={gameState.config.safeThreshold}
-              selectedCoord={selectedHandCoord}
-              hoveredCoord={hoveredHandCoord}
-              hideChits={hideChits}
-              onSelectTile={setSelectedHandCoord}
-              onHoverTile={setHoveredHandCoord}
-              onPlaceTile={handlePlaceTile}
-              onDiscardDeadTile={handleDiscardDeadTile}
-              onToggleHideChits={setHideChits}
-            />
-          </div>
+            {/* Board & Hand Tray Layout */}
+            <div className="game-workspace-layout">
+              <div className="game-main-content">
+                <GameBoard
+                  board={gameState.board}
+                  companies={gameState.companies}
+                  definitions={gameState.config.companies}
+                  safeThreshold={gameState.config.safeThreshold}
+                  selectedTileCoord={selectedHandCoord}
+                  previewTileCoord={hoveredHandCoord}
+                  playerHand={gameState.players[gameState.activePlayerIndex]?.hand}
+                  onPlaceTile={handlePlaceTile}
+                />
 
-          <aside className="game-sidebar-content">
-            <PlayerScoreboard
-              players={gameState.players}
-              activePlayerIndex={gameState.activePlayerIndex}
-              companies={gameState.companies}
-              definitions={gameState.config.companies}
-              onTogglePlayerAi={handleTogglePlayerAi}
-            />
-          </aside>
-        </div>
-      </main>
+                <PlayerHand
+                  hand={gameState.players[gameState.activePlayerIndex]?.hand ?? []}
+                  activePlayerName={gameState.players[gameState.activePlayerIndex]?.name}
+                  activePlayerIndex={gameState.activePlayerIndex}
+                  isCurrentTurn={!activePlayerIsAi}
+                  turnPhase={gameState.phase}
+                  isAi={activePlayerIsAi}
+                  board={gameState.board}
+                  companies={gameState.companies}
+                  definitions={gameState.config.companies}
+                  safeThreshold={gameState.config.safeThreshold}
+                  selectedCoord={selectedHandCoord}
+                  hoveredCoord={hoveredHandCoord}
+                  hideChits={hideChits}
+                  onSelectTile={setSelectedHandCoord}
+                  onHoverTile={setHoveredHandCoord}
+                  onPlaceTile={handlePlaceTile}
+                  onDiscardDeadTile={handleDiscardDeadTile}
+                  onToggleHideChits={setHideChits}
+                />
+              </div>
+
+              <aside className="game-sidebar-content">
+                <PlayerScoreboard
+                  players={gameState.players}
+                  activePlayerIndex={gameState.activePlayerIndex}
+                  companies={gameState.companies}
+                  definitions={gameState.config.companies}
+                  onTogglePlayerAi={handleTogglePlayerAi}
+                />
+              </aside>
+            </div>
+          </main>
+        </>
+      )}
 
       {/* =========================================================================
           MODALS & DIALOGS LAYER

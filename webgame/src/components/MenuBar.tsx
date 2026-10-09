@@ -21,6 +21,7 @@ import {
   Check,
   BookOpen,
   Info,
+  Monitor,
 } from 'lucide-react';
 import { playClick } from '../assets/audio';
 
@@ -41,6 +42,7 @@ export type MenuActionId =
   | 'view_companies'
   | 'view_warroom'
   | 'view_discarded'
+  | 'view_classic'
   | 'open_options'
   | 'toggle_player_ai'
   | 'toggle_slow_cpu'
@@ -64,6 +66,7 @@ export interface MenuBarProps {
   onViewCompanies?: () => void;
   onViewWarRoom?: () => void;
   onViewDiscarded?: () => void;
+  onViewClassic?: () => void;
   onOpenOptions?: () => void;
   onTogglePlayerAi?: () => void;
   onToggleSlowCpu?: () => void;
@@ -268,6 +271,7 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
     onViewCompanies,
     onViewWarRoom,
     onViewDiscarded,
+    onViewClassic,
     onOpenOptions,
     onTogglePlayerAi,
     onToggleSlowCpu,
@@ -607,6 +611,20 @@ export const MenuBar: React.FC<MenuBarProps> = (props) => {
                 <span className="menu-item-left">
                   <Archive size={14} className="menu-icon" />
                   <span>Discarded Pieces</span>
+                </span>
+              </button>
+
+              <div className="menu-dropdown-divider" role="separator" />
+
+              <button
+                type="button"
+                className="menu-dropdown-item"
+                role="menuitem"
+                onClick={() => executeAction('view_classic', onViewClassic)}
+              >
+                <span className="menu-item-left">
+                  <Monitor size={14} className="menu-icon" />
+                  <span>1993 Classic Edition View</span>
                 </span>
               </button>
             </div>

@@ -30,6 +30,14 @@ describe('App Integration', () => {
     expect(html).toContain('10 × 12 Grid');
     expect(html).toContain('role="grid"');
 
+    // Turn Guidance Bar with Beginner Hints
+    expect(html).toContain('Turn Guidance &amp; Onboarding');
+    expect(html).toContain('STEP 1 OF 3: SELECT CHIT');
+    expect(html).toContain('Hints: ON');
+
+    // 1993 Classic switcher button
+    expect(html).toContain('1993 Classic View');
+
     // PlayerHand Tray
     expect(html).toContain('data-testid="player-hand-tray"');
     expect(html).toContain('Place Chit');
@@ -42,5 +50,30 @@ describe('App Integration', () => {
     expect(html).toContain('2 Players');
     expect(html).toContain('Change to CPU');
     expect(html).toContain('Change to Human');
+  });
+
+  it('renders 1993 Windows 3.1 Classic View when hash is #classic', () => {
+    // Simulate window.location.hash = '#classic'
+    const origLocation = window.location;
+    // @ts-expect-error Mocking location for test
+    delete window.location;
+    window.location = {
+      ...origLocation,
+      hash: '#classic',
+      pathname: '/',
+      search: '',
+    } as any;
+
+    try {
+      const html = renderToStaticMarkup(<App />);
+      expect(html).toContain('win31-root');
+      expect(html).toContain('Oil Baron (1993 Windows 3.1 Classic Edition)');
+      expect(html).toContain('Switch to Modern Studio UI');
+      expect(html).toContain('win31-window');
+      expect(html).toContain('win31-titlebar');
+      expect(html).toContain('data-testid="classic-board"');
+    } finally {
+      window.location = origLocation as any;
+    }
   });
 });
