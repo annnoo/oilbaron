@@ -170,14 +170,9 @@ export const ConcessionsDock: React.FC<ConcessionsDockProps> = ({
       {isSelectedDead ? (
         <button
           type="button"
-          className="drill-actuator"
+          className="drill-actuator discard"
           onClick={handleActuatorClick}
           aria-label={`Discard dead parcel ${selectedCoordLabel}`}
-          style={{
-            background: 'linear-gradient(180deg, #ef4444 0%, #b91c1c 100%)',
-            borderColor: '#f87171',
-            color: '#ffffff',
-          }}
         >
           <span className="actuator-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Trash2 size={16} /> DISCARD DEAD PARCEL

@@ -18,7 +18,7 @@ import type {
   ShareSale,
   TileCoord,
 } from './engine/types';
-import { formatCoord, classifyMove } from './engine/board';
+import { formatCoord, classifyMove, isTileDead } from './engine/board';
 import { gameReducer } from './engine/reducer';
 import { simulateAiTurn, getBestMergerDisposition } from './engine/ai';
 import { calculateNetWorth } from './engine/market';
@@ -72,6 +72,7 @@ export interface AppKeyDownOptions {
   setWarRoomModalOpen: (open: boolean) => void;
   onPlaceTile?: (coord: TileCoord) => void;
   onDiscardDeadTile?: (coord: TileCoord) => void;
+  isSelectedDead?: boolean;
   dispatch: (action: GameAction) => void;
   playClick?: () => void;
   setLastAction?: (msg: string) => void;
@@ -139,8 +140,12 @@ export function handleAppKeyDown(
       return true;
     } else if (key === 'e') {
       e.preventDefault?.();
-      if (options.phase === 'place_tile' && options.selectedHandCoord && options.onPlaceTile) {
-        options.onPlaceTile(options.selectedHandCoord);
+      if (options.phase === 'place_tile' && options.selectedHandCoord) {
+        if (options.isSelectedDead && options.onDiscardDeadTile) {
+          options.onDiscardDeadTile(options.selectedHandCoord);
+        } else if (options.onPlaceTile) {
+          options.onPlaceTile(options.selectedHandCoord);
+        }
       } else if (options.phase === 'buy_shares') {
         options.dispatch({ type: 'END_TURN' });
         options.playClick?.();
@@ -166,11 +171,15 @@ export function handleAppKeyDown(
     }
   }
 
-  // Space shortcut to drill well when a parcel is armed
+  // Space shortcut to drill well (or discard dead parcel) when a parcel is armed
   if (e.key === ' ' || e.key === 'Spacebar') {
-    if (options.phase === 'place_tile' && options.selectedHandCoord && options.onPlaceTile) {
+    if (options.phase === 'place_tile' && options.selectedHandCoord) {
       e.preventDefault?.();
-      options.onPlaceTile(options.selectedHandCoord);
+      if (options.isSelectedDead && options.onDiscardDeadTile) {
+        options.onDiscardDeadTile(options.selectedHandCoord);
+      } else if (options.onPlaceTile) {
+        options.onPlaceTile(options.selectedHandCoord);
+      }
       return true;
     }
   }
@@ -463,12 +472,22 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
 
   // Global Keyboard Shortcuts
   useEffect(() => {
+    const isSelectedDead = selectedHandCoord
+      ? isTileDead(
+          gameState.board,
+          selectedHandCoord,
+          gameState.companies,
+          gameState.config.safeThreshold
+        )
+      : false;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       handleAppKeyDown(e, {
         viewMode,
         phase: gameState.phase,
         selectedHandCoord,
         ledgerDrawerOpen,
+        isSelectedDead,
         setLedgerDrawerOpen,
         setStockMarketModalOpen,
         setWealthChartModalOpen,
@@ -485,7 +504,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedHandCoord, gameState.phase, ledgerDrawerOpen, viewMode, dispatch]);
+  }, [selectedHandCoord, gameState.phase, gameState.board, gameState.companies, gameState.config.safeThreshold, ledgerDrawerOpen, viewMode, dispatch]);
 
   // Wildcard Blank Piece Handlers
   const handleOpenBlankModal = (blankCoord: TileCoord) => {
@@ -689,6 +708,13 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
         return {
           directivePhase: 'SURVEY & DRILL OPERATION',
           directiveText: 'Select an oil lease parcel from your concessions dock to drill.',
+        };
+      }
+
+      if (activeCoord.isBlank) {
+        return {
+          directivePhase: 'WILDCARD CONCESSION LEASE',
+          directiveText: 'Wildcard lease armed: Click to survey and select any open basin parcel.',
         };
       }
 
