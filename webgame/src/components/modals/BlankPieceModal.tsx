@@ -78,27 +78,33 @@ export const BlankPieceModal: React.FC<BlankPieceModalProps> = ({
   );
   const colNumbers = Array.from({ length: cols }, (_, idx) => idx + 1);
 
+  const parsedCoord = useMemo(() => parseCoordinate(inputVal, rows, cols), [inputVal, rows, cols]);
+  const isParseError = !parsedCoord;
+  const activeCoord = parsedCoord ?? selectedCoord;
+
   // Validate current coordinate
-  const cell = gameState.board[selectedCoord.row]?.[selectedCoord.col];
-  const isOccupied = !cell || cell.type !== 'empty';
-  const isDead = isTileDead(
-    gameState.board,
-    selectedCoord,
-    gameState.companies,
-    gameState.config.safeThreshold
-  );
+  const cell = parsedCoord ? gameState.board[parsedCoord.row]?.[parsedCoord.col] : null;
+  const isOccupied = parsedCoord ? (!cell || cell.type !== 'empty') : false;
+  const isDead = parsedCoord
+    ? isTileDead(
+        gameState.board,
+        parsedCoord,
+        gameState.companies,
+        gameState.config.safeThreshold
+      )
+    : false;
 
   let classification: MoveClassification | null = null;
-  if (!isOccupied) {
+  if (parsedCoord && !isOccupied) {
     classification = classifyMove(
       gameState.board,
-      selectedCoord,
+      parsedCoord,
       gameState.companies,
       gameState.config.safeThreshold
     );
   }
 
-  const isValid = !isOccupied && !isDead && classification?.type !== 'illegal_safe_merger';
+  const isValid = !isParseError && !isOccupied && !isDead && classification?.type !== 'illegal_safe_merger';
 
   const handleTextChange = (val: string) => {
     setInputVal(val);
@@ -109,23 +115,25 @@ export const BlankPieceModal: React.FC<BlankPieceModalProps> = ({
   };
 
   const handleRowChange = (rIdx: number) => {
-    const next: TileCoord = { row: rIdx, col: selectedCoord.col };
+    const nextCol = parsedCoord ? parsedCoord.col : selectedCoord.col;
+    const next: TileCoord = { row: rIdx, col: nextCol };
     setSelectedCoord(next);
     const rLabel = ROW_LABELS[next.row] ?? String.fromCharCode(65 + next.row);
     setInputVal(`${rLabel}${next.col + 1}`);
   };
 
   const handleColChange = (cNum: number) => {
-    const next: TileCoord = { row: selectedCoord.row, col: cNum - 1 };
+    const nextRow = parsedCoord ? parsedCoord.row : selectedCoord.row;
+    const next: TileCoord = { row: nextRow, col: cNum - 1 };
     setSelectedCoord(next);
     const rLabel = ROW_LABELS[next.row] ?? String.fromCharCode(65 + next.row);
     setInputVal(`${rLabel}${next.col + 1}`);
   };
 
   const handleConfirm = () => {
-    if (!isValid) return;
+    if (!isValid || !parsedCoord) return;
     playClick();
-    onConfirmPlacement(blankTileCoord, selectedCoord);
+    onConfirmPlacement(blankTileCoord, parsedCoord);
   };
 
   return (
@@ -274,16 +282,23 @@ export const BlankPieceModal: React.FC<BlankPieceModalProps> = ({
             style={{
               padding: '10px',
               borderRadius: '4px',
-              backgroundColor: isDead || isOccupied ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-secondary)',
-              border: isDead || isOccupied ? '1px solid #ef4444' : '1px solid var(--border-color)',
+              backgroundColor: isParseError || isDead || isOccupied ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-secondary)',
+              border: isParseError || isDead || isOccupied ? '1px solid #ef4444' : '1px solid var(--border-color)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {isOccupied ? (
+              {isParseError ? (
                 <>
                   <AlertCircle size={16} color="#ef4444" />
                   <span style={{ fontSize: '12px', color: '#ef4444', fontWeight: 600 }}>
-                    Cell {formatCoord(selectedCoord)} is already occupied
+                    Invalid coordinate format (e.g. A1 – L12)
+                  </span>
+                </>
+              ) : isOccupied ? (
+                <>
+                  <AlertCircle size={16} color="#ef4444" />
+                  <span style={{ fontSize: '12px', color: '#ef4444', fontWeight: 600 }}>
+                    Cell {parsedCoord ? formatCoord(parsedCoord) : ''} is already occupied
                   </span>
                 </>
               ) : isDead ? (
@@ -297,7 +312,7 @@ export const BlankPieceModal: React.FC<BlankPieceModalProps> = ({
                 <>
                   <CheckCircle size={16} color="var(--accent-green, #22c55e)" />
                   <span style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 600 }}>
-                    Target: {formatCoord(selectedCoord)} —{' '}
+                    Target: {parsedCoord ? formatCoord(parsedCoord) : ''} —{' '}
                     {classification?.type === 'isolated'
                       ? 'Wildcat Chit (Unincorporated)'
                       : classification?.type === 'founding'

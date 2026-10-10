@@ -361,7 +361,10 @@ export function coordEquals(
   b: TileCoord | null | undefined
 ): boolean {
   if (!a || !b) return false;
-  if (a.isBlank || b.isBlank) return Boolean(a.isBlank && b.isBlank);
+  if (a.isBlank || b.isBlank) {
+    if (!a.isBlank || !b.isBlank) return false;
+    return a.row === b.row && a.col === b.col;
+  }
   return a.row === b.row && a.col === b.col;
 }
 

@@ -135,7 +135,7 @@ export function createInitialGameState(
   if (config.allowBlanks) {
     const blankCount = 4;
     for (let i = 0; i < blankCount; i++) {
-      allTiles.push({ row: -1, col: -1, isBlank: true });
+      allTiles.push({ row: -1, col: -1 - i, isBlank: true });
     }
   }
 

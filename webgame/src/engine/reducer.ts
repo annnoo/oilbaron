@@ -1,6 +1,7 @@
 import {
   applyTilePlacement,
   classifyMove,
+  coordEquals,
   isTileDead,
 } from './board';
 import {
@@ -564,7 +565,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       const activePlayer = state.players[state.activePlayerIndex]!;
       const inHandIndex = activePlayer.hand.findIndex(
-        (t) => Boolean(t.isBlank) || Boolean(blankTileCoord?.isBlank && t.isBlank) || (t.row === blankTileCoord.row && t.col === blankTileCoord.col)
+        (t) => Boolean(t.isBlank) && (blankTileCoord ? coordEquals(t, blankTileCoord) : true)
       );
       if (inHandIndex === -1) {
         throw new Error(`Blank tile is not in active player's hand`);
