@@ -1,14 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Flame,
-  TrendingUp,
-  Sparkles,
-  ShoppingBag,
-  ArrowRight,
-  ShieldAlert,
-  Info,
-} from 'lucide-react';
-import {
   soundEffects,
   playClick,
   playFoundCompany,
@@ -33,12 +24,14 @@ import { simulateAiTurn, getBestMergerDisposition } from './engine/ai';
 import { useTranslation } from './i18n';
 
 // Core UI Components
-import { MenuBar, type MenuActionId } from './components/MenuBar';
+import type { MenuActionId } from './components/MenuBar';
+import { GameHeader } from './components/GameHeader';
+import { TurnAdvisor } from './components/TurnAdvisor';
+import { ActionDock } from './components/ActionDock';
+import { LedgerDrawer } from './components/LedgerDrawer';
 import { CompanyTicker } from './components/CompanyTicker';
 import { GameBoard } from './components/GameBoard';
-import { PlayerHand } from './components/PlayerHand';
 import { PlayerScoreboard } from './components/PlayerScoreboard';
-import { TurnGuidanceBar } from './components/TurnGuidanceBar';
 import { ClassicGameView } from './components/classic/ClassicGameView';
 
 // Modal Dialogs
@@ -64,7 +57,7 @@ export interface AppProps {
 }
 
 export const App: React.FC<AppProps> = ({ initialViewMode }) => {
-  const { t, language } = useTranslation();
+  const { t, language, setLanguage } = useTranslation();
 
   // Config & Audio State
   const [config, setConfig] = useState<GameConfig>(DEFAULT_CONFIG);
@@ -89,6 +82,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
   const [saveLoadModalOpen, setSaveLoadModalOpen] = useState<boolean>(false);
   const [saveLoadModalMode, setSaveLoadModalMode] = useState<'save' | 'load'>('save');
   const [helpModalOpen, setHelpModalOpen] = useState<boolean>(false);
+  const [ledgerDrawerOpen, setLedgerDrawerOpen] = useState<boolean>(false);
   const [mergerStatsDismissed, setMergerStatsDismissed] = useState<boolean>(false);
   const [blankPieceModalOpen, setBlankPieceModalOpen] = useState<boolean>(false);
   const [activeBlankCoord, setActiveBlankCoord] = useState<TileCoord | null>(null);
@@ -357,9 +351,18 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
         return;
       }
 
+      if (e.key === 'Escape') {
+        if (ledgerDrawerOpen) {
+          setLedgerDrawerOpen(false);
+        }
+      }
+
       if (e.altKey) {
         const key = e.key.toLowerCase();
-        if (key === 'b') {
+        if (key === 'l') {
+          e.preventDefault();
+          setLedgerDrawerOpen((prev) => !prev);
+        } else if (key === 'b') {
           e.preventDefault();
           setStockMarketModalOpen(true);
         } else if (key === 'p') {
@@ -373,6 +376,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
           if (gameState.phase === 'buy_shares') {
             dispatch({ type: 'END_TURN' });
             playClick();
+            setLastAction('Ended turn and passed share purchases');
           }
         } else if (key === 'n') {
           e.preventDefault();
@@ -392,7 +396,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedHandCoord, gameState.phase, dispatch]);
+  }, [selectedHandCoord, gameState.phase, ledgerDrawerOpen, dispatch]);
 
   // Wildcard Blank Piece Handlers
   const handleOpenBlankModal = (blankCoord: TileCoord) => {
@@ -548,11 +552,6 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
       )
     : [];
 
-  // Total sold shares repurchase allowance this turn
-  const turnSoldAllowance = gameState.turnSoldShares
-    ? Object.values(gameState.turnSoldShares).reduce((acc, c) => acc + c, 0)
-    : 0;
-
   return (
     <div className={`app-container ${viewMode === 'classic' ? 'classic-mode' : ''}`}>
       {viewMode === 'classic' ? (
@@ -580,54 +579,21 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
         />
       ) : (
         <>
-          {/* Top Menu Bar & Switcher */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: 'var(--bg-surface)',
-            }}
-          >
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <MenuBar
-                soundMuted={muted}
-                slowCpuTurns={slowCpuTurns}
-                hideChits={hideChits}
-                activePlayerIsAi={activePlayerIsAi}
-                activePlayerName={activePlayer?.name ?? 'Player 1'}
-                onAction={handleMenuAction}
-                onSaveGame={() => {
-                  setSaveLoadModalMode('save');
-                  setSaveLoadModalOpen(true);
-                }}
-                onLoadGame={() => {
-                  setSaveLoadModalMode('load');
-                  setSaveLoadModalOpen(true);
-                }}
-                onViewClassic={() => setViewMode('classic')}
-              />
-            </div>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              style={{
-                marginRight: '12px',
-                fontSize: '11px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                whiteSpace: 'nowrap',
-              }}
-              onClick={() => {
-                playClick();
-                setViewMode('classic');
-              }}
-              title="Switch to original 1993 Windows 3.1 pixelated view"
-            >
-              <span>🕹️ 1993 Classic View</span>
-            </button>
-          </div>
+          {/* Modern Strategy Game Header */}
+          <GameHeader
+            activePlayerName={activePlayer?.name ?? 'Player 1'}
+            activePlayerColor={activePlayer?.color}
+            isAi={activePlayerIsAi}
+            turnPhase={gameState.phase}
+            soundMuted={muted}
+            language={language as 'en' | 'de'}
+            onToggleSound={handleToggleMute}
+            onToggleLanguage={() => setLanguage(language === 'en' ? 'de' : 'en')}
+            onToggleLedger={() => setLedgerDrawerOpen((prev) => !prev)}
+            onOpenRules={() => setHelpModalOpen(true)}
+            onOpenNewGame={() => setNewGameModalOpen(true)}
+            onSwitchClassic={() => setViewMode('classic')}
+          />
 
           {/* Live Company Stock Ticker */}
           <CompanyTicker
@@ -646,105 +612,20 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
 
           {/* Main Workspace Layout */}
           <main className="game-main">
-            {/* Interactive Turn Guidance Bar */}
-            <TurnGuidanceBar
-              phase={gameState.phase}
-              activePlayerName={activePlayer?.name ?? 'Player 1'}
-              activePlayerColor={activePlayer?.color}
-              isAi={activePlayerIsAi}
-              selectedCoord={selectedHandCoord}
-              cash={activePlayer?.cash}
-              showHints={showBeginnerHints}
-              repurchaseAllowance={turnSoldAllowance}
-              lastDividendPayout={gameState.lastDividendPayout}
-              onToggleHints={setShowBeginnerHints}
-              onPlaceSelected={() => {
-                if (selectedHandCoord) handlePlaceTile(selectedHandCoord);
-              }}
-              onOpenStockMarket={() => setStockMarketModalOpen(true)}
-              onEndTurn={() => {
-                if (gameState.phase === 'buy_shares') {
-                  dispatch({ type: 'END_TURN' });
-                  playClick();
-                  setLastAction('Ended turn and passed share purchases');
-                }
-              }}
-            />
-            {/* Turn Status & Prompt Bar */}
-            <div
-              style={{
-                padding: '10px 16px',
-                backgroundColor: 'var(--bg-surface-elevated)',
-                border: '1px solid var(--border-accent)',
-                borderRadius: 'var(--radius-sm)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-                flexWrap: 'wrap',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span
-                  style={{
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                    backgroundColor: activePlayer?.color || 'var(--accent-gold)',
-                    display: 'inline-block',
-                  }}
-                />
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  {language === 'de'
-                    ? `${activePlayer?.name} ist am Zug (${activePlayerIsAi ? 'CPU' : 'Mensch'})`
-                    : `${activePlayer?.name}'s Turn (${activePlayerIsAi ? 'CPU' : 'Human'})`}
-                </span>
-                <span
-                  style={{
-                    fontSize: '11px',
-                    padding: '2px 8px',
-                    borderRadius: '10px',
-                    background: 'rgba(245, 158, 11, 0.15)',
-                    color: 'var(--text-amber)',
-                    fontWeight: 600,
-                  }}
-                >
-                  {t('app.phaseLabel', { phase: gameState.phase.replace(/_/g, ' ').toUpperCase() })}
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {gameState.phase === 'buy_shares' && !activePlayerIsAi && (
-                  <>
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm"
-                      onClick={() => setStockMarketModalOpen(true)}
-                    >
-                      <ShoppingBag size={13} style={{ marginRight: '5px' }} />
-                      {t('app.buySharesBtn')}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => dispatch({ type: 'END_TURN' })}
-                    >
-                      {t('app.endTurnBtn')}
-                    </button>
-                  </>
-                )}
-
-                {lastAction && (
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    {lastAction}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Board & Hand Tray Layout */}
             <div className="game-workspace-layout">
               <div className="game-main-content">
+                <TurnAdvisor
+                  phase={gameState.phase}
+                  isAi={activePlayerIsAi}
+                  activePlayerName={activePlayer?.name ?? 'Player 1'}
+                  selectedCoord={selectedHandCoord}
+                  hoveredCoord={hoveredHandCoord}
+                  board={gameState.board}
+                  companies={gameState.companies}
+                  definitions={gameState.config.companies}
+                  safeThreshold={gameState.config.safeThreshold}
+                />
+
                 <GameBoard
                   board={gameState.board}
                   companies={gameState.companies}
@@ -756,26 +637,31 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
                   onPlaceTile={handlePlaceTile}
                 />
 
-                <PlayerHand
-                  hand={gameState.players[gameState.activePlayerIndex]?.hand ?? []}
-                  activePlayerName={gameState.players[gameState.activePlayerIndex]?.name}
-                  activePlayerIndex={gameState.activePlayerIndex}
+                <ActionDock
+                  phase={gameState.phase}
                   isCurrentTurn={!activePlayerIsAi}
-                  turnPhase={gameState.phase}
-                  isAi={activePlayerIsAi}
+                  hand={gameState.players[gameState.activePlayerIndex]?.hand ?? []}
+                  selectedCoord={selectedHandCoord}
+                  hoveredCoord={hoveredHandCoord}
+                  activePlayerCash={activePlayer?.cash ?? 0}
+                  activePlayerName={activePlayer?.name}
                   board={gameState.board}
                   companies={gameState.companies}
                   definitions={gameState.config.companies}
                   safeThreshold={gameState.config.safeThreshold}
-                  selectedCoord={selectedHandCoord}
-                  hoveredCoord={hoveredHandCoord}
                   hideChits={hideChits}
                   onSelectTile={setSelectedHandCoord}
                   onHoverTile={setHoveredHandCoord}
                   onPlaceTile={handlePlaceTile}
                   onDiscardDeadTile={handleDiscardDeadTile}
-                  onPlayBlankTile={handleOpenBlankModal}
-                  onToggleHideChits={setHideChits}
+                  onConfirmPurchases={handleConfirmPurchases}
+                  onPassTurn={() => {
+                    if (gameState.phase === 'buy_shares') {
+                      dispatch({ type: 'END_TURN' });
+                      playClick();
+                      setLastAction('Ended turn and passed share purchases');
+                    }
+                  }}
                 />
               </div>
 
@@ -790,6 +676,12 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
               </aside>
             </div>
           </main>
+
+          <LedgerDrawer
+            isOpen={ledgerDrawerOpen}
+            onClose={() => setLedgerDrawerOpen(false)}
+            gameState={gameState}
+          />
         </>
       )}
 
