@@ -1,9 +1,10 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { LedgerDrawer } from '../LedgerDrawer';
 import { DEFAULT_CONFIG, createInitialGameState } from '../../engine/config';
 import * as audioModule from '../../assets/audio';
+import { setLanguage } from '../../i18n';
 
 // Register toBeInTheDocument matcher for vitest Chai
 expect.extend({
@@ -198,6 +199,10 @@ describe('LedgerDrawer', () => {
     vi.restoreAllMocks();
   });
 
+  afterEach(() => {
+    setLanguage('en');
+  });
+
   const gameState = createInitialGameState(DEFAULT_CONFIG, [
     { name: 'Player 1', isAi: false },
     { name: 'Player 2', isAi: true },
@@ -324,5 +329,47 @@ describe('LedgerDrawer', () => {
     const sharesTabBtn = screen.getByRole('button', { name: /shares/i });
     fireEvent.click(sharesTabBtn);
     expect(screen.getByText('5')).toBeInTheDocument();
+  });
+
+  it('renders German localized labels in wealth and companies tabs when language is de', () => {
+    setLanguage('de');
+    const customState = {
+      ...gameState,
+      companies: {
+        ...gameState.companies,
+        imperial: {
+          ...gameState.companies['imperial']!,
+          isActive: true,
+          isSafe: true,
+          size: 12,
+          availableShares: 20,
+        },
+      },
+      players: [
+        {
+          ...gameState.players[0]!,
+          cash: 4000,
+          shares: { imperial: 5 },
+        },
+        gameState.players[1]!,
+      ],
+    };
+
+    render(<LedgerDrawer isOpen={true} onClose={vi.fn()} gameState={customState} />);
+
+    // In wealth tab:
+    expect(screen.getByText(/Hauptbuch & Strategische Analysen/i)).toBeInTheDocument();
+    expect(screen.getByText(/Nettovermögen & Liquidität/i)).toBeInTheDocument();
+    expect(screen.getByText(/Bargeld: \$4[,.]000/i)).toBeInTheDocument();
+    expect(screen.getByText(/Aktien: \$6[,.]500/i)).toBeInTheDocument();
+
+    // In companies tab:
+    const companiesTabBtn = screen.getByRole('button', { name: /konzerne|companies/i });
+    fireEvent.click(companiesTabBtn);
+    expect(screen.getByText(/Konzernübersicht/i)).toBeInTheDocument();
+    expect(screen.getByText(/🛡️ Sicher/i)).toBeInTheDocument();
+    expect(screen.getByText(/Bohrungen: 12/i)).toBeInTheDocument();
+    expect(screen.getByText(/Kurs: \$1[,.]?300/i)).toBeInTheDocument();
+    expect(screen.getByText(/Bankaktien: 20/i)).toBeInTheDocument();
   });
 });

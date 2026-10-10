@@ -90,19 +90,19 @@ export const LedgerDrawer: React.FC<LedgerDrawerProps> = ({ isOpen, onClose, gam
                         <div
                           className="bar-cash"
                           style={{ width: `${Math.min(100, (p.cash / (netWorth || 1)) * 100)}%` }}
-                          title={`Cash: $${p.cash}`}
+                          title={t('drawer.cash', { amount: p.cash.toLocaleString() })}
                         />
                         <div
                           className="bar-stocks"
                           style={{
                             width: `${Math.min(100, (stockVal / (netWorth || 1)) * 100)}%`,
                           }}
-                          title={`Stock: $${stockVal}`}
+                          title={t('drawer.stocks', { amount: stockVal.toLocaleString() })}
                         />
                       </div>
                       <div className="wealth-breakdown">
-                        <span>Cash: ${p.cash.toLocaleString()}</span>
-                        <span>Stocks: ${stockVal.toLocaleString()}</span>
+                        <span>{t('drawer.cash', { amount: p.cash.toLocaleString() })}</span>
+                        <span>{t('drawer.stocks', { amount: stockVal.toLocaleString() })}</span>
                       </div>
                     </div>
                   );
@@ -164,10 +164,22 @@ export const LedgerDrawer: React.FC<LedgerDrawerProps> = ({ isOpen, onClose, gam
                     >
                       <div className="stat-name">{def.name}</div>
                       <div className="stat-details">
-                        <span>Status: {active ? (cState?.isSafe ? t('drawer.safe') : t('drawer.active')) : t('drawer.dormant')}</span>
-                        <span>Wells: {cState?.size ?? 0}</span>
-                        <span>Price: ${price}</span>
-                        <span>Bank Shares: {cState?.availableShares ?? config.totalSharesPerCompany}</span>
+                        <span>
+                          {t('drawer.status', {
+                            status: active
+                              ? cState?.isSafe
+                                ? t('drawer.safe')
+                                : t('drawer.active')
+                              : t('drawer.dormant'),
+                          })}
+                        </span>
+                        <span>{t('drawer.wells', { count: cState?.size ?? 0 })}</span>
+                        <span>{t('drawer.price', { price: price.toLocaleString() })}</span>
+                        <span>
+                          {t('drawer.bankShares', {
+                            count: cState?.availableShares ?? config.totalSharesPerCompany,
+                          })}
+                        </span>
                       </div>
                     </div>
                   );

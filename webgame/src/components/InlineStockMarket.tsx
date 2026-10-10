@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Minus, Check, ShoppingBag } from 'lucide-react';
 import type { CompanyDefinition, CompanyId, CompanyState, SharePurchase } from '../engine/types';
 import { calculateSharePrice } from '../engine/market';
@@ -84,6 +84,39 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
       onPass();
     }
   };
+
+  const handleFinishRef = useRef(handleFinish);
+  handleFinishRef.current = handleFinish;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts inside text inputs
+      if (
+        e.target &&
+        typeof e.target === 'object' &&
+        'tagName' in e.target
+      ) {
+        const tagName = (e.target as { tagName?: string }).tagName?.toLowerCase();
+        if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+          return;
+        }
+      }
+
+      if (e.altKey && (e.key?.toLowerCase() === 'e' || e.code === 'KeyE')) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation?.();
+        handleFinishRef.current();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, []);
 
   return (
     <div className="inline-stock-shelf">

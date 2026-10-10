@@ -56,6 +56,114 @@ export interface AppProps {
   initialViewMode?: 'modern' | 'classic';
 }
 
+export interface AppKeyDownOptions {
+  viewMode: 'modern' | 'classic';
+  phase: string;
+  selectedHandCoord?: TileCoord | null;
+  ledgerDrawerOpen: boolean;
+  setLedgerDrawerOpen: (value: boolean | ((prev: boolean) => boolean)) => void;
+  setStockMarketModalOpen: (open: boolean) => void;
+  setWealthChartModalOpen: (open: boolean) => void;
+  setShareGraphModalOpen: (open: boolean) => void;
+  setCompanyStatsModalOpen: (open: boolean) => void;
+  setWarRoomModalOpen: (open: boolean) => void;
+  onPlaceTile?: (coord: TileCoord) => void;
+  onDiscardDeadTile?: (coord: TileCoord) => void;
+  dispatch: (action: GameAction) => void;
+  playClick?: () => void;
+  setLastAction?: (msg: string) => void;
+}
+
+export function handleAppKeyDown(
+  e: KeyboardEvent | { key: string; altKey?: boolean; preventDefault?: () => void; target?: any },
+  options: AppKeyDownOptions
+): boolean {
+  // Don't trigger shortcuts inside text inputs
+  if (
+    (typeof HTMLInputElement !== 'undefined' && e.target instanceof HTMLInputElement) ||
+    (typeof HTMLTextAreaElement !== 'undefined' && e.target instanceof HTMLTextAreaElement) ||
+    (typeof HTMLSelectElement !== 'undefined' && e.target instanceof HTMLSelectElement)
+  ) {
+    return false;
+  }
+  if (e.target && typeof e.target === 'object' && 'tagName' in e.target) {
+    const tagName = (e.target as { tagName?: string }).tagName?.toLowerCase();
+    if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
+      return false;
+    }
+  }
+
+  if (e.key === 'Escape') {
+    if (options.ledgerDrawerOpen) {
+      options.setLedgerDrawerOpen(false);
+      return true;
+    }
+  }
+
+  if (e.altKey) {
+    const key = e.key.toLowerCase();
+    if (key === 'l') {
+      e.preventDefault?.();
+      options.setLedgerDrawerOpen((prev: any) => !prev);
+      return true;
+    } else if (key === 'b') {
+      e.preventDefault?.();
+      if (options.viewMode === 'classic') {
+        options.setStockMarketModalOpen(true);
+      } else if (options.phase === 'buy_shares') {
+        if (typeof document !== 'undefined') {
+          const dockEl =
+            document.querySelector('.unified-action-dock') ||
+            document.querySelector('.inline-stock-shelf');
+          if (dockEl) {
+            dockEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            (dockEl as HTMLElement).focus?.();
+          }
+        }
+      }
+      return true;
+    } else if (key === 'p') {
+      e.preventDefault?.();
+      if (options.selectedHandCoord && options.onPlaceTile) {
+        options.onPlaceTile(options.selectedHandCoord);
+      }
+      return true;
+    } else if (key === 'd') {
+      e.preventDefault?.();
+      if (options.selectedHandCoord && options.onDiscardDeadTile) {
+        options.onDiscardDeadTile(options.selectedHandCoord);
+      }
+      return true;
+    } else if (key === 'e') {
+      e.preventDefault?.();
+      if (options.phase === 'buy_shares') {
+        options.dispatch({ type: 'END_TURN' });
+        options.playClick?.();
+        options.setLastAction?.('Ended turn and passed share purchases');
+      }
+      return true;
+    } else if (key === 'n') {
+      e.preventDefault?.();
+      options.setWealthChartModalOpen(true);
+      return true;
+    } else if (key === 's') {
+      e.preventDefault?.();
+      options.setShareGraphModalOpen(true);
+      return true;
+    } else if (key === 'c') {
+      e.preventDefault?.();
+      options.setCompanyStatsModalOpen(true);
+      return true;
+    } else if (key === 'w') {
+      e.preventDefault?.();
+      options.setWarRoomModalOpen(true);
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export const App: React.FC<AppProps> = ({ initialViewMode }) => {
   const { t, language, setLanguage } = useTranslation();
 
@@ -342,61 +450,28 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts inside text inputs
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement
-      ) {
-        return;
-      }
-
-      if (e.key === 'Escape') {
-        if (ledgerDrawerOpen) {
-          setLedgerDrawerOpen(false);
-        }
-      }
-
-      if (e.altKey) {
-        const key = e.key.toLowerCase();
-        if (key === 'l') {
-          e.preventDefault();
-          setLedgerDrawerOpen((prev) => !prev);
-        } else if (key === 'b') {
-          e.preventDefault();
-          setStockMarketModalOpen(true);
-        } else if (key === 'p') {
-          e.preventDefault();
-          if (selectedHandCoord) handlePlaceTile(selectedHandCoord);
-        } else if (key === 'd') {
-          e.preventDefault();
-          if (selectedHandCoord) handleDiscardDeadTile(selectedHandCoord);
-        } else if (key === 'e') {
-          e.preventDefault();
-          if (gameState.phase === 'buy_shares') {
-            dispatch({ type: 'END_TURN' });
-            playClick();
-            setLastAction('Ended turn and passed share purchases');
-          }
-        } else if (key === 'n') {
-          e.preventDefault();
-          setWealthChartModalOpen(true);
-        } else if (key === 's') {
-          e.preventDefault();
-          setShareGraphModalOpen(true);
-        } else if (key === 'c') {
-          e.preventDefault();
-          setCompanyStatsModalOpen(true);
-        } else if (key === 'w') {
-          e.preventDefault();
-          setWarRoomModalOpen(true);
-        }
-      }
+      handleAppKeyDown(e, {
+        viewMode,
+        phase: gameState.phase,
+        selectedHandCoord,
+        ledgerDrawerOpen,
+        setLedgerDrawerOpen,
+        setStockMarketModalOpen,
+        setWealthChartModalOpen,
+        setShareGraphModalOpen,
+        setCompanyStatsModalOpen,
+        setWarRoomModalOpen,
+        onPlaceTile: handlePlaceTile,
+        onDiscardDeadTile: handleDiscardDeadTile,
+        dispatch,
+        playClick,
+        setLastAction,
+      });
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedHandCoord, gameState.phase, ledgerDrawerOpen, dispatch]);
+  }, [selectedHandCoord, gameState.phase, ledgerDrawerOpen, viewMode, dispatch]);
 
   // Wildcard Blank Piece Handlers
   const handleOpenBlankModal = (blankCoord: TileCoord) => {

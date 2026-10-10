@@ -36,6 +36,34 @@ let hookIdx = 0;
 let currentTree: any = null;
 let currentHtml = '';
 let rootElement: React.ReactElement | null = null;
+let activeEffects: (() => void | (() => void))[] = [];
+let activeCleanups: (() => void)[] = [];
+
+const windowListeners: Record<string, { handler: (e: any) => void; useCapture?: boolean }[]> = {};
+
+if (typeof (globalThis as any).window === 'undefined') {
+  (globalThis as any).window = globalThis;
+}
+
+(globalThis as any).window.addEventListener = (
+  type: string,
+  handler: (e: any) => void,
+  options?: boolean | AddEventListenerOptions
+) => {
+  const useCapture = typeof options === 'boolean' ? options : options?.capture;
+  windowListeners[type] = windowListeners[type] || [];
+  windowListeners[type].push({ handler, useCapture });
+};
+
+(globalThis as any).window.removeEventListener = (
+  type: string,
+  handler: (e: any) => void,
+  options?: boolean | EventListenerOptions
+) => {
+  if (windowListeners[type]) {
+    windowListeners[type] = windowListeners[type].filter((l) => l.handler !== handler);
+  }
+};
 
 const testDispatcher = {
   useState: (initialValue: any) => {
@@ -51,6 +79,24 @@ const testDispatcher = {
     };
     return [hookStates[idx], setter];
   },
+  useRef: (initialValue: any) => {
+    const idx = hookIdx++;
+    if (hookStates[idx] === undefined) {
+      hookStates[idx] = { current: initialValue };
+    }
+    return hookStates[idx];
+  },
+  useEffect: (effect: () => void | (() => void), deps?: any[]) => {
+    const idx = hookIdx++;
+    const prevDeps = hookStates[idx];
+    const hasChanged = !prevDeps || !deps || deps.some((d, i) => d !== prevDeps[i]);
+    if (hasChanged) {
+      hookStates[idx] = deps;
+      activeEffects.push(effect);
+    }
+  },
+  useCallback: (fn: any) => fn,
+  useMemo: (fn: any) => fn(),
 };
 
 function evaluateTree(node: any, path: string = '0'): any {
@@ -107,17 +153,35 @@ function getNodeText(node: any): string {
 function triggerRender() {
   if (!rootElement) return;
   hookIdx = 0;
+  activeEffects = [];
   if (internals) internals.H = testDispatcher;
   currentTree = evaluateTree(rootElement);
   if (internals) internals.H = null;
   currentHtml = renderToStaticMarkup(currentTree);
+  for (const eff of activeEffects) {
+    const cleanup = eff();
+    if (typeof cleanup === 'function') {
+      activeCleanups.push(cleanup);
+    }
+  }
+}
+
+function unmount() {
+  for (const cleanup of activeCleanups) {
+    cleanup();
+  }
+  activeCleanups = [];
+  rootElement = null;
+  currentTree = null;
+  currentHtml = '';
 }
 
 function render(ui: React.ReactElement) {
+  unmount();
   hookStates = [];
   rootElement = ui;
   triggerRender();
-  return { html: currentHtml };
+  return { html: currentHtml, unmount };
 }
 
 const decodeHtml = (str: string) =>
@@ -178,11 +242,47 @@ const fireEvent = {
       target.props.onClick({ preventDefault: () => {} });
     }
   },
+  keyDown: (target: any, eventData: any) => {
+    let stoppedImmediate = false;
+    let stopped = false;
+    let defaultPrevented = false;
+
+    const event = {
+      key: '',
+      altKey: false,
+      preventDefault: vi.fn(() => {
+        defaultPrevented = true;
+      }),
+      stopPropagation: vi.fn(() => {
+        stopped = true;
+      }),
+      stopImmediatePropagation: vi.fn(() => {
+        stoppedImmediate = true;
+      }),
+      get defaultPrevented() {
+        return defaultPrevented;
+      },
+      ...eventData,
+    };
+
+    if (target === (globalThis as any).window || target === globalThis) {
+      const list = [...(windowListeners['keydown'] || [])];
+      for (const entry of list) {
+        if (stoppedImmediate) break;
+        entry.handler(event);
+      }
+    }
+    return event;
+  },
 };
 
 describe('InlineStockMarket', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    for (const key of Object.keys(windowListeners)) {
+      delete windowListeners[key];
+    }
+    unmount();
   });
 
   afterEach(() => {
@@ -458,5 +558,121 @@ describe('InlineStockMarket', () => {
 
     expect(playCashChimeSpy).toHaveBeenCalledTimes(1);
     expect(onConfirm).toHaveBeenCalledWith([{ companyId: 'american', count: 1 }]);
+  });
+
+  describe('Alt+E Keyboard Shortcut', () => {
+    it('executes handleFinish with purchased shares on Alt+E, preventing default and stopping propagation', () => {
+      const onConfirm = vi.fn();
+      const onPass = vi.fn();
+
+      render(
+        <InlineStockMarket
+          activePlayerCash={3000}
+          companies={activeCompanies}
+          definitions={CLASSIC_COMPANIES}
+          onConfirmPurchases={onConfirm}
+          onPass={onPass}
+        />
+      );
+
+      // Select 2 shares of American
+      const incBtn = screen.getByRole('button', { name: /increase american/i });
+      fireEvent.click(incBtn);
+      fireEvent.click(incBtn);
+
+      expect(screen.getByText(/2 \/ 3 shares/i)).toBeInTheDocument();
+
+      // Trigger Alt+E on window
+      const event = fireEvent.keyDown(window, {
+        key: 'e',
+        altKey: true,
+      });
+
+      expect(event.preventDefault).toHaveBeenCalledTimes(1);
+      expect(event.stopPropagation).toHaveBeenCalledTimes(1);
+      expect(event.stopImmediatePropagation).toHaveBeenCalledTimes(1);
+      expect(onConfirm).toHaveBeenCalledTimes(1);
+      expect(onConfirm).toHaveBeenCalledWith([{ companyId: 'american', count: 2 }]);
+      expect(onPass).not.toHaveBeenCalled();
+    });
+
+    it('executes onPass on Alt+E when 0 shares are selected', () => {
+      const onConfirm = vi.fn();
+      const onPass = vi.fn();
+
+      render(
+        <InlineStockMarket
+          activePlayerCash={3000}
+          companies={activeCompanies}
+          definitions={CLASSIC_COMPANIES}
+          onConfirmPurchases={onConfirm}
+          onPass={onPass}
+        />
+      );
+
+      // Trigger Alt+E with 0 shares selected
+      const event = fireEvent.keyDown(window, {
+        key: 'E',
+        altKey: true,
+      });
+
+      expect(event.preventDefault).toHaveBeenCalledTimes(1);
+      expect(event.stopPropagation).toHaveBeenCalledTimes(1);
+      expect(event.stopImmediatePropagation).toHaveBeenCalledTimes(1);
+      expect(onPass).toHaveBeenCalledTimes(1);
+      expect(onConfirm).not.toHaveBeenCalled();
+    });
+
+    it('ignores Alt+E when event target is an input element', () => {
+      const onConfirm = vi.fn();
+      const onPass = vi.fn();
+
+      render(
+        <InlineStockMarket
+          activePlayerCash={3000}
+          companies={activeCompanies}
+          definitions={CLASSIC_COMPANIES}
+          onConfirmPurchases={onConfirm}
+          onPass={onPass}
+        />
+      );
+
+      const fakeInput = { tagName: 'INPUT' };
+      const event = fireEvent.keyDown(window, {
+        key: 'e',
+        altKey: true,
+        target: fakeInput,
+      });
+
+      expect(event.preventDefault).not.toHaveBeenCalled();
+      expect(onConfirm).not.toHaveBeenCalled();
+      expect(onPass).not.toHaveBeenCalled();
+    });
+
+    it('removes window keydown listener on unmount', () => {
+      const onConfirm = vi.fn();
+      const onPass = vi.fn();
+
+      const { unmount } = render(
+        <InlineStockMarket
+          activePlayerCash={3000}
+          companies={activeCompanies}
+          definitions={CLASSIC_COMPANIES}
+          onConfirmPurchases={onConfirm}
+          onPass={onPass}
+        />
+      );
+
+      unmount();
+
+      const event = fireEvent.keyDown(window, {
+        key: 'e',
+        altKey: true,
+      });
+
+      expect(event.preventDefault).not.toHaveBeenCalled();
+      expect(onConfirm).not.toHaveBeenCalled();
+      expect(onPass).not.toHaveBeenCalled();
+    });
   });
 });

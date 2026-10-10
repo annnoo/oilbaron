@@ -380,6 +380,8 @@ describe('German UI Localization Integration', () => {
     );
     expect(ledgerHtml).toContain('Hauptbuch &amp; Strategische Analysen');
     expect(ledgerHtml).toContain('Nettovermögen &amp; Liquidität');
+    expect(ledgerHtml).toContain('Bargeld: $');
+    expect(ledgerHtml).toContain('Aktien: $');
 
     const shelfHtml = renderToStaticMarkup(
       <InlineStockMarket

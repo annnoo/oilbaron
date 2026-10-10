@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import App from '../App';
+import App, { handleAppKeyDown } from '../App';
 
 describe('App Integration', () => {
   it('renders modern App shell containing GameHeader, TurnAdvisor, CompanyTicker, Board, ActionDock, and Scoreboard', () => {
@@ -71,5 +71,116 @@ describe('App Integration', () => {
     // Retro menu and guidance inside classic window
     expect(html).toContain('role="menubar"');
     expect(html).toContain('STEP 1 OF 3: SELECT CHIT');
+  });
+
+  describe('handleAppKeyDown', () => {
+    it('opens StockMarketModal on Alt+B in classic mode', () => {
+      const setStockMarketModalOpen = vi.fn();
+      const preventDefault = vi.fn();
+
+      const handled = handleAppKeyDown(
+        { key: 'b', altKey: true, preventDefault },
+        {
+          viewMode: 'classic',
+          phase: 'place_tile',
+          ledgerDrawerOpen: false,
+          setLedgerDrawerOpen: vi.fn(),
+          setStockMarketModalOpen,
+          setWealthChartModalOpen: vi.fn(),
+          setShareGraphModalOpen: vi.fn(),
+          setCompanyStatsModalOpen: vi.fn(),
+          setWarRoomModalOpen: vi.fn(),
+          dispatch: vi.fn(),
+        }
+      );
+
+      expect(handled).toBe(true);
+      expect(preventDefault).toHaveBeenCalled();
+      expect(setStockMarketModalOpen).toHaveBeenCalledWith(true);
+    });
+
+    it('does NOT open StockMarketModal on Alt+B in modern mode', () => {
+      const setStockMarketModalOpen = vi.fn();
+      const preventDefault = vi.fn();
+
+      const handled = handleAppKeyDown(
+        { key: 'b', altKey: true, preventDefault },
+        {
+          viewMode: 'modern',
+          phase: 'place_tile',
+          ledgerDrawerOpen: false,
+          setLedgerDrawerOpen: vi.fn(),
+          setStockMarketModalOpen,
+          setWealthChartModalOpen: vi.fn(),
+          setShareGraphModalOpen: vi.fn(),
+          setCompanyStatsModalOpen: vi.fn(),
+          setWarRoomModalOpen: vi.fn(),
+          dispatch: vi.fn(),
+        }
+      );
+
+      expect(handled).toBe(true);
+      expect(preventDefault).toHaveBeenCalled();
+      expect(setStockMarketModalOpen).not.toHaveBeenCalled();
+    });
+
+    it('focuses/scrolls action dock on Alt+B in modern mode during buy_shares phase', () => {
+      const setStockMarketModalOpen = vi.fn();
+      const preventDefault = vi.fn();
+      const scrollIntoView = vi.fn();
+      const focus = vi.fn();
+
+      const mockDock = { scrollIntoView, focus };
+      (globalThis as any).document = {
+        querySelector: vi.fn((sel: string) => (sel.includes('dock') ? mockDock : null)),
+      };
+
+      const handled = handleAppKeyDown(
+        { key: 'b', altKey: true, preventDefault },
+        {
+          viewMode: 'modern',
+          phase: 'buy_shares',
+          ledgerDrawerOpen: false,
+          setLedgerDrawerOpen: vi.fn(),
+          setStockMarketModalOpen,
+          setWealthChartModalOpen: vi.fn(),
+          setShareGraphModalOpen: vi.fn(),
+          setCompanyStatsModalOpen: vi.fn(),
+          setWarRoomModalOpen: vi.fn(),
+          dispatch: vi.fn(),
+        }
+      );
+
+      expect(handled).toBe(true);
+      expect(preventDefault).toHaveBeenCalled();
+      expect(setStockMarketModalOpen).not.toHaveBeenCalled();
+      expect(scrollIntoView).toHaveBeenCalled();
+      expect(focus).toHaveBeenCalled();
+    });
+
+    it('ignores shortcuts when target is an input element', () => {
+      const setStockMarketModalOpen = vi.fn();
+      const preventDefault = vi.fn();
+
+      const handled = handleAppKeyDown(
+        { key: 'b', altKey: true, preventDefault, target: { tagName: 'INPUT' } },
+        {
+          viewMode: 'classic',
+          phase: 'place_tile',
+          ledgerDrawerOpen: false,
+          setLedgerDrawerOpen: vi.fn(),
+          setStockMarketModalOpen,
+          setWealthChartModalOpen: vi.fn(),
+          setShareGraphModalOpen: vi.fn(),
+          setCompanyStatsModalOpen: vi.fn(),
+          setWarRoomModalOpen: vi.fn(),
+          dispatch: vi.fn(),
+        }
+      );
+
+      expect(handled).toBe(false);
+      expect(preventDefault).not.toHaveBeenCalled();
+      expect(setStockMarketModalOpen).not.toHaveBeenCalled();
+    });
   });
 });
