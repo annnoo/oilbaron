@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { GameState, TileCoord, CompanyId } from '../engine/types';
 import { createInitialGameState, DEFAULT_CONFIG } from '../engine/config';
 import { gameReducer } from '../engine/reducer';
+import { simulateAiTurn, getBestMergerDisposition } from '../engine/ai';
 import { HudBar } from '../ui/HudBar';
 import { ConcessionsTray } from '../ui/ConcessionsTray';
 import { FoundingDialog } from '../ui/FoundingDialog';
@@ -79,6 +80,11 @@ export class GameScene extends Phaser.Scene {
         }
       });
     }
+
+    // Refresh UI whenever GameScene is resumed (from PauseScene or StockScene)
+    this.events.on('resume', () => {
+      this.refreshUI();
+    });
 
     this.refreshUI();
   }
@@ -270,6 +276,45 @@ export class GameScene extends Phaser.Scene {
           },
         });
       }
+    }
+
+    // Handle AI turn actions automatically
+    if (this.gameState.phase === 'game_over') return;
+
+    if (this.gameState.phase === 'dispose_merger_shares' && this.gameState.pendingMerger) {
+      const pm = this.gameState.pendingMerger;
+      const shareholderId = pm.shareholderQueue[pm.currentShareholderIndex];
+      const shareholder = this.gameState.players.find((p) => p.id === shareholderId);
+      const shareholderIdx = this.gameState.players.findIndex((p) => p.id === shareholderId);
+
+      if (shareholder?.isAi && pm.currentDefunctCompanyId && shareholderIdx !== -1) {
+        this.time.delayedCall(300, () => {
+          const choices = getBestMergerDisposition(
+            this.gameState,
+            shareholderIdx,
+            pm.currentDefunctCompanyId!
+          );
+          this.gameState = gameReducer(this.gameState, {
+            type: 'DISPOSE_MERGER_SHARES',
+            choices,
+          });
+          this.refreshUI();
+        });
+        return;
+      }
+    }
+
+    const currentActive = this.gameState.players[this.gameState.activePlayerIndex];
+    if (currentActive?.isAi) {
+      this.time.delayedCall(400, () => {
+        try {
+          this.gameState = simulateAiTurn(this.gameState);
+          this.refreshUI();
+        } catch (err) {
+          console.error('AI execution error:', err);
+        }
+      });
+      return;
     }
 
     // Check if phase is buy_shares to trigger exchange prompt

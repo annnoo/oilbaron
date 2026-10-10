@@ -14,6 +14,7 @@ export class ConcessionsTray extends Phaser.GameObjects.Container {
   private leaseButtons: Phaser.GameObjects.Container[] = [];
   private drillActuatorBtn: Button;
   private selectedCoord: TileCoord | null = null;
+  private isSelectedTileDead = false;
   private props: ConcessionsTrayProps;
 
   constructor(scene: Phaser.Scene, width: number, y: number, props: ConcessionsTrayProps) {
@@ -41,7 +42,11 @@ export class ConcessionsTray extends Phaser.GameObjects.Container {
       strokeColor: 0x64748b,
       onClick: () => {
         if (this.selectedCoord) {
-          this.props.onDrillWell();
+          if (this.isSelectedTileDead) {
+            this.props.onDiscardDead();
+          } else {
+            this.props.onDrillWell();
+          }
         }
       },
     });
@@ -125,6 +130,7 @@ export class ConcessionsTray extends Phaser.GameObjects.Container {
     });
 
     // Update actuator text & state
+    this.isSelectedTileDead = false;
     if (isPlacePhase) {
       if (selectedTile) {
         const selLabel = formatCoord(selectedTile);
@@ -132,6 +138,7 @@ export class ConcessionsTray extends Phaser.GameObjects.Container {
         // If dead tile, allow discard
         const cl = classifyMove(state.board, selectedTile, state.companies, state.config.safeThreshold);
         if (cl.type === 'illegal_safe_merger') {
+          this.isSelectedTileDead = true;
           this.drillActuatorBtn.setText(`DISCARD [${selLabel}]`);
         }
       } else {
