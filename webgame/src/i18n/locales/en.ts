@@ -476,6 +476,15 @@ export const en = {
   'shelf.left': '{count} left',
   'shelf.buyFinish': 'Buy Shares & Finish Turn (Alt+E)',
   'shelf.passFinish': 'Pass & Finish Turn (Alt+E)',
+  'shelf.tabAcquire': 'ACQUIRE SHARES (BUY)',
+  'shelf.tabLiquidate': 'LIQUIDATE SHARES (SELL)',
+  'shelf.noSharesOwned': 'You currently hold no corporate equity to liquidate.',
+  'shelf.sharesOwned': '{count} shares owned · ${val}',
+  'shelf.sellOne': '-1 Share',
+  'shelf.sellAllCompany': 'Sell All',
+  'shelf.liquidateEntire': 'LIQUIDATE ENTIRE PORTFOLIO',
+  'shelf.finishTurn': 'FINISH TURN',
+  'shelf.portfolioSummary': 'Portfolio Holdings: {count} {unit} · Value: ${val} | Liquid Cash: ${cash}',
 
   // App Layout & Status
   'app.turn': "{name}'s Turn",

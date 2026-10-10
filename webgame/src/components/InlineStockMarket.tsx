@@ -172,10 +172,10 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
                 playClick();
                 setMode('buy');
               }}
-              aria-label="ACQUIRE SHARES (BUY)"
+              aria-label={t('shelf.tabAcquire')}
             >
               <ShoppingBag size={13} style={{ marginRight: '5px' }} />
-              ACQUIRE SHARES (BUY)
+              {t('shelf.tabAcquire')}
             </button>
             <button
               type="button"
@@ -184,10 +184,10 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
                 playClick();
                 setMode('sell');
               }}
-              aria-label="LIQUIDATE SHARES (SELL)"
+              aria-label={t('shelf.tabLiquidate')}
             >
               <DollarSign size={13} style={{ marginRight: '5px' }} />
-              LIQUIDATE SHARES (SELL)
+              {t('shelf.tabLiquidate')}
               {totalOwnedSharesCount > 0 && (
                 <span className="tab-shares-badge">{totalOwnedSharesCount}</span>
               )}
@@ -278,7 +278,7 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
         <div className="shelf-companies-row">
           {ownedCompanies.length === 0 ? (
             <div className="no-companies-note" style={{ padding: '12px 4px' }}>
-              You currently hold no corporate equity to liquidate.
+              {t('shelf.noSharesOwned')}
             </div>
           ) : (
             ownedCompanies.map((def) => {
@@ -296,7 +296,7 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
                     <span className="company-name">{def.name}</span>
                     <span className="company-price">${price}</span>
                     <span className="company-avail">
-                      {ownedCount} shares owned · ${totalVal}
+                      {t('shelf.sharesOwned', { count: ownedCount, val: totalVal })}
                     </span>
                   </div>
                   <div className="company-counter" style={{ gap: '6px' }}>
@@ -306,7 +306,7 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
                       onClick={() => handleSellOne(def.id)}
                       aria-label={`sell 1 share of ${def.name}`}
                     >
-                      -1 Share
+                      {t('shelf.sellOne')}
                     </button>
                     <button
                       type="button"
@@ -314,7 +314,7 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
                       onClick={() => handleSellAllCompany(def.id, ownedCount)}
                       aria-label={`sell all shares of ${def.name}`}
                     >
-                      Sell All
+                      {t('shelf.sellAllCompany')}
                     </button>
                   </div>
                 </div>
@@ -331,11 +331,11 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
             className="btn btn-secondary liquidate-all-portfolio-btn"
             onClick={handleLiquidateEntirePortfolio}
             disabled={totalOwnedSharesCount === 0}
-            aria-label="LIQUIDATE ENTIRE PORTFOLIO"
+            aria-label={t('shelf.liquidateEntire')}
             style={{ marginRight: 'auto' }}
           >
             <Trash2 size={13} style={{ marginRight: '5px' }} />
-            LIQUIDATE ENTIRE PORTFOLIO
+            {t('shelf.liquidateEntire')}
           </button>
         )}
 
@@ -350,7 +350,7 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
             ? totalSelectedShares > 0
               ? t('shelf.buyFinish')
               : t('shelf.passFinish')
-            : 'FINISH TURN'}
+            : t('shelf.finishTurn')}
         </button>
       </div>
     </div>

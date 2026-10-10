@@ -478,6 +478,15 @@ export const de: Record<TranslationKey, string> = {
   'shelf.left': '{count} übrig',
   'shelf.buyFinish': 'Aktien kaufen & Zug beenden (Alt+E)',
   'shelf.passFinish': 'Passen & Zug beenden (Alt+E)',
+  'shelf.tabAcquire': 'AKTIEN KAUFEN (KAUF)',
+  'shelf.tabLiquidate': 'AKTIEN LIQUIDIEREN (VERKAUF)',
+  'shelf.noSharesOwned': 'Du besitzt derzeit keine Unternehmensanteile zum Liquidieren.',
+  'shelf.sharesOwned': '{count} Aktien im Besitz · ${val}',
+  'shelf.sellOne': '-1 Aktie',
+  'shelf.sellAllCompany': 'Alle verkaufen',
+  'shelf.liquidateEntire': 'GESAMTES PORTFOLIO LIQUIDIEREN',
+  'shelf.finishTurn': 'ZUG BEENDEN',
+  'shelf.portfolioSummary': 'Portfolio-Bestand: {count} {unit} · Wert: ${val} | Bargeld: ${cash}',
 
   // App Layout & Status
   'app.turn': '{name} ist am Zug',
