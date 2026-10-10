@@ -29,11 +29,12 @@ describe('App Integration', () => {
     expect(html).not.toContain('class="game-header"');
     expect(html).not.toContain('Turn Guidance &amp; Onboarding');
 
-    // Center survey map container & GameBoard
+    // Center survey map container & GameBoard (with hideToolbar={true} for clean tactical map)
     expect(html).toContain('class="survey-map-container"');
     expect(html).toContain('Oil Baron 10x12 Game Board');
-    expect(html).toContain('10 × 12 Grid');
     expect(html).toContain('role="grid"');
+    expect(html).not.toContain('class="board-toolbar"');
+    expect(html).not.toContain('10 × 12 Grid');
 
     // Bottom ConcessionsDock with tactical leases and drill actuator
     expect(html).toContain('class="concessions-dock"');

@@ -162,4 +162,39 @@ describe('ConcessionsDock', () => {
 
     expect(html).toContain('inline-stock-shelf');
   });
+
+  it('forwards share liquidation callbacks and playerShares to InlineStockMarket in buy_shares phase', () => {
+    const onConfirmSales = vi.fn();
+    const onSellAll = vi.fn();
+    const playerShares = { american: 5 };
+
+    const html = renderToStaticMarkup(
+      <ConcessionsDock
+        phase="buy_shares"
+        isCurrentTurn={true}
+        hand={[{ row: 1, col: 4 }]}
+        selectedCoord={null}
+        hoveredCoord={null}
+        activePlayerCash={6400}
+        board={emptyBoard}
+        companies={{ american: makeCompany({ id: 'american', size: 3, isActive: true }) }}
+        definitions={CLASSIC_COMPANIES}
+        playerShares={playerShares}
+        onSelectTile={vi.fn()}
+        onHoverTile={vi.fn()}
+        onPlaceTile={vi.fn()}
+        onDiscardDeadTile={vi.fn()}
+        onConfirmPurchases={vi.fn()}
+        onConfirmSales={onConfirmSales}
+        onSellAll={onSellAll}
+        onPassTurn={vi.fn()}
+      />
+    );
+
+    expect(html).toContain('inline-stock-shelf');
+    expect(html).toContain('LIQUIDATE SHARES (SELL)');
+    expect(html).toContain('tab-shares-badge');
+    expect(html).toContain('>5<');
+  });
 });
+

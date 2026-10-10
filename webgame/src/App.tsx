@@ -833,6 +833,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
               previewTileCoord={hoveredHandCoord}
               playerHand={gameState.players[gameState.activePlayerIndex]?.hand}
               onPlaceTile={handlePlaceTile}
+              hideToolbar={true}
             />
           </div>
 
@@ -845,7 +846,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
             hoveredCoord={hoveredHandCoord}
             activePlayerCash={activePlayer?.cash ?? 0}
             activePlayerName={activePlayer?.name}
-            playerShares={activePlayer?.shares}
+            playerShares={activePlayer?.shares ?? {}}
             board={gameState.board}
             companies={gameState.companies}
             definitions={gameState.config.companies}
