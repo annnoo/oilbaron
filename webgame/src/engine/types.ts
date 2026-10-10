@@ -1,4 +1,13 @@
-export type CompanyId = string;
+export type CompanyId =
+  | 'american'
+  | 'arabian'
+  | 'imperial'
+  | 'supra'
+  | 'tower'
+  | 'royal'
+  | 'weemoco'
+  | 'purple'
+  | string;
 
 export type CompanyTier = 'low' | 'mid' | 'high' | 'custom';
 
@@ -9,6 +18,7 @@ export interface CompanyDefinition {
   basePrice: number;     // e.g. $200 (low), $300 (mid), $400 (high)
   priceDelta: number;    // e.g. $100 per size tier
   color: string;
+  letter?: string;
   icon?: string;
   shortName?: string;
   isDormant?: boolean;
@@ -136,6 +146,9 @@ export interface GameConfig {
   allowBlanks?: boolean;         // Allow blank wildcard tiles
   purchaseLimit?: boolean;       // Enable per-turn purchasing limit
   showDiscard?: boolean;         // Show discarded markers ('X') on grid when tiles are discarded
+  enableEighthCompany?: boolean; // Enable 8th corporation ("Purple Oil Company, Int.")
+  randomSharePrices?: boolean;   // Randomize initial base share prices within classic bounds
+  randomDividends?: boolean;     // Randomize dividend payout yield rates
 }
 
 export interface GameState {

@@ -55,7 +55,7 @@ export const COMPANY_VISUALS: Record<string, CompanyVisual> = {
   tower:    { id: 'tower',    name: 'Tower Drilling',        shortCode: 'TW', initials: 'T', color: '#457b9d', textColor: '#ffffff' },
   royal:    { id: 'royal',    name: 'Royal Dutch',           shortCode: 'RD', initials: 'R', color: '#1d3557', textColor: '#ffffff' },
   weemoco:  { id: 'weemoco',  name: 'Weemoco Oil',           shortCode: 'WM', initials: 'W', color: '#38b000', textColor: '#ffffff' },
-  purple:   { id: 'purple',   name: 'Purple Oil',            shortCode: 'PR', initials: 'P', color: '#7209b7', textColor: '#ffffff' },
+  purple:   { id: 'purple',   name: 'Purple Oil Company, Int.', shortCode: 'PR', initials: 'P', color: '#8b5cf6', textColor: '#ffffff' },
 };
 
 export function getCompanyVisual(companyId: CompanyId, definitions?: readonly CompanyDefinition[]): CompanyVisual {

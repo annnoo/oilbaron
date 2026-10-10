@@ -31,6 +31,9 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
   const [allowBlanks, setAllowBlanks] = useState<boolean>(config.allowBlanks ?? false);
   const [maxSharesPerPurchase, setMaxSharesPerPurchase] = useState<number>(config.maxSharesPerPurchase ?? 3);
   const [showDiscard, setShowDiscard] = useState<boolean>(config.showDiscard ?? false);
+  const [enableEighthCompany, setEnableEighthCompany] = useState<boolean>(config.enableEighthCompany ?? false);
+  const [randomSharePrices, setRandomSharePrices] = useState<boolean>(config.randomSharePrices ?? false);
+  const [randomDividends, setRandomDividends] = useState<boolean>(config.randomDividends ?? false);
 
   useEffect(() => {
     if (isOpen) {
@@ -44,6 +47,9 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
       setAllowBlanks(config.allowBlanks ?? false);
       setMaxSharesPerPurchase(config.maxSharesPerPurchase ?? 3);
       setShowDiscard(config.showDiscard ?? false);
+      setEnableEighthCompany(config.enableEighthCompany ?? false);
+      setRandomSharePrices(config.randomSharePrices ?? false);
+      setRandomDividends(config.randomDividends ?? false);
     }
   }, [isOpen, config, slowCpu]);
 
@@ -75,6 +81,9 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
     setAllowBlanks(false);
     setMaxSharesPerPurchase(3);
     setShowDiscard(false);
+    setEnableEighthCompany(false);
+    setRandomSharePrices(false);
+    setRandomDividends(false);
   };
 
   const handleSave = () => {
@@ -92,6 +101,9 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
       allowBlanks,
       maxSharesPerPurchase,
       showDiscard,
+      enableEighthCompany,
+      randomSharePrices,
+      randomDividends,
     };
     onSaveConfig(newConfig, isSlowCpu);
     onClose();
@@ -332,6 +344,66 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
                 </span>
                 <span className="form-help" style={{ display: 'block', margin: 0 }}>
                   Place permanent 'X' marker tiles on the grid when unplayable dead tiles are discarded.
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={enableEighthCompany}
+                onChange={(e) => {
+                  playClick();
+                  setEnableEighthCompany(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Enable 8th Company ("Purple Oil Company, Int.")
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  Include the bonus 8th corporation (Purple) alongside the classic 7 oil companies.
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={randomSharePrices}
+                onChange={(e) => {
+                  playClick();
+                  setRandomSharePrices(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Random Share Prices
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  Randomize base company share prices across tiers at match start.
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={randomDividends}
+                onChange={(e) => {
+                  playClick();
+                  setRandomDividends(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Random Dividends
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  Randomize dividend yield payout rates across corporations.
                 </span>
               </div>
             </label>

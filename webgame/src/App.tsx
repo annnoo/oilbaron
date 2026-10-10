@@ -454,8 +454,17 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
   };
 
   // New Game Setup Confirmation
-  const handleStartCustomGame = (players: PlayerConfig[]) => {
-    const nextState = createInitialGameState(config, players);
+  const handleStartCustomGame = (
+    players: PlayerConfig[],
+    options?: Partial<Pick<GameConfig, 'enableEighthCompany' | 'randomSharePrices' | 'randomDividends'>>
+  ) => {
+    const effectiveGameConfig: GameConfig = options
+      ? { ...config, ...options }
+      : config;
+    if (options) {
+      setConfig(effectiveGameConfig);
+    }
+    const nextState = createInitialGameState(effectiveGameConfig, players);
     setGameState(nextState);
     setSelectedHandCoord(null);
     setNewGameModalOpen(false);
@@ -799,6 +808,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
           color: p.color || '#f59e0b',
           isAi: p.isAi ?? false,
         }))}
+        initialConfig={config}
       />
 
       <OptionsModal

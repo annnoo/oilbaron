@@ -53,6 +53,21 @@ describe('Task 5 Modals', () => {
       expect(html).toContain('Dumb AI');
       expect(html).toContain('value="dumb" selected=""');
     });
+
+    it('renders 8th Company and Economy Randomizer checkboxes', () => {
+      const html = renderToStaticMarkup(
+        <NewGameModal
+          isOpen={true}
+          onClose={vi.fn()}
+          onStartGame={vi.fn()}
+          initialConfig={CLASSIC_CONFIG}
+        />
+      );
+      expect(html).toContain('Enable 8th Company');
+      expect(html).toContain('Purple Oil Company, Int.');
+      expect(html).toContain('Random Share Prices');
+      expect(html).toContain('Random Dividends');
+    });
   });
 
   describe('OptionsModal', () => {
@@ -85,6 +100,10 @@ describe('Task 5 Modals', () => {
       expect(html).toContain('Safe Company Threshold');
       expect(html).toContain('Slow Computer Turns');
       expect(html).toContain('Show Discarded Markers (&#x27;X&#x27;)');
+      expect(html).toContain('Enable 8th Company');
+      expect(html).toContain('Purple Oil Company, Int.');
+      expect(html).toContain('Random Share Prices');
+      expect(html).toContain('Random Dividends');
     });
   });
 

@@ -13,14 +13,14 @@ import type {
 export type { GameConfig };
 
 export const CLASSIC_COMPANIES: CompanyDefinition[] = [
-  { id: 'american', name: 'American Natural Gas', tier: 'low', basePrice: 200, priceDelta: 100, color: '#e63946', dividendYield: 0.10 },
-  { id: 'arabian', name: 'Arabian Oil', tier: 'low', basePrice: 200, priceDelta: 100, color: '#f4a261', dividendYield: 0.10 },
-  { id: 'imperial', name: 'Imperial Petroleum', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#2a9d8f', dividendYield: 0.125 },
-  { id: 'supra', name: 'Supra Oil', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#e76f51', dividendYield: 0.067 },
-  { id: 'tower', name: 'Tower Drilling', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#457b9d', dividendYield: 0.10 },
-  { id: 'royal', name: 'Royal Dutch', tier: 'high', basePrice: 400, priceDelta: 100, color: '#1d3557', dividendYield: 0.125 },
-  { id: 'weemoco', name: 'Weemoco Oil', tier: 'high', basePrice: 400, priceDelta: 100, color: '#38b000', dividendYield: 0.067 },
-  { id: 'purple', name: 'Purple Oil', tier: 'high', basePrice: 400, priceDelta: 100, color: '#7209b7', dividendYield: 0.067 },
+  { id: 'american', name: 'American Natural Gas', letter: 'A', tier: 'low', basePrice: 200, priceDelta: 100, color: '#e63946', dividendYield: 0.10 },
+  { id: 'arabian', name: 'Arabian Oil', letter: 'Ar', tier: 'low', basePrice: 200, priceDelta: 100, color: '#f4a261', dividendYield: 0.10 },
+  { id: 'imperial', name: 'Imperial Petroleum', letter: 'I', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#2a9d8f', dividendYield: 0.125 },
+  { id: 'supra', name: 'Supra Oil', letter: 'S', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#e76f51', dividendYield: 0.067 },
+  { id: 'tower', name: 'Tower Drilling', letter: 'T', tier: 'mid', basePrice: 300, priceDelta: 100, color: '#457b9d', dividendYield: 0.10 },
+  { id: 'royal', name: 'Royal Dutch', letter: 'R', tier: 'high', basePrice: 400, priceDelta: 100, color: '#1d3557', dividendYield: 0.125 },
+  { id: 'weemoco', name: 'Weemoco Oil', letter: 'W', tier: 'high', basePrice: 400, priceDelta: 100, color: '#38b000', dividendYield: 0.067 },
+  { id: 'purple', name: 'Purple Oil Company, Int.', letter: 'P', tier: 'low', basePrice: 200, priceDelta: 100, color: '#8b5cf6', dividendYield: 0.067 },
 ];
 
 export const DEFAULT_CONFIG: GameConfig = {
@@ -39,6 +39,9 @@ export const DEFAULT_CONFIG: GameConfig = {
   allowBlanks: false,
   purchaseLimit: true,
   showDiscard: false,
+  enableEighthCompany: false,
+  randomSharePrices: false,
+  randomDividends: false,
 };
 
 export const CLASSIC_CONFIG = DEFAULT_CONFIG;
@@ -123,16 +126,57 @@ export function createInitialGameState(
 ): GameState {
   const rng = seed !== undefined ? createRng(seed) : Math.random;
 
+  // Filter companies: 8th company ('purple') is only included if enableEighthCompany is true.
+  // If config.companies is provided, filter out purple if !enableEighthCompany unless explicitly kept.
+  let activeCompaniesList = config.companies.filter((c) => {
+    if (c.id === 'purple') {
+      return Boolean(config.enableEighthCompany);
+    }
+    return true;
+  });
+
+  // Apply economy randomizers if enabled
+  if (config.randomSharePrices || config.randomDividends) {
+    const priceOptions = [100, 200, 300, 400];
+    const dividendOptions = [0.05, 0.067, 0.08, 0.10, 0.125, 0.15];
+
+    activeCompaniesList = activeCompaniesList.map((def) => {
+      let basePrice = def.basePrice;
+      let dividendYield = def.dividendYield;
+
+      if (config.randomSharePrices) {
+        const randIdx = Math.floor(rng() * priceOptions.length);
+        basePrice = priceOptions[randIdx]!;
+      }
+
+      if (config.randomDividends) {
+        const randDivIdx = Math.floor(rng() * dividendOptions.length);
+        dividendYield = dividendOptions[randDivIdx]!;
+      }
+
+      return {
+        ...def,
+        basePrice,
+        dividendYield,
+      };
+    });
+  }
+
+  const effectiveConfig: GameConfig = {
+    ...config,
+    companies: activeCompaniesList,
+  };
+
   // Generate all grid tile coordinates
   const allTiles: TileCoord[] = [];
-  for (let r = 0; r < config.boardRows; r++) {
-    for (let c = 0; c < config.boardCols; c++) {
+  for (let r = 0; r < effectiveConfig.boardRows; r++) {
+    for (let c = 0; c < effectiveConfig.boardCols; c++) {
       allTiles.push({ row: r, col: c });
     }
   }
 
   // Inject wildcard blank pieces if enabled (classic 1993 Oil Baron: 4 blank pieces)
-  if (config.allowBlanks) {
+  if (effectiveConfig.allowBlanks) {
     const blankCount = 4;
     for (let i = 0; i < blankCount; i++) {
       allTiles.push({ row: -1, col: -1 - i, isBlank: true });
@@ -152,11 +196,11 @@ export function createInitialGameState(
     const isAi = typeof input === 'string' ? false : (input.isAi ?? false);
     const id = typeof input === 'string' ? `p${i + 1}` : (input.id ?? `p${i + 1}`);
 
-    const hand = shuffledTiles.slice(cursor, cursor + config.handSize);
-    cursor += config.handSize;
+    const hand = shuffledTiles.slice(cursor, cursor + effectiveConfig.handSize);
+    cursor += effectiveConfig.handSize;
 
     const shares: Record<CompanyId, number> = {};
-    for (const company of config.companies) {
+    for (const company of effectiveConfig.companies) {
       shares[company.id] = 0;
     }
 
@@ -188,7 +232,7 @@ export function createInitialGameState(
 
   // Initialize company states
   const companyStates: Record<CompanyId, CompanyState> = {};
-  for (const def of config.companies) {
+  for (const def of effectiveConfig.companies) {
     companyStates[def.id] = {
       id: def.id,
       name: def.name,
@@ -197,13 +241,13 @@ export function createInitialGameState(
       size: 0,
       isActive: false,
       isSafe: false,
-      availableShares: config.totalSharesPerCompany,
+      availableShares: effectiveConfig.totalSharesPerCompany,
     };
   }
 
   return {
-    config,
-    board: createEmptyBoard(config.boardRows, config.boardCols),
+    config: effectiveConfig,
+    board: createEmptyBoard(effectiveConfig.boardRows, effectiveConfig.boardCols),
     tilePool: remainingTilePool,
     companies: companyStates,
     players: playerStates,

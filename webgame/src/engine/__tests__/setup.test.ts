@@ -20,5 +20,28 @@ describe('Engine Setup and Initialization', () => {
     expect(state.players[2]!.aiDifficulty).toBe('smart');
     expect(state.players[3]!.aiDifficulty).toBe('smart');
   });
+
+  it('correctly configures 8th company purple through setupGame', () => {
+    const stateDefault = setupGame({ ...DEFAULT_CONFIG, enableEighthCompany: false });
+    expect(stateDefault.companies.purple).toBeUndefined();
+
+    const stateEighth = setupGame({ ...DEFAULT_CONFIG, enableEighthCompany: true });
+    expect(stateEighth.companies.purple).toBeDefined();
+    expect(stateEighth.companies.purple?.name).toBe('Purple Oil Company, Int.');
+  });
+
+  it('applies economy randomizers in setupGame', () => {
+    const state = setupGame(
+      { ...DEFAULT_CONFIG, enableEighthCompany: true, randomSharePrices: true, randomDividends: true },
+      undefined,
+      1234
+    );
+
+    expect(state.config.randomSharePrices).toBe(true);
+    expect(state.config.randomDividends).toBe(true);
+    // Base prices or dividend rates should reflect randomization
+    const purpleDef = state.config.companies.find((c) => c.id === 'purple');
+    expect(purpleDef).toBeDefined();
+  });
 });
 

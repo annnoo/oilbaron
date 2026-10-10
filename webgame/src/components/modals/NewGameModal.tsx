@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, User, Bot, Plus, Trash2, X, Play, Palette } from 'lucide-react';
 import { playClick } from '../../assets/audio';
 import { DEFAULT_PLAYER_COLORS } from '../../engine/config';
+import type { GameConfig } from '../../engine/types';
 import { useTranslation } from '../../i18n';
 
 export interface PlayerConfig {
@@ -15,8 +16,9 @@ export interface PlayerConfig {
 export interface NewGameModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onStartGame: (players: PlayerConfig[]) => void;
+  onStartGame: (players: PlayerConfig[], options?: Partial<Pick<GameConfig, 'enableEighthCompany' | 'randomSharePrices' | 'randomDividends'>>) => void;
   initialPlayers?: readonly PlayerConfig[];
+  initialConfig?: GameConfig;
 }
 
 export const COLOR_PALETTE: readonly string[] = [
@@ -40,6 +42,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
   onClose,
   onStartGame,
   initialPlayers,
+  initialConfig,
 }) => {
   const { t, language } = useTranslation();
   const [players, setPlayers] = useState<PlayerConfig[]>(() => {
@@ -56,8 +59,17 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
   });
 
   const [activeColorPickerIdx, setActiveColorPickerIdx] = useState<number | null>(null);
+  const [enableEighthCompany, setEnableEighthCompany] = useState<boolean>(
+    initialConfig?.enableEighthCompany ?? false
+  );
+  const [randomSharePrices, setRandomSharePrices] = useState<boolean>(
+    initialConfig?.randomSharePrices ?? false
+  );
+  const [randomDividends, setRandomDividends] = useState<boolean>(
+    initialConfig?.randomDividends ?? false
+  );
 
-  // Sync state if modal reopens or initialPlayers changes
+  // Sync state if modal reopens or initialPlayers/initialConfig changes
   useEffect(() => {
     if (isOpen) {
       if (initialPlayers && initialPlayers.length >= 2) {
@@ -73,9 +85,12 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
       } else {
         setPlayers(DEFAULT_ROSTER.map((p) => ({ ...p })));
       }
+      setEnableEighthCompany(initialConfig?.enableEighthCompany ?? false);
+      setRandomSharePrices(initialConfig?.randomSharePrices ?? false);
+      setRandomDividends(initialConfig?.randomDividends ?? false);
       setActiveColorPickerIdx(null);
     }
-  }, [isOpen, initialPlayers]);
+  }, [isOpen, initialPlayers, initialConfig]);
 
   if (!isOpen) return null;
 
@@ -194,7 +209,11 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
       name: p.name.trim() || `Player ${idx + 1}`,
       aiDifficulty: p.isAi ? (p.aiDifficulty ?? 'smart') : undefined,
     }));
-    onStartGame(sanitized);
+    onStartGame(sanitized, {
+      enableEighthCompany,
+      randomSharePrices,
+      randomDividends,
+    });
   };
 
   return (
@@ -425,6 +444,69 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
             <p className="form-help">
               {t('newGame.helpText')}
             </p>
+          </div>
+
+          {/* Gameplay Rule Toggles: 8th Company & Economy Randomizers */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px', padding: '12px', background: 'var(--bg-surface-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={enableEighthCompany}
+                onChange={(e) => {
+                  playClick();
+                  setEnableEighthCompany(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Enable 8th Company ("Purple Oil Company, Int.")
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  Include the bonus 8th corporation (Purple) alongside the classic 7 oil companies.
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={randomSharePrices}
+                onChange={(e) => {
+                  playClick();
+                  setRandomSharePrices(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Random Share Prices
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  Randomize base company share prices across tiers at match start.
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={randomDividends}
+                onChange={(e) => {
+                  playClick();
+                  setRandomDividends(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  Random Dividends
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  Randomize dividend yield payout rates across corporations.
+                </span>
+              </div>
+            </label>
           </div>
         </div>
 
