@@ -29,6 +29,20 @@ import { TileInspector, getCompanyVisual } from './TileInspector';
 import { playClick } from '../assets/audio';
 import { useTranslation } from '../i18n';
 
+/**
+ * Standard tactical glyph mapping for corporate wellheads on the geological survey map.
+ */
+export const COMPANY_GLYPHS: Record<CompanyId, string> = {
+  american: '▲',
+  arabian: '▲',
+  imperial: '◆',
+  supra: '◆',
+  tower: '▲',
+  royal: '◆',
+  weemoco: '▲',
+  purple: '◆',
+};
+
 export interface GameBoardProps {
   /**
    * The 2D grid matrix of board cells (rows x cols).
@@ -71,7 +85,7 @@ export interface GameBoardProps {
   interactive?: boolean;
 
   /**
-   * Whether to show coordinate labels on empty cells.
+   * Whether to show coordinate labels on empty cells. Defaults to false in survey map mode.
    */
   showCoordinates?: boolean;
 
@@ -115,7 +129,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   previewTileCoord = null,
   playerHand = [],
   interactive = true,
-  showCoordinates = true,
+  showCoordinates = false,
   showMovePreviews = true,
   inspectedCoord: externalInspectedCoord,
   onPlaceTile,
@@ -306,7 +320,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   return (
-    <div className={`board-container ${className}`} role="region" aria-label={`Oil Baron ${rows}x${cols} Game Board`}>
+    <div className={`board-container survey-map-container ${className}`} role="region" aria-label={`Oil Baron ${rows}x${cols} Game Board`}>
       {/* Board Top Toolbar */}
       <div className="board-toolbar">
         <div className="toolbar-left">
@@ -416,7 +430,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       {/* Responsive Board Grid Scroll Wrapper */}
       <div className="board-scroll-area">
         <div
-          className="board-grid"
+          className="board-grid sector-grid"
           role="grid"
           aria-label={`${rows} by ${cols} Tiles Grid`}
           style={{
@@ -488,12 +502,38 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                   const companyState =
                     cell.type === 'company' ? companies[cell.companyId] : null;
 
+                  const isSafeCompany =
+                    cell.type === 'company' &&
+                    Boolean(
+                      companyState &&
+                      (companyState.isSafe || companyState.size >= safeThreshold)
+                    );
+
+                  const isTarget = Boolean(
+                    isPreviewTarget ||
+                    isSelectedHand ||
+                    (previewTileCoord && coordEquals(previewTileCoord, { row: r, col: c })) ||
+                    (cell.type === 'empty' && isHoveredCell)
+                  );
+
+                  const cellClassName = [
+                    'board-cell',
+                    cell.type,
+                    'parcel',
+                    isSafeCompany ? 'well-safe' : '',
+                    isTarget ? 'target' : '',
+                    previewClass,
+                    connectedHighlightClass,
+                    isInHand ? 'is-in-hand' : '',
+                    isSelectedHand ? 'is-selected-hand' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ');
+
                   return (
                     <div
                       key={`cell-${r}-${c}`}
-                      className={`board-cell ${cell.type} ${previewClass} ${connectedHighlightClass} ${
-                        isInHand ? 'is-in-hand' : ''
-                      } ${isSelectedHand ? 'is-selected-hand' : ''}`}
+                      className={cellClassName}
                       style={
                         cell.type === 'company' && companyVisual
                           ? {
@@ -527,16 +567,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                       {/* EMPTY CELL */}
                       {cell.type === 'empty' && (
                         <>
-                          {showCoordinates && (
+                          {showCoordinates ? (
                             <span className="cell-coord-label">{formatted}</span>
+                          ) : (
+                            !isTarget && <span className="parcel-guide-dot" aria-hidden="true" />
                           )}
                           {isInHand && <span className="cell-in-hand-indicator" title="In your hand" />}
-                          {isPreviewTarget && moveClassification && (
-                            <span className="cell-preview-overlay">
-                              {moveClassification.type === 'illegal_safe_merger' ? (
+                          {isTarget && (
+                            <span className="cell-preview-overlay" data-testid="target-reticle">
+                              {moveClassification?.type === 'illegal_safe_merger' ? (
                                 <Ban size={16} color="#ef4444" />
                               ) : (
-                                <Crosshair size={14} />
+                                <Crosshair size={14} className="text-gold" />
                               )}
                             </span>
                           )}
@@ -551,24 +593,32 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                         </div>
                       )}
 
-                      {/* COMPANY TILE */}
-                      {cell.type === 'company' && companyVisual && (
-                        <div className="company-tile-content">
-                          <span className="tile-coord-micro">{formatted}</span>
-                          <span className="tile-company-initials">
-                            {companyVisual.shortCode}
-                          </span>
-                          {companyState && (
-                            <span className="tile-size-badge">
-                              {companyState.size >= safeThreshold ? (
-                                <ShieldCheck size={9} />
-                              ) : (
-                                companyState.size
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {/* COMPANY WELLHEAD TILE */}
+                      {cell.type === 'company' && companyVisual && (() => {
+                        const glyph =
+                          COMPANY_GLYPHS[cell.companyId] ??
+                          (companyState?.tier === 'mid' ? '◆' : '▲');
+                        const initial = companyVisual.initials;
+
+                        return (
+                          <div
+                            className={`well ${cell.companyId} ${isSafeCompany ? 'safe' : ''}`}
+                            data-testid={`well-${cell.companyId}`}
+                          >
+                            <span className="well-glyph">{glyph}</span>
+                            <span className="well-initial">{initial}</span>
+                            {companyState && (
+                              <span className="tile-size-badge" title={`Chain size: ${companyState.size}`}>
+                                {companyState.size >= safeThreshold ? (
+                                  <ShieldCheck size={8} />
+                                ) : (
+                                  companyState.size
+                                )}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* DISCARDED CELL */}
                       {cell.type === 'discarded' && (
@@ -579,7 +629,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                       )}
                     </div>
                   );
-
                 })}
               </React.Fragment>
             );

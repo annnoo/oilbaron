@@ -59,10 +59,23 @@ describe('GameBoard Component', () => {
     expect(cellMatches).toHaveLength(120);
   });
 
-  it('renders empty cells with subtle coordinate tags', () => {
+  it('renders clean survey parcels with guide dots and no inner coordinate text by default', () => {
+    const board = createEmptyBoard(10, 12);
+    const html = renderToStaticMarkup(<GameBoard board={board} />);
+
+    expect(html).not.toContain('cell-coord-label');
+    expect(html).toContain('parcel-guide-dot');
+    expect(html).toContain('data-type="empty"');
+    // Perimeter coordinates and accessibility are fully preserved
+    expect(html).toContain('aria-label="Cell A-1: empty"');
+    expect(html).toContain('data-coord="A-1"');
+  });
+
+  it('renders empty cells with coordinate tags when showCoordinates is explicitly true', () => {
     const board = createEmptyBoard(10, 12);
     const html = renderToStaticMarkup(<GameBoard board={board} showCoordinates={true} />);
 
+    expect(html).toContain('cell-coord-label');
     expect(html).toContain('A-1');
     expect(html).toContain('J-12');
     expect(html).toContain('data-type="empty"');
@@ -79,7 +92,7 @@ describe('GameBoard Component', () => {
     expect(html).toContain('C-4');
   });
 
-  it('renders company-controlled tiles with logos, initials, and size badges', () => {
+  it('renders company-controlled tiles as active industrial wellheads with glyphs and safe refinery borders', () => {
     const board = createEmptyBoard(10, 12);
     board[2]![3] = { type: 'company', companyId: 'american' };
     board[4]![5] = { type: 'company', companyId: 'imperial' };
@@ -92,14 +105,45 @@ describe('GameBoard Component', () => {
       />
     );
 
-    // American: initials AM, size 4 (vulnerable)
-    expect(html).toContain('AM');
+    // American: active wellhead with glyph ▲, initial A, size 4 (vulnerable)
+    expect(html).toContain('well american');
+    expect(html).toContain('well-glyph">▲</span>');
+    expect(html).toContain('well-initial">A</span>');
     expect(html).toContain('tile-size-badge');
     expect(html).toContain('background-color:#e63946');
 
-    // Imperial: initials IM, size 11 (Safe shield icon)
-    expect(html).toContain('IM');
+    // Imperial: safe chain (size 11 >= safeThreshold), fortified refinery hub .well.safe and .well-safe
+    expect(html).toContain('well imperial safe');
+    expect(html).toContain('well-safe');
+    expect(html).toContain('well-glyph">◆</span>');
+    expect(html).toContain('well-initial">I</span>');
     expect(html).toContain('background-color:#2a9d8f');
+  });
+
+  it('renders tactical reticle highlight when cell is selected in hand', () => {
+    const board = createEmptyBoard(10, 12);
+    const html = renderToStaticMarkup(
+      <GameBoard
+        board={board}
+        selectedTileCoord={{ row: 3, col: 4 }} // D-5
+      />
+    );
+
+    expect(html).toContain('board-cell empty parcel target');
+    expect(html).toContain('data-testid="target-reticle"');
+  });
+
+  it('renders tactical reticle highlight when cell is previewed from hand dock', () => {
+    const board = createEmptyBoard(10, 12);
+    const html = renderToStaticMarkup(
+      <GameBoard
+        board={board}
+        previewTileCoord={{ row: 1, col: 2 }} // B-3
+      />
+    );
+
+    expect(html).toContain('board-cell empty parcel target');
+    expect(html).toContain('data-testid="target-reticle"');
   });
 
   it('renders move classification preview for isolated tile placement', () => {
