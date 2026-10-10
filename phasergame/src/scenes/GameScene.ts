@@ -4,6 +4,8 @@ import { createInitialGameState, DEFAULT_CONFIG } from '../engine/config';
 import { gameReducer } from '../engine/reducer';
 import { HudBar } from '../ui/HudBar';
 import { ConcessionsTray } from '../ui/ConcessionsTray';
+import { FoundingDialog } from '../ui/FoundingDialog';
+import { MergerDialog } from '../ui/MergerDialog';
 import { parseCoord, formatCoord } from '../engine/board';
 
 export class GameScene extends Phaser.Scene {
@@ -229,6 +231,46 @@ export class GameScene extends Phaser.Scene {
         }
       });
     });
+
+    // Check if phase is founding company
+    if (this.gameState.phase === 'choose_founding_company' && this.gameState.pendingFounding) {
+      const activePlayer = this.gameState.players[this.gameState.activePlayerIndex];
+      if (activePlayer && !activePlayer.isAi) {
+        const available = this.gameState.config.companies.filter((c) =>
+          this.gameState.pendingFounding?.availableCompanyIds.includes(c.id)
+        );
+        new FoundingDialog(this, {
+          availableCompanies: available,
+          onSelectCompany: (companyId) => {
+            const action = {
+              type: 'CHOOSE_FOUNDED_COMPANY' as const,
+              companyId,
+            };
+            this.gameState = gameReducer(this.gameState, action);
+            this.refreshUI();
+          },
+        });
+      }
+    }
+
+    // Check if phase is choose merger survivor
+    if (this.gameState.phase === 'choose_merger_survivor' && this.gameState.pendingMerger) {
+      const activePlayer = this.gameState.players[this.gameState.activePlayerIndex];
+      if (activePlayer && !activePlayer.isAi) {
+        new MergerDialog(this, {
+          tiedCompanyIds: this.gameState.pendingMerger.participatingCompanyIds,
+          companies: this.gameState.companies,
+          onSelectSurvivor: (survivorCompanyId) => {
+            const action = {
+              type: 'CHOOSE_MERGER_SURVIVOR' as const,
+              survivorCompanyId,
+            };
+            this.gameState = gameReducer(this.gameState, action);
+            this.refreshUI();
+          },
+        });
+      }
+    }
 
     // Check if phase is buy_shares to trigger exchange prompt
     if (this.gameState.phase === 'buy_shares') {
