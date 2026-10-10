@@ -36,6 +36,8 @@ let hookIdx = 0;
 let currentTree: any = null;
 let currentHtml = '';
 let rootElement: React.ReactElement | null = null;
+let activeEffects: (() => void | (() => void))[] = [];
+let activeCleanups: (() => void)[] = [];
 
 const testDispatcher = {
   useState: (initialValue: any) => {
@@ -51,6 +53,24 @@ const testDispatcher = {
     };
     return [hookStates[idx], setter];
   },
+  useRef: (initialValue: any) => {
+    const idx = hookIdx++;
+    if (hookStates[idx] === undefined) {
+      hookStates[idx] = { current: initialValue };
+    }
+    return hookStates[idx];
+  },
+  useEffect: (effect: () => void | (() => void), deps?: any[]) => {
+    const idx = hookIdx++;
+    const prevDeps = hookStates[idx];
+    const hasChanged = !prevDeps || !deps || deps.some((d, i) => d !== prevDeps[i]);
+    if (hasChanged) {
+      hookStates[idx] = deps;
+      activeEffects.push(effect);
+    }
+  },
+  useCallback: (fn: any) => fn,
+  useMemo: (fn: any) => fn(),
 };
 
 function evaluateTree(node: any, path: string = '0'): any {
@@ -110,13 +130,25 @@ function getNodeText(node: any): string {
 function triggerRender() {
   if (!rootElement) return;
   hookIdx = 0;
+  activeEffects = [];
   if (internals) internals.H = testDispatcher;
   currentTree = evaluateTree(rootElement);
   if (internals) internals.H = null;
   currentHtml = currentTree ? renderToStaticMarkup(currentTree) : '';
+  for (const eff of activeEffects) {
+    const cleanup = eff();
+    if (typeof cleanup === 'function') {
+      activeCleanups.push(cleanup);
+    }
+  }
 }
 
 function render(ui: React.ReactElement) {
+  for (const cleanup of activeCleanups) {
+    cleanup();
+  }
+  activeCleanups = [];
+  activeEffects = [];
   hookStates = [];
   rootElement = ui;
   triggerRender();
@@ -372,4 +404,43 @@ describe('LedgerDrawer', () => {
     expect(screen.getByText(/Kurs: \$1[,.]?300/i)).toBeInTheDocument();
     expect(screen.getByText(/Bankaktien: 20/i)).toBeInTheDocument();
   });
+
+  it('renders with tactical-sheet and tactical-ledger-panel classes', () => {
+    render(<LedgerDrawer isOpen={true} onClose={vi.fn()} gameState={gameState} />);
+    const panel = findNode(currentTree, (el) =>
+      typeof el.props?.className === 'string' &&
+      el.props.className.includes('tactical-sheet') &&
+      el.props.className.includes('tactical-ledger-panel')
+    );
+    expect(panel).toBeDefined();
+  });
+
+  it('handles Escape key listener to trigger onClose', () => {
+    const onClose = vi.fn();
+    const playClickSpy = vi.spyOn(audioModule, 'playClick');
+    let keyHandler: any = null;
+    const fakeWindow = {
+      addEventListener: vi.fn((event: string, handler: any) => {
+        if (event === 'keydown') keyHandler = handler;
+      }),
+      removeEventListener: vi.fn(),
+    };
+    (globalThis as any).window = fakeWindow;
+
+    render(<LedgerDrawer isOpen={true} onClose={onClose} gameState={gameState} />);
+    expect(fakeWindow.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function));
+
+    // Simulate Escape key
+    const preventDefault = vi.fn();
+    if (keyHandler) {
+      keyHandler({ key: 'Escape', preventDefault });
+    }
+    expect(preventDefault).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(playClickSpy).toHaveBeenCalledTimes(1);
+
+    // Clean up fakeWindow
+    delete (globalThis as any).window;
+  });
 });
+

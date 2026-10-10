@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, BarChart2, PieChart, Building2 } from 'lucide-react';
 import type { GameState } from '../engine/types';
 import { calculateNetWorth, calculateSharePrice } from '../engine/market';
@@ -17,13 +17,31 @@ export const LedgerDrawer: React.FC<LedgerDrawerProps> = ({ isOpen, onClose, gam
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<LedgerTab>('wealth');
 
+  useEffect(() => {
+    if (!isOpen || typeof window === 'undefined') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        playClick();
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const { players, companies, config } = gameState;
 
   return (
     <div className="ledger-drawer-backdrop" onClick={onClose}>
-      <div className="ledger-drawer-panel" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="ledger-drawer-panel tactical-sheet tactical-ledger-panel"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="drawer-header">
           <div className="drawer-title-group">
             <span className="drawer-title">{t('drawer.title')}</span>
