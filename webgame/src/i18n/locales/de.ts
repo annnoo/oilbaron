@@ -188,6 +188,9 @@ export const de: Record<TranslationKey, string> = {
   'newGame.playerName': 'Spielername',
   'newGame.ruleset': 'Regelwerk-Paradigma',
   'newGame.start': 'Spiel starten',
+  'newGame.smartAi': 'Schlaue KI',
+  'newGame.dumbAi': 'Einfache KI',
+  'newGame.aiDifficulty': 'KI-Schwierigkeit',
   'newGame.helpText': 'Oil Baron Partien unterstützen 2 bis 6 menschliche oder Computerspieler. Computer-Ölbarone treffen in ihren Zügen automatische spekulative Kaufentscheidungen.',
 
   // Founding Company Modal

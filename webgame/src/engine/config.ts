@@ -165,6 +165,13 @@ export function createInitialGameState(
         ? DEFAULT_PLAYER_COLORS[i % DEFAULT_PLAYER_COLORS.length]
         : (input.color ?? DEFAULT_PLAYER_COLORS[i % DEFAULT_PLAYER_COLORS.length]);
 
+    const aiDifficulty =
+      typeof input === 'string'
+        ? undefined
+        : input.isAi
+          ? (input.aiDifficulty ?? 'smart')
+          : undefined;
+
     playerStates.push({
       id,
       name,
@@ -173,6 +180,7 @@ export function createInitialGameState(
       shares,
       hand,
       color,
+      aiDifficulty,
     });
   }
 

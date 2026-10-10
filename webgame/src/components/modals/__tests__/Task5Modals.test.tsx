@@ -34,6 +34,25 @@ describe('Task 5 Modals', () => {
       expect(html).toContain('Quick Roster Presets');
       expect(html).toContain('Start Game');
     });
+
+    it('renders AI difficulty selector (Smart AI / Dumb AI) for CPU players', () => {
+      const html = renderToStaticMarkup(
+        <NewGameModal
+          isOpen={true}
+          onClose={vi.fn()}
+          onStartGame={vi.fn()}
+          initialPlayers={[
+            { id: 'p1', name: 'Alice', color: '#f59e0b', isAi: false },
+            { id: 'p2', name: 'Bot 1', color: '#38bdf8', isAi: true, aiDifficulty: 'dumb' },
+          ]}
+        />
+      );
+      // AI difficulty selector should be present for CPU player
+      expect(html).toContain('ai-difficulty-select');
+      expect(html).toContain('Smart AI');
+      expect(html).toContain('Dumb AI');
+      expect(html).toContain('value="dumb" selected=""');
+    });
   });
 
   describe('OptionsModal', () => {

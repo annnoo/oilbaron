@@ -186,6 +186,9 @@ export const en = {
   'newGame.playerName': 'Player Name',
   'newGame.ruleset': 'Ruleset Paradigm',
   'newGame.start': 'Start Game',
+  'newGame.smartAi': 'Smart AI',
+  'newGame.dumbAi': 'Dumb AI',
+  'newGame.aiDifficulty': 'AI Difficulty',
   'newGame.helpText': 'Oil Baron matches support 2 to 6 human or computer players. Computer oil barons make automatic speculative acquisitions on their turns.',
 
   // Founding Company Modal

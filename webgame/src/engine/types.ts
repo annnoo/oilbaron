@@ -46,6 +46,7 @@ export interface PlayerState {
   shares: Record<CompanyId, number>;
   hand: TileCoord[];
   color?: string;
+  aiDifficulty?: 'dumb' | 'smart';
 }
 
 export interface PlayerInit {
@@ -53,6 +54,7 @@ export interface PlayerInit {
   name: string;
   isAi?: boolean;
   color?: string;
+  aiDifficulty?: 'dumb' | 'smart';
 }
 
 export type PlayerInput = string | PlayerInit;

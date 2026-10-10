@@ -9,6 +9,7 @@ export interface PlayerConfig {
   name: string;
   color: string;
   isAi: boolean;
+  aiDifficulty?: 'dumb' | 'smart';
 }
 
 export interface NewGameModalProps {
@@ -31,7 +32,7 @@ export const COLOR_PALETTE: readonly string[] = [
 
 const DEFAULT_ROSTER: readonly PlayerConfig[] = [
   { id: 'p1', name: 'Player 1', color: '#f59e0b', isAi: false },
-  { id: 'p2', name: 'Computer 1 (CPU)', color: '#38bdf8', isAi: true },
+  { id: 'p2', name: 'Computer 1 (CPU)', color: '#38bdf8', isAi: true, aiDifficulty: 'smart' },
 ];
 
 export const NewGameModal: React.FC<NewGameModalProps> = ({
@@ -48,6 +49,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
         name: p.name,
         color: p.color || COLOR_PALETTE[idx % COLOR_PALETTE.length]!,
         isAi: Boolean(p.isAi),
+        aiDifficulty: Boolean(p.isAi) ? (p.aiDifficulty ?? 'smart') : undefined,
       }));
     }
     return DEFAULT_ROSTER.map((p) => ({ ...p }));
@@ -65,6 +67,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
             name: p.name,
             color: p.color || COLOR_PALETTE[idx % COLOR_PALETTE.length]!,
             isAi: Boolean(p.isAi),
+            aiDifficulty: Boolean(p.isAi) ? (p.aiDifficulty ?? 'smart') : undefined,
           }))
         );
       } else {
@@ -91,6 +94,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
         name: defaultName,
         color: nextColor,
         isAi,
+        aiDifficulty: isAi ? 'smart' : undefined,
       },
     ]);
   };
@@ -126,9 +130,17 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
         return {
           ...p,
           isAi: nextAi,
+          aiDifficulty: nextAi ? (p.aiDifficulty ?? 'smart') : undefined,
           name: updatedName,
         };
       })
+    );
+  };
+
+  const handleDifficultyChange = (index: number, difficulty: 'dumb' | 'smart') => {
+    playClick();
+    setPlayers((prev) =>
+      prev.map((p, idx) => (idx === index ? { ...p, aiDifficulty: difficulty } : p))
     );
   };
 
@@ -146,22 +158,22 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
       case '2p':
         setPlayers([
           { id: 'p1', name: 'Player 1', color: COLOR_PALETTE[0]!, isAi: false },
-          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true },
+          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true, aiDifficulty: 'smart' },
         ]);
         break;
       case '3p':
         setPlayers([
           { id: 'p1', name: 'Player 1', color: COLOR_PALETTE[0]!, isAi: false },
-          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true },
-          { id: 'p3', name: 'Computer 2 (CPU)', color: COLOR_PALETTE[2]!, isAi: true },
+          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true, aiDifficulty: 'smart' },
+          { id: 'p3', name: 'Computer 2 (CPU)', color: COLOR_PALETTE[2]!, isAi: true, aiDifficulty: 'smart' },
         ]);
         break;
       case '4p_cpu':
         setPlayers([
           { id: 'p1', name: 'Player 1', color: COLOR_PALETTE[0]!, isAi: false },
-          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true },
-          { id: 'p3', name: 'Computer 2 (CPU)', color: COLOR_PALETTE[2]!, isAi: true },
-          { id: 'p4', name: 'Computer 3 (CPU)', color: COLOR_PALETTE[3]!, isAi: true },
+          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true, aiDifficulty: 'smart' },
+          { id: 'p3', name: 'Computer 2 (CPU)', color: COLOR_PALETTE[2]!, isAi: true, aiDifficulty: 'smart' },
+          { id: 'p4', name: 'Computer 3 (CPU)', color: COLOR_PALETTE[3]!, isAi: true, aiDifficulty: 'smart' },
         ]);
         break;
       case '4p_human':
@@ -180,6 +192,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
     const sanitized = players.map((p, idx) => ({
       ...p,
       name: p.name.trim() || `Player ${idx + 1}`,
+      aiDifficulty: p.isAi ? (p.aiDifficulty ?? 'smart') : undefined,
     }));
     onStartGame(sanitized);
   };
@@ -353,7 +366,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                   />
 
                   {/* Human vs CPU Toggle */}
-                    <button
+                  <button
                     type="button"
                     className={`player-type-toggle-btn ${
                       player.isAi ? 'is-cpu' : 'is-human'
@@ -365,6 +378,30 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                     {player.isAi ? <Bot size={13} /> : <User size={13} />}
                     <span>{player.isAi ? t('common.cpu') : t('common.human')}</span>
                   </button>
+
+                  {/* AI Difficulty Selector (CPU only) */}
+                  {player.isAi && (
+                    <select
+                      className="form-select ai-difficulty-select"
+                      style={{
+                        width: 'auto',
+                        minWidth: '95px',
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        height: '28px',
+                      }}
+                      value={player.aiDifficulty ?? 'smart'}
+                      onChange={(e) =>
+                        handleDifficultyChange(index, e.target.value as 'dumb' | 'smart')
+                      }
+                      title={`AI Difficulty for ${player.name}`}
+                      aria-label={`AI Difficulty for ${player.name}`}
+                      data-testid={`ai-difficulty-${index}`}
+                    >
+                      <option value="smart">{t('newGame.smartAi')}</option>
+                      <option value="dumb">{t('newGame.dumbAi')}</option>
+                    </select>
+                  )}
 
                   {/* Remove Player Button */}
                   <button

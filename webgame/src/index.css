@@ -2282,6 +2282,27 @@ html, body {
   border-color: rgba(192, 132, 252, 0.4);
 }
 
+.ai-difficulty-select {
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ai-difficulty-select:hover {
+  border-color: var(--border-strong);
+}
+
+.ai-difficulty-select:focus {
+  border-color: var(--accent-gold);
+}
+
 /* Quick preset buttons */
 .preset-button-bar {
   display: flex;
