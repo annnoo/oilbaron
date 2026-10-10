@@ -18,9 +18,10 @@ import type {
   ShareSale,
   TileCoord,
 } from './engine/types';
-import { formatCoord } from './engine/board';
+import { formatCoord, classifyMove } from './engine/board';
 import { gameReducer } from './engine/reducer';
 import { simulateAiTurn, getBestMergerDisposition } from './engine/ai';
+import { calculateNetWorth } from './engine/market';
 import { useTranslation } from './i18n';
 
 // Core UI Components
@@ -33,6 +34,8 @@ import { CompanyTicker } from './components/CompanyTicker';
 import { GameBoard } from './components/GameBoard';
 import { PlayerScoreboard } from './components/PlayerScoreboard';
 import { ClassicGameView } from './components/classic/ClassicGameView';
+import { TacticalOpsBar } from './components/TacticalOpsBar';
+import { ConcessionsDock } from './components/ConcessionsDock';
 
 // Modal Dialogs
 import { NewGameModal, type PlayerConfig } from './components/modals/NewGameModal';
@@ -136,7 +139,9 @@ export function handleAppKeyDown(
       return true;
     } else if (key === 'e') {
       e.preventDefault?.();
-      if (options.phase === 'buy_shares') {
+      if (options.phase === 'place_tile' && options.selectedHandCoord && options.onPlaceTile) {
+        options.onPlaceTile(options.selectedHandCoord);
+      } else if (options.phase === 'buy_shares') {
         options.dispatch({ type: 'END_TURN' });
         options.playClick?.();
         options.setLastAction?.('Ended turn and passed share purchases');
@@ -157,6 +162,15 @@ export function handleAppKeyDown(
     } else if (key === 'w') {
       e.preventDefault?.();
       options.setWarRoomModalOpen(true);
+      return true;
+    }
+  }
+
+  // Space shortcut to drill well when a parcel is armed
+  if (e.key === ' ' || e.key === 'Spacebar') {
+    if (options.phase === 'place_tile' && options.selectedHandCoord && options.onPlaceTile) {
+      e.preventDefault?.();
+      options.onPlaceTile(options.selectedHandCoord);
       return true;
     }
   }
@@ -627,6 +641,114 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
       )
     : [];
 
+  // Active player financial calculation for tactical HUD
+  const activePlayerNetWorth = activePlayer
+    ? calculateNetWorth(activePlayer, gameState.companies, gameState.config.companies)
+    : 0;
+
+  // Compute live tactical directive and phase text
+  const getTacticalDirective = (): { directivePhase: string; directiveText: string } => {
+    if (activePlayerIsAi) {
+      return {
+        directivePhase: 'AUTONOMOUS OPERATIONS',
+        directiveText: `${activePlayer?.name ?? 'CPU'} is surveying geological basin...`,
+      };
+    }
+
+    if (gameState.phase === 'choose_founding_company') {
+      return {
+        directivePhase: 'CORPORATE INCORPORATION',
+        directiveText: 'Select an available company to claim your free Founder share.',
+      };
+    }
+
+    if (gameState.phase === 'choose_merger_survivor') {
+      return {
+        directivePhase: 'MERGER TAKEOVER TIEBREAK',
+        directiveText: 'Equal size detected. Select which corporation absorbs the competitor.',
+      };
+    }
+
+    if (gameState.phase === 'dispose_merger_shares') {
+      return {
+        directivePhase: 'PETROLEUM EQUITY DISPOSITION',
+        directiveText: 'Review merger cash payouts and choose share disposition options.',
+      };
+    }
+
+    if (gameState.phase === 'buy_shares') {
+      return {
+        directivePhase: 'PETROLEUM EXCHANGE TRADING',
+        directiveText: 'Acquire up to 3 corporation shares or pass turn.',
+      };
+    }
+
+    if (gameState.phase === 'place_tile') {
+      const activeCoord = hoveredHandCoord || selectedHandCoord;
+      if (!activeCoord) {
+        return {
+          directivePhase: 'SURVEY & DRILL OPERATION',
+          directiveText: 'Select an oil lease parcel from your concessions dock to drill.',
+        };
+      }
+
+      const coordName = formatCoord(activeCoord);
+      const classification = classifyMove(
+        gameState.board,
+        activeCoord,
+        gameState.companies,
+        gameState.config.safeThreshold
+      );
+
+      switch (classification.type as string) {
+        case 'isolated':
+          return {
+            directivePhase: 'WILDCAT EXPLORATION',
+            directiveText: `Target parcel ${coordName} to establish a solitary wildcat claim.`,
+          };
+        case 'expansion':
+        case 'expand': {
+          const compId = 'companyId' in classification ? classification.companyId : undefined;
+          const compDef = compId ? gameState.config.companies.find((d) => d.id === compId) : undefined;
+          const compName = compDef?.name ?? (compId ? compId.toUpperCase() : 'corporation');
+          return {
+            directivePhase: 'FIELD EXPANSION',
+            directiveText: `Target parcel ${coordName} to expand ${compName} pipeline network.`,
+          };
+        }
+        case 'founding':
+        case 'found':
+          return {
+            directivePhase: 'FOUNDING OPPORTUNITY',
+            directiveText: `Target parcel ${coordName} to connect wildcat wells and charter a new corporation!`,
+          };
+        case 'merger':
+          return {
+            directivePhase: 'CORPORATE TAKEOVER',
+            directiveText: `Target parcel ${coordName} to trigger an oil merger between adjacent fields!`,
+          };
+        case 'illegal_safe_merger':
+        case 'illegal_dead':
+          return {
+            directivePhase: 'DEAD CONCESSION PARCEL',
+            directiveText: `Parcel ${coordName} connects safe refineries. Click Discard to cycle lease.`,
+          };
+        default:
+          return {
+            directivePhase: 'SURVEY & DRILL OPERATION',
+            directiveText: `Parcel ${coordName} armed. Deploy rig to strike oil!`,
+          };
+      }
+    }
+
+    return {
+      directivePhase: 'FIELD OPERATIONS',
+      directiveText: 'Awaiting simulation directive...',
+    };
+  };
+
+  const { directivePhase, directiveText } = getTacticalDirective();
+
   return (
     <div className={`app-container ${viewMode === 'classic' ? 'classic-mode' : ''}`}>
       {viewMode === 'classic' ? (
@@ -653,115 +775,75 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
           }}
         />
       ) : (
-        <>
-          {/* Modern Strategy Game Header */}
-          <GameHeader
+        <div className="simulation-screen">
+          {/* Top: Tactical Operations Bar & Corporate Pipeline Ticker */}
+          <TacticalOpsBar
             activePlayerName={activePlayer?.name ?? 'Player 1'}
+            activePlayerCash={activePlayer?.cash ?? 0}
+            activePlayerNetWorth={activePlayerNetWorth}
             activePlayerColor={activePlayer?.color}
             isAi={activePlayerIsAi}
             turnPhase={gameState.phase}
+            directiveText={directiveText}
+            directivePhase={directivePhase}
+            companies={gameState.companies}
+            definitions={gameState.config.companies}
             soundMuted={muted}
             language={language as 'en' | 'de'}
             onToggleSound={handleToggleMute}
-            onToggleLanguage={() => setLanguage(language === 'en' ? 'de' : 'en')}
             onToggleLedger={() => setLedgerDrawerOpen((prev) => !prev)}
-            onOpenRules={() => setHelpModalOpen(true)}
-            onOpenNewGame={() => setNewGameModalOpen(true)}
             onOpenOptions={() => setOptionsModalOpen(true)}
-            onOpenSaveLoad={() => setSaveLoadModalOpen(true)}
             onSwitchClassic={() => setViewMode('classic')}
           />
 
-          {/* Live Company Stock Ticker */}
-          <CompanyTicker
+          {/* Center: Geological Survey Map Container */}
+          <div className="survey-map-container">
+            <GameBoard
+              board={gameState.board}
+              companies={gameState.companies}
+              definitions={gameState.config.companies}
+              safeThreshold={gameState.config.safeThreshold}
+              selectedTileCoord={selectedHandCoord}
+              previewTileCoord={hoveredHandCoord}
+              playerHand={gameState.players[gameState.activePlayerIndex]?.hand}
+              onPlaceTile={handlePlaceTile}
+            />
+          </div>
+
+          {/* Bottom: Tactical Concessions Dock & Drill Actuator Console */}
+          <ConcessionsDock
+            phase={gameState.phase}
+            isCurrentTurn={!activePlayerIsAi}
+            hand={gameState.players[gameState.activePlayerIndex]?.hand ?? []}
+            selectedCoord={selectedHandCoord}
+            hoveredCoord={hoveredHandCoord}
+            activePlayerCash={activePlayer?.cash ?? 0}
+            activePlayerName={activePlayer?.name}
+            board={gameState.board}
             companies={gameState.companies}
             definitions={gameState.config.companies}
             safeThreshold={gameState.config.safeThreshold}
-            totalShares={gameState.config.totalSharesPerCompany}
-            onSelectCompany={() => {
+            onSelectTile={setSelectedHandCoord}
+            onHoverTile={setHoveredHandCoord}
+            onPlaceTile={handlePlaceTile}
+            onDiscardDeadTile={handleDiscardDeadTile}
+            onConfirmPurchases={handleConfirmPurchases}
+            onPassTurn={() => {
               if (gameState.phase === 'buy_shares') {
-                setStockMarketModalOpen(true);
-              } else {
-                setCompanyStatsModalOpen(true);
+                dispatch({ type: 'END_TURN' });
+                playClick();
+                setLastAction('Ended turn and passed share purchases');
               }
             }}
           />
 
-          {/* Main Workspace Layout */}
-          <main className="game-main">
-            <div className="game-workspace-layout">
-              <div className="game-main-content">
-                <TurnAdvisor
-                  phase={gameState.phase}
-                  isAi={activePlayerIsAi}
-                  activePlayerName={activePlayer?.name ?? 'Player 1'}
-                  selectedCoord={selectedHandCoord}
-                  hoveredCoord={hoveredHandCoord}
-                  board={gameState.board}
-                  companies={gameState.companies}
-                  definitions={gameState.config.companies}
-                  safeThreshold={gameState.config.safeThreshold}
-                />
-
-                <GameBoard
-                  board={gameState.board}
-                  companies={gameState.companies}
-                  definitions={gameState.config.companies}
-                  safeThreshold={gameState.config.safeThreshold}
-                  selectedTileCoord={selectedHandCoord}
-                  previewTileCoord={hoveredHandCoord}
-                  playerHand={gameState.players[gameState.activePlayerIndex]?.hand}
-                  onPlaceTile={handlePlaceTile}
-                />
-
-                <ActionDock
-                  phase={gameState.phase}
-                  isCurrentTurn={!activePlayerIsAi}
-                  hand={gameState.players[gameState.activePlayerIndex]?.hand ?? []}
-                  selectedCoord={selectedHandCoord}
-                  hoveredCoord={hoveredHandCoord}
-                  activePlayerCash={activePlayer?.cash ?? 0}
-                  activePlayerName={activePlayer?.name}
-                  board={gameState.board}
-                  companies={gameState.companies}
-                  definitions={gameState.config.companies}
-                  safeThreshold={gameState.config.safeThreshold}
-                  hideChits={hideChits}
-                  onSelectTile={setSelectedHandCoord}
-                  onHoverTile={setHoveredHandCoord}
-                  onPlaceTile={handlePlaceTile}
-                  onDiscardDeadTile={handleDiscardDeadTile}
-                  onPlayBlankTile={handleOpenBlankModal}
-                  onToggleHideChits={setHideChits}
-                  onConfirmPurchases={handleConfirmPurchases}
-                  onPassTurn={() => {
-                    if (gameState.phase === 'buy_shares') {
-                      dispatch({ type: 'END_TURN' });
-                      playClick();
-                      setLastAction('Ended turn and passed share purchases');
-                    }
-                  }}
-                />
-              </div>
-
-              <aside className="game-sidebar-content">
-                <PlayerScoreboard
-                  players={gameState.players}
-                  activePlayerIndex={gameState.activePlayerIndex}
-                  companies={gameState.companies}
-                  definitions={gameState.config.companies}
-                  onTogglePlayerAi={handleTogglePlayerAi}
-                />
-              </aside>
-            </div>
-          </main>
-
+          {/* Strategic Slide-Up Ledger Drawer */}
           <LedgerDrawer
             isOpen={ledgerDrawerOpen}
             onClose={() => setLedgerDrawerOpen(false)}
             gameState={gameState}
           />
-        </>
+        </div>
       )}
 
       {/* =========================================================================

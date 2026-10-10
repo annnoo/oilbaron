@@ -4,60 +4,43 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import App, { handleAppKeyDown } from '../App';
 
 describe('App Integration', () => {
-  it('renders modern App shell containing GameHeader, TurnAdvisor, CompanyTicker, Board, ActionDock, and Scoreboard', () => {
+  it('renders modern App shell containing TacticalOpsBar, survey map GameBoard, and ConcessionsDock', () => {
     const html = renderToStaticMarkup(<App />);
 
-    // Modern GameHeader
-    expect(html).toContain('class="game-header"');
-    expect(html).toContain('OIL BARON');
-    expect(html).toContain('STRATEGY');
+    // Modern simulation-screen wrapper
+    expect(html).toContain('class="simulation-screen"');
+
+    // TacticalOpsBar at top
+    expect(html).toContain('class="ops-bar-container"');
+    expect(html).toContain('class="ops-bar"');
     expect(html).toContain('Player 1');
-    expect(html).toContain('Step 1: Drill Well');
+    expect(html).toContain('SURVEY &amp; DRILL OPERATION');
     expect(html).toContain('aria-label="ledger"');
     expect(html).toContain('aria-label="sound"');
-    expect(html).toContain('aria-label="language"');
-    expect(html).toContain('aria-label="rules"');
-    expect(html).toContain('aria-label="new game"');
-    expect(html).toContain('aria-label="save load"');
-    expect(html).toContain('aria-label="options"');
+    expect(html).toContain('aria-label="settings"');
     expect(html).toContain('aria-label="classic view"');
-    expect(html).toContain('1993 View');
 
-    // Legacy MenuBar should NOT be present in modern view mode
+    // Corporate pipeline ticker bar
+    expect(html).toContain('class="network-status-bar"');
+
+    // Legacy elements should NOT be present in modern simulation mode
     expect(html).not.toContain('role="menubar"');
     expect(html).not.toContain('<span class="mnemonic">G</span>ame');
-
-    // Company ticker
-    expect(html).toContain('role="region"');
-    expect(html).toContain('MARKET');
-    expect(html).toContain('Available:');
-
-    // Modern TurnAdvisor banner
-    expect(html).toContain('class="turn-advisor-banner"');
-    expect(html).toContain('class="advisor-content"');
-    expect(html).toContain('Select an oil parcel from your hand tray below to drill');
-
-    // Redundant legacy TurnGuidanceBar should NOT be present in modern view mode
+    expect(html).not.toContain('class="game-header"');
     expect(html).not.toContain('Turn Guidance &amp; Onboarding');
 
-    // Game board integration
+    // Center survey map container & GameBoard
+    expect(html).toContain('class="survey-map-container"');
     expect(html).toContain('Oil Baron 10x12 Game Board');
     expect(html).toContain('10 × 12 Grid');
     expect(html).toContain('role="grid"');
 
-    // Modern ActionDock wrapping player hand
-    expect(html).toContain('class="unified-action-dock"');
-    expect(html).toContain('data-testid="player-hand-tray"');
-    expect(html).toContain('Place Chit');
-    expect(html).toContain('Discard Dead Tile');
-    expect(html).toContain('Hide Chits');
-
-    // PlayerScoreboard
-    expect(html).toContain('data-testid="player-scoreboard"');
-    expect(html).toContain('SCOREBOARD');
-    expect(html).toContain('2 Players');
-    expect(html).toContain('Change to CPU');
-    expect(html).toContain('Change to Human');
+    // Bottom ConcessionsDock with tactical leases and drill actuator
+    expect(html).toContain('class="concessions-dock"');
+    expect(html).toContain('class="leases-tray"');
+    expect(html).toContain('aria-label="Parcel leases in hand"');
+    expect(html).toContain('class="drill-actuator"');
+    expect(html).toContain('DRILL WELL');
   });
 
   it('renders 1993 Windows 3.1 Classic View when initialViewMode is classic', () => {
@@ -156,6 +139,104 @@ describe('App Integration', () => {
       expect(setStockMarketModalOpen).not.toHaveBeenCalled();
       expect(scrollIntoView).toHaveBeenCalled();
       expect(focus).toHaveBeenCalled();
+    });
+
+    it('toggles LedgerDrawer on Alt+L', () => {
+      const setLedgerDrawerOpen = vi.fn();
+      const preventDefault = vi.fn();
+
+      const handled = handleAppKeyDown(
+        { key: 'l', altKey: true, preventDefault },
+        {
+          viewMode: 'modern',
+          phase: 'place_tile',
+          ledgerDrawerOpen: false,
+          setLedgerDrawerOpen,
+          setStockMarketModalOpen: vi.fn(),
+          setWealthChartModalOpen: vi.fn(),
+          setShareGraphModalOpen: vi.fn(),
+          setCompanyStatsModalOpen: vi.fn(),
+          setWarRoomModalOpen: vi.fn(),
+          dispatch: vi.fn(),
+        }
+      );
+
+      expect(handled).toBe(true);
+      expect(preventDefault).toHaveBeenCalled();
+      expect(setLedgerDrawerOpen).toHaveBeenCalled();
+    });
+
+    it('places tile on Alt+E or Space when selectedHandCoord is present in place_tile phase', () => {
+      const onPlaceTile = vi.fn();
+      const preventDefault = vi.fn();
+
+      // Test Alt+E
+      const handledAltE = handleAppKeyDown(
+        { key: 'e', altKey: true, preventDefault },
+        {
+          viewMode: 'modern',
+          phase: 'place_tile',
+          selectedHandCoord: { row: 2, col: 5 },
+          ledgerDrawerOpen: false,
+          setLedgerDrawerOpen: vi.fn(),
+          setStockMarketModalOpen: vi.fn(),
+          setWealthChartModalOpen: vi.fn(),
+          setShareGraphModalOpen: vi.fn(),
+          setCompanyStatsModalOpen: vi.fn(),
+          setWarRoomModalOpen: vi.fn(),
+          onPlaceTile,
+          dispatch: vi.fn(),
+        }
+      );
+
+      expect(handledAltE).toBe(true);
+      expect(onPlaceTile).toHaveBeenCalledWith({ row: 2, col: 5 });
+
+      // Test Space
+      const handledSpace = handleAppKeyDown(
+        { key: ' ', altKey: false, preventDefault },
+        {
+          viewMode: 'modern',
+          phase: 'place_tile',
+          selectedHandCoord: { row: 3, col: 7 },
+          ledgerDrawerOpen: false,
+          setLedgerDrawerOpen: vi.fn(),
+          setStockMarketModalOpen: vi.fn(),
+          setWealthChartModalOpen: vi.fn(),
+          setShareGraphModalOpen: vi.fn(),
+          setCompanyStatsModalOpen: vi.fn(),
+          setWarRoomModalOpen: vi.fn(),
+          onPlaceTile,
+          dispatch: vi.fn(),
+        }
+      );
+
+      expect(handledSpace).toBe(true);
+      expect(onPlaceTile).toHaveBeenCalledWith({ row: 3, col: 7 });
+    });
+
+    it('ends turn on Alt+E during buy_shares phase', () => {
+      const dispatch = vi.fn();
+      const preventDefault = vi.fn();
+
+      const handled = handleAppKeyDown(
+        { key: 'e', altKey: true, preventDefault },
+        {
+          viewMode: 'modern',
+          phase: 'buy_shares',
+          ledgerDrawerOpen: false,
+          setLedgerDrawerOpen: vi.fn(),
+          setStockMarketModalOpen: vi.fn(),
+          setWealthChartModalOpen: vi.fn(),
+          setShareGraphModalOpen: vi.fn(),
+          setCompanyStatsModalOpen: vi.fn(),
+          setWarRoomModalOpen: vi.fn(),
+          dispatch,
+        }
+      );
+
+      expect(handled).toBe(true);
+      expect(dispatch).toHaveBeenCalledWith({ type: 'END_TURN' });
     });
 
     it('ignores shortcuts when target is an input element', () => {
