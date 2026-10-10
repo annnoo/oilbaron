@@ -306,14 +306,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   };
 
   return (
-    <div className={`board-container ${className}`} role="region" aria-label="Oil Baron 10x12 Game Board">
+    <div className={`board-container ${className}`} role="region" aria-label={`Oil Baron ${rows}x${cols} Game Board`}>
       {/* Board Top Toolbar */}
       <div className="board-toolbar">
         <div className="toolbar-left">
           <div className="board-title-group">
             <Grid size={16} className="text-gold" />
             <span className="board-title">{t('board.title')}</span>
-            <span className="badge">{t('board.gridSize')}</span>
+            <span className="badge">{rows} × {cols} Grid</span>
           </div>
         </div>
 
@@ -415,7 +415,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
       {/* Responsive Board Grid Scroll Wrapper */}
       <div className="board-scroll-area">
-        <div className="board-grid" role="grid" aria-label="10 by 12 Tiles Grid">
+        <div
+          className="board-grid"
+          role="grid"
+          aria-label={`${rows} by ${cols} Tiles Grid`}
+          style={{
+            gridTemplateColumns: `28px repeat(${cols}, minmax(32px, 52px))`,
+            gridTemplateRows: `24px repeat(${rows}, minmax(32px, 52px))`,
+          }}
+        >
           {/* Top-Left Corner Header */}
           <div className="board-coord-header corner-header" role="columnheader">
             #

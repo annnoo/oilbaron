@@ -16,7 +16,10 @@ export interface PlayerConfig {
 export interface NewGameModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onStartGame: (players: PlayerConfig[], options?: Partial<Pick<GameConfig, 'enableEighthCompany' | 'randomSharePrices' | 'randomDividends'>>) => void;
+  onStartGame: (
+    players: PlayerConfig[],
+    options?: Partial<Pick<GameConfig, 'boardRows' | 'boardCols' | 'enableEighthCompany' | 'randomSharePrices' | 'randomDividends'>>
+  ) => void;
   initialPlayers?: readonly PlayerConfig[];
   initialConfig?: GameConfig;
 }
@@ -59,6 +62,8 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
   });
 
   const [activeColorPickerIdx, setActiveColorPickerIdx] = useState<number | null>(null);
+  const [boardRows, setBoardRows] = useState<number>(initialConfig?.boardRows ?? 10);
+  const [boardCols, setBoardCols] = useState<number>(initialConfig?.boardCols ?? 12);
   const [enableEighthCompany, setEnableEighthCompany] = useState<boolean>(
     initialConfig?.enableEighthCompany ?? false
   );
@@ -85,6 +90,8 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
       } else {
         setPlayers(DEFAULT_ROSTER.map((p) => ({ ...p })));
       }
+      setBoardRows(initialConfig?.boardRows ?? 10);
+      setBoardCols(initialConfig?.boardCols ?? 12);
       setEnableEighthCompany(initialConfig?.enableEighthCompany ?? false);
       setRandomSharePrices(initialConfig?.randomSharePrices ?? false);
       setRandomDividends(initialConfig?.randomDividends ?? false);
@@ -210,6 +217,8 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
       aiDifficulty: p.isAi ? (p.aiDifficulty ?? 'smart') : undefined,
     }));
     onStartGame(sanitized, {
+      boardRows,
+      boardCols,
       enableEighthCompany,
       randomSharePrices,
       randomDividends,
@@ -446,6 +455,47 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
             </p>
           </div>
 
+          {/* Board Dimensions Controls (10-26) */}
+          <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg-surface-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+            <div className="form-group" style={{ marginBottom: '12px' }}>
+              <div className="form-label">
+                <span>{t('options.boardRows')}</span>
+                <span className="slider-value-badge">{boardRows} rows (A–{String.fromCharCode(64 + boardRows)})</span>
+              </div>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min={10}
+                  max={26}
+                  value={boardRows}
+                  onChange={(e) => setBoardRows(Number(e.target.value))}
+                  className="slider-input"
+                  aria-label={t('options.boardRows')}
+                />
+              </div>
+              <span className="form-help">{t('options.boardRowsDesc')}</span>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '0' }}>
+              <div className="form-label">
+                <span>{t('options.boardCols')}</span>
+                <span className="slider-value-badge">{boardCols} cols (1–{boardCols})</span>
+              </div>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min={10}
+                  max={26}
+                  value={boardCols}
+                  onChange={(e) => setBoardCols(Number(e.target.value))}
+                  className="slider-input"
+                  aria-label={t('options.boardCols')}
+                />
+              </div>
+              <span className="form-help">{t('options.boardColsDesc')}</span>
+            </div>
+          </div>
+
           {/* Gameplay Rule Toggles: 8th Company & Economy Randomizers */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px', padding: '12px', background: 'var(--bg-surface-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
@@ -460,10 +510,10 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
               />
               <div>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Enable 8th Company ("Purple Oil Company, Int.")
+                  {t('options.eighthCompany')}
                 </span>
                 <span className="form-help" style={{ display: 'block', margin: 0 }}>
-                  Include the bonus 8th corporation (Purple) alongside the classic 7 oil companies.
+                  {t('options.eighthCompanyDesc')}
                 </span>
               </div>
             </label>
@@ -480,10 +530,10 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
               />
               <div>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Random Share Prices
+                  {t('options.randomSharePrices')}
                 </span>
                 <span className="form-help" style={{ display: 'block', margin: 0 }}>
-                  Randomize base company share prices across tiers at match start.
+                  {t('options.randomSharePricesDesc')}
                 </span>
               </div>
             </label>
@@ -500,10 +550,10 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
               />
               <div>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Random Dividends
+                  {t('options.randomDividends')}
                 </span>
                 <span className="form-help" style={{ display: 'block', margin: 0 }}>
-                  Randomize dividend yield payout rates across corporations.
+                  {t('options.randomDividendsDesc')}
                 </span>
               </div>
             </label>

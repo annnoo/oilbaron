@@ -252,5 +252,19 @@ describe('GameBoard Component', () => {
     expect(html).toContain('discarded-x-mark');
     expect(html).toContain('✕');
   });
+
+  it('renders dynamic 26x26 board grid correctly with A-Z headers and 676 cells', () => {
+    const board = createEmptyBoard(26, 26);
+    const html = renderToStaticMarkup(<GameBoard board={board} />);
+
+    expect(html).toContain('Oil Baron 26x26 Game Board');
+    expect(html).toContain('26 × 26 Grid');
+    expect(html).toContain('row-header" role="rowheader">Z</div>');
+    expect(html).toContain('col-header" role="columnheader">26</div>');
+    expect(html).toContain('grid-template-columns:28px repeat(26, minmax(32px, 52px))');
+
+    const cellMatches = html.match(/role="gridcell"/g);
+    expect(cellMatches).toHaveLength(676);
+  });
 });
 

@@ -95,7 +95,7 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
       </div>
 
       {/* Main Window */}
-      <ClassicWindow title="OILBARON.EXE - [Petroleum Oil Board: 10x12]">
+      <ClassicWindow title={`OILBARON.EXE - [Petroleum Oil Board: ${rows}x${cols}]`}>
         {/* Top Menu Bar */}
         <MenuBar
           activePlayerIsAi={activePlayerIsAi}
@@ -186,12 +186,22 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
 
           {/* Layout: Board on Left, Scoreboard on Right */}
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-            {/* 10x12 Board */}
-            <div className="win31-window" style={{ padding: '6px' }} data-testid="classic-board">
-              <div className="win31-board-grid">
+            {/* Board */}
+            <div
+              className="win31-window"
+              style={{ padding: '6px', maxWidth: '100%', overflow: 'auto' }}
+              data-testid="classic-board"
+            >
+              <div
+                className="win31-board-grid"
+                style={{
+                  gridTemplateColumns: `26px repeat(${cols}, 38px)`,
+                  gridTemplateRows: `20px repeat(${rows}, 38px)`,
+                }}
+              >
                 {/* Column Headers */}
                 <div className="win31-coord-hdr"></div>
-                {Array.from({ length: 12 }, (_, c) => (
+                {Array.from({ length: cols }, (_, c) => (
                   <div key={`col-${c}`} className="win31-coord-hdr">
                     {c + 1}
                   </div>

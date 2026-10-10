@@ -456,7 +456,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
   // New Game Setup Confirmation
   const handleStartCustomGame = (
     players: PlayerConfig[],
-    options?: Partial<Pick<GameConfig, 'enableEighthCompany' | 'randomSharePrices' | 'randomDividends'>>
+    options?: Partial<Pick<GameConfig, 'boardRows' | 'boardCols' | 'enableEighthCompany' | 'randomSharePrices' | 'randomDividends'>>
   ) => {
     const effectiveGameConfig: GameConfig = options
       ? { ...config, ...options }

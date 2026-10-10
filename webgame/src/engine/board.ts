@@ -327,7 +327,39 @@ export function applyTilePlacement(
   );
 }
 
-export const ROW_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'] as const;
+export const ROW_LABELS = [
+  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
+  'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+  'U', 'V', 'W', 'X', 'Y', 'Z',
+] as const;
+
+/**
+ * Checks whether a given coordinate is strictly within valid board boundaries.
+ */
+export function isValidCoord(coord: TileCoord, rows: number = 26, cols: number = 26): boolean {
+  if (coord.isBlank) return true;
+  return coord.row >= 0 && coord.row < rows && coord.col >= 0 && coord.col < cols;
+}
+
+/**
+ * Generates an array of all coordinate tiles for a grid of dimension `rows x cols`,
+ * with optional wildcard blank tiles.
+ */
+export function generateTilePool(rows: number, cols: number, allowBlanks: boolean = false): TileCoord[] {
+  const tiles: TileCoord[] = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      tiles.push({ row: r, col: c });
+    }
+  }
+  if (allowBlanks) {
+    const blankCount = 4;
+    for (let i = 0; i < blankCount; i++) {
+      tiles.push({ row: -1, col: -1 - i, isBlank: true });
+    }
+  }
+  return tiles;
+}
 
 /**
  * Formats a TileCoord into standard grid notation (e.g. { row: 2, col: 4 } -> "C-5", blank -> "BLANK").
@@ -341,17 +373,30 @@ export function formatCoord(coord: TileCoord): string {
 }
 
 /**
- * Parses coordinate text (e.g. "C-5", "c5", "A-1") into a TileCoord.
- * Returns null if invalid or out of bounds.
+ * Alias for formatCoord.
  */
-export function parseCoord(text: string): TileCoord | null {
+export const coordToString = formatCoord;
+
+/**
+ * Parses coordinate text (e.g. "C-5", "c5", "A-1", "Z-26") into a TileCoord.
+ * Returns null if invalid or out of bounds (rows A-Z, cols 1-26).
+ */
+export function parseCoord(text: string, maxRows: number = 26, maxCols: number = 26): TileCoord | null {
   const trimmed = text.trim().toUpperCase();
-  const match = trimmed.match(/^([A-J])-?([1-9]|1[0-2])$/);
+  const match = trimmed.match(/^([A-Z])-?([1-9]|[12][0-9])$/);
   if (!match) return null;
   const row = match[1]!.charCodeAt(0) - 65;
   const col = parseInt(match[2]!, 10) - 1;
+  if (row >= maxRows || col >= maxCols || col < 0) {
+    return null;
+  }
   return { row, col };
 }
+
+/**
+ * Alias for parseCoord.
+ */
+export const stringToCoord = parseCoord;
 
 /**
  * Checks whether two coordinates represent the exact same board cell.

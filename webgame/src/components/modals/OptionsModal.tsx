@@ -22,6 +22,8 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
 }) => {
   const { t, language, setLanguage } = useTranslation();
   const [ruleset, setRuleset] = useState<GameConfig['ruleset']>(config.ruleset);
+  const [boardRows, setBoardRows] = useState<number>(config.boardRows ?? 10);
+  const [boardCols, setBoardCols] = useState<number>(config.boardCols ?? 12);
   const [handSize, setHandSize] = useState<number>(config.handSize);
   const [safeThreshold, setSafeThreshold] = useState<number>(config.safeThreshold);
   const [startingCash, setStartingCash] = useState<number>(config.startingCash);
@@ -38,6 +40,8 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setRuleset(config.ruleset);
+      setBoardRows(config.boardRows ?? 10);
+      setBoardCols(config.boardCols ?? 12);
       setHandSize(config.handSize);
       setSafeThreshold(config.safeThreshold);
       setStartingCash(config.startingCash);
@@ -59,10 +63,14 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
     playClick();
     setRuleset(selected);
     if (selected === 'oilbaron_classic') {
+      setBoardRows(CLASSIC_CONFIG.boardRows);
+      setBoardCols(CLASSIC_CONFIG.boardCols);
       setHandSize(CLASSIC_CONFIG.handSize);
       setSafeThreshold(CLASSIC_CONFIG.safeThreshold);
       setStartingCash(CLASSIC_CONFIG.startingCash);
     } else {
+      setBoardRows(MODERN_BALANCED_CONFIG.boardRows);
+      setBoardCols(MODERN_BALANCED_CONFIG.boardCols);
       setHandSize(MODERN_BALANCED_CONFIG.handSize);
       setSafeThreshold(MODERN_BALANCED_CONFIG.safeThreshold);
       setStartingCash(MODERN_BALANCED_CONFIG.startingCash);
@@ -72,6 +80,8 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
   const handleResetDefaults = () => {
     playClick();
     const defaults = ruleset === 'oilbaron_classic' ? CLASSIC_CONFIG : MODERN_BALANCED_CONFIG;
+    setBoardRows(defaults.boardRows);
+    setBoardCols(defaults.boardCols);
     setHandSize(defaults.handSize);
     setSafeThreshold(defaults.safeThreshold);
     setStartingCash(defaults.startingCash);
@@ -92,6 +102,8 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
     const newConfig: GameConfig = {
       ...base,
       ruleset,
+      boardRows,
+      boardCols,
       handSize,
       safeThreshold,
       startingCash,
@@ -205,6 +217,46 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
               </button>
             </div>
             <span className="form-help">{t('options.languageDesc')}</span>
+          </div>
+
+          {/* Board Rows Slider (10-26) */}
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <div className="form-label">
+              <span>{t('options.boardRows')}</span>
+              <span className="slider-value-badge">{boardRows} rows (A–{String.fromCharCode(64 + boardRows)})</span>
+            </div>
+            <div className="slider-container">
+              <input
+                type="range"
+                min={10}
+                max={26}
+                value={boardRows}
+                onChange={(e) => setBoardRows(Number(e.target.value))}
+                className="slider-input"
+                aria-label={t('options.boardRows')}
+              />
+            </div>
+            <span className="form-help">{t('options.boardRowsDesc')}</span>
+          </div>
+
+          {/* Board Columns Slider (10-26) */}
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <div className="form-label">
+              <span>{t('options.boardCols')}</span>
+              <span className="slider-value-badge">{boardCols} cols (1–{boardCols})</span>
+            </div>
+            <div className="slider-container">
+              <input
+                type="range"
+                min={10}
+                max={26}
+                value={boardCols}
+                onChange={(e) => setBoardCols(Number(e.target.value))}
+                className="slider-input"
+                aria-label={t('options.boardCols')}
+              />
+            </div>
+            <span className="form-help">{t('options.boardColsDesc')}</span>
           </div>
 
           {/* Hand Size Slider */}
@@ -360,10 +412,10 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
               />
               <div>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Enable 8th Company ("Purple Oil Company, Int.")
+                  {t('options.eighthCompany')}
                 </span>
                 <span className="form-help" style={{ display: 'block', margin: 0 }}>
-                  Include the bonus 8th corporation (Purple) alongside the classic 7 oil companies.
+                  {t('options.eighthCompanyDesc')}
                 </span>
               </div>
             </label>
@@ -380,10 +432,10 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
               />
               <div>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Random Share Prices
+                  {t('options.randomSharePrices')}
                 </span>
                 <span className="form-help" style={{ display: 'block', margin: 0 }}>
-                  Randomize base company share prices across tiers at match start.
+                  {t('options.randomSharePricesDesc')}
                 </span>
               </div>
             </label>
@@ -400,10 +452,10 @@ export const OptionsModal: React.FC<OptionsModalProps> = ({
               />
               <div>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  Random Dividends
+                  {t('options.randomDividends')}
                 </span>
                 <span className="form-help" style={{ display: 'block', margin: 0 }}>
-                  Randomize dividend yield payout rates across corporations.
+                  {t('options.randomDividendsDesc')}
                 </span>
               </div>
             </label>

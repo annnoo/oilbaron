@@ -9,6 +9,7 @@ import type {
   PlayerState,
   TileCoord,
 } from './types';
+import { generateTilePool } from './board';
 
 export type { GameConfig };
 
@@ -167,21 +168,12 @@ export function createInitialGameState(
     companies: activeCompaniesList,
   };
 
-  // Generate all grid tile coordinates
-  const allTiles: TileCoord[] = [];
-  for (let r = 0; r < effectiveConfig.boardRows; r++) {
-    for (let c = 0; c < effectiveConfig.boardCols; c++) {
-      allTiles.push({ row: r, col: c });
-    }
-  }
-
-  // Inject wildcard blank pieces if enabled (classic 1993 Oil Baron: 4 blank pieces)
-  if (effectiveConfig.allowBlanks) {
-    const blankCount = 4;
-    for (let i = 0; i < blankCount; i++) {
-      allTiles.push({ row: -1, col: -1 - i, isBlank: true });
-    }
-  }
+  // Generate all grid tile coordinates (with optional wildcard blank pieces)
+  const allTiles: TileCoord[] = generateTilePool(
+    effectiveConfig.boardRows,
+    effectiveConfig.boardCols,
+    Boolean(effectiveConfig.allowBlanks)
+  );
 
   // Shuffle tile pool
   const shuffledTiles = shuffle(allTiles, rng);

@@ -67,6 +67,8 @@ describe('Task 5 Modals', () => {
       expect(html).toContain('Purple Oil Company, Int.');
       expect(html).toContain('Random Share Prices');
       expect(html).toContain('Random Dividends');
+      expect(html).toContain('Board Rows');
+      expect(html).toContain('Board Columns');
     });
   });
 
@@ -98,6 +100,8 @@ describe('Task 5 Modals', () => {
       expect(html).toContain('1993 Oil Baron Classic');
       expect(html).toContain('Modern Balanced');
       expect(html).toContain('Safe Company Threshold');
+      expect(html).toContain('Board Rows');
+      expect(html).toContain('Board Columns');
       expect(html).toContain('Slow Computer Turns');
       expect(html).toContain('Show Discarded Markers (&#x27;X&#x27;)');
       expect(html).toContain('Enable 8th Company');
