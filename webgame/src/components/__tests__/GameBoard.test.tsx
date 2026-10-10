@@ -310,5 +310,22 @@ describe('GameBoard Component', () => {
     const cellMatches = html.match(/role="gridcell"/g);
     expect(cellMatches).toHaveLength(676);
   });
+
+  it('renders board toolbar by default, but hides it when hideToolbar={true}', () => {
+    const board = createEmptyBoard(10, 12);
+
+    // Default: toolbar is rendered
+    const defaultHtml = renderToStaticMarkup(<GameBoard board={board} />);
+    expect(defaultHtml).toContain('board-toolbar');
+    expect(defaultHtml).toContain('10 × 12 Grid');
+
+    // Explicitly false: toolbar is rendered
+    const toolbarShownHtml = renderToStaticMarkup(<GameBoard board={board} hideToolbar={false} />);
+    expect(toolbarShownHtml).toContain('board-toolbar');
+
+    // Explicitly true: toolbar is omitted
+    const toolbarHiddenHtml = renderToStaticMarkup(<GameBoard board={board} hideToolbar={true} />);
+    expect(toolbarHiddenHtml).not.toContain('board-toolbar');
+  });
 });
 

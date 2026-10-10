@@ -115,6 +115,11 @@ export interface GameBoardProps {
   onInspectCoord?: (coord: TileCoord | null) => void;
 
   /**
+   * Whether to hide the top board toolbar (title, inspect mode, tooltip, legend toggles).
+   */
+  hideToolbar?: boolean;
+
+  /**
    * Optional custom CSS class name.
    */
   className?: string;
@@ -135,6 +140,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   onPlaceTile,
   onCellClick,
   onInspectCoord,
+  hideToolbar = false,
   className = '',
 }) => {
   const { t } = useTranslation();
@@ -322,59 +328,61 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   return (
     <div className={`board-container survey-map-container ${className}`} role="region" aria-label={`Oil Baron ${rows}x${cols} Game Board`}>
       {/* Board Top Toolbar */}
-      <div className="board-toolbar">
-        <div className="toolbar-left">
-          <div className="board-title-group">
-            <Grid size={16} className="text-gold" />
-            <span className="board-title">{t('board.title')}</span>
-            <span className="badge">{rows} × {cols} Grid</span>
+      {!hideToolbar && (
+        <div className="board-toolbar">
+          <div className="toolbar-left">
+            <div className="board-title-group">
+              <Grid size={16} className="text-gold" />
+              <span className="board-title">{t('board.title')}</span>
+              <span className="badge">{rows} × {cols} Grid</span>
+            </div>
+          </div>
+
+          <div className="toolbar-right">
+            {/* Inspect Mode Toggle */}
+            <button
+              type="button"
+              className={`btn btn-sm ${inspectModeActive ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => {
+                playClick();
+                setInspectModeActive((prev) => !prev);
+              }}
+              title={t('board.inspectModeTooltip')}
+            >
+              <Eye size={13} />
+              <span>{inspectModeActive ? t('board.inspecting') : t('board.inspectMode')}</span>
+            </button>
+
+            {/* Hover Tooltip Toggle */}
+            <button
+              type="button"
+              className={`btn btn-sm ${hoverTooltipEnabled ? 'btn-secondary' : 'btn-ghost'}`}
+              onClick={() => {
+                playClick();
+                setHoverTooltipEnabled((prev) => !prev);
+              }}
+              title={t('board.tooltipToggle')}
+            >
+              <Info size={13} />
+              <span>{t('board.tooltip')} {hoverTooltipEnabled ? 'ON' : 'OFF'}</span>
+            </button>
+
+            {/* Color Legend Toggle */}
+            <button
+              type="button"
+              className={`btn btn-sm ${showLegend ? 'btn-secondary' : 'btn-ghost'}`}
+              onClick={() => {
+                playClick();
+                setShowLegend((prev) => !prev);
+              }}
+              title={t('board.legendToggle')}
+            >
+              <HelpCircle size={13} />
+              <span>{t('board.legend')}</span>
+            </button>
           </div>
         </div>
-
-        <div className="toolbar-right">
-          {/* Inspect Mode Toggle */}
-          <button
-            type="button"
-            className={`btn btn-sm ${inspectModeActive ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => {
-              playClick();
-              setInspectModeActive((prev) => !prev);
-            }}
-            title={t('board.inspectModeTooltip')}
-          >
-            <Eye size={13} />
-            <span>{inspectModeActive ? t('board.inspecting') : t('board.inspectMode')}</span>
-          </button>
-
-          {/* Hover Tooltip Toggle */}
-          <button
-            type="button"
-            className={`btn btn-sm ${hoverTooltipEnabled ? 'btn-secondary' : 'btn-ghost'}`}
-            onClick={() => {
-              playClick();
-              setHoverTooltipEnabled((prev) => !prev);
-            }}
-            title={t('board.tooltipToggle')}
-          >
-            <Info size={13} />
-            <span>{t('board.tooltip')} {hoverTooltipEnabled ? 'ON' : 'OFF'}</span>
-          </button>
-
-          {/* Color Legend Toggle */}
-          <button
-            type="button"
-            className={`btn btn-sm ${showLegend ? 'btn-secondary' : 'btn-ghost'}`}
-            onClick={() => {
-              playClick();
-              setShowLegend((prev) => !prev);
-            }}
-            title={t('board.legendToggle')}
-          >
-            <HelpCircle size={13} />
-            <span>{t('board.legend')}</span>
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Live Move Preview Status Strip */}
       <div className="board-preview-strip">
