@@ -18,6 +18,8 @@ describe('App Integration', () => {
     expect(html).toContain('aria-label="language"');
     expect(html).toContain('aria-label="rules"');
     expect(html).toContain('aria-label="new game"');
+    expect(html).toContain('aria-label="save load"');
+    expect(html).toContain('aria-label="options"');
     expect(html).toContain('aria-label="classic view"');
     expect(html).toContain('1993 View');
 

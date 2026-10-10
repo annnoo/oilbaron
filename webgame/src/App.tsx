@@ -592,6 +592,8 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
             onToggleLedger={() => setLedgerDrawerOpen((prev) => !prev)}
             onOpenRules={() => setHelpModalOpen(true)}
             onOpenNewGame={() => setNewGameModalOpen(true)}
+            onOpenOptions={() => setOptionsModalOpen(true)}
+            onOpenSaveLoad={() => setSaveLoadModalOpen(true)}
             onSwitchClassic={() => setViewMode('classic')}
           />
 
@@ -654,6 +656,8 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
                   onHoverTile={setHoveredHandCoord}
                   onPlaceTile={handlePlaceTile}
                   onDiscardDeadTile={handleDiscardDeadTile}
+                  onPlayBlankTile={handleOpenBlankModal}
+                  onToggleHideChits={setHideChits}
                   onConfirmPurchases={handleConfirmPurchases}
                   onPassTurn={() => {
                     if (gameState.phase === 'buy_shares') {

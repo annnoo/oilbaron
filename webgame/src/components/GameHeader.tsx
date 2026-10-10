@@ -7,9 +7,12 @@ import {
   RotateCcw,
   Languages,
   Monitor,
+  Settings,
+  FolderOpen,
 } from 'lucide-react';
 import type { TurnPhase } from '../engine/types';
 import { playClick } from '../assets/audio';
+import { useTranslation } from '../i18n';
 
 export interface GameHeaderProps {
   activePlayerName: string;
@@ -23,6 +26,8 @@ export interface GameHeaderProps {
   onToggleLedger: () => void;
   onOpenRules: () => void;
   onOpenNewGame: () => void;
+  onOpenOptions?: () => void;
+  onOpenSaveLoad?: () => void;
   onSwitchClassic?: () => void;
 }
 
@@ -38,25 +43,29 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   onToggleLedger,
   onOpenRules,
   onOpenNewGame,
+  onOpenOptions,
+  onOpenSaveLoad,
   onSwitchClassic,
 }) => {
+  const { t } = useTranslation();
+
   const getStepLabel = () => {
-    if (isAi) return 'AI Turn in Progress';
+    if (isAi) return t('header.aiTurn');
     switch (turnPhase) {
       case 'place_tile':
-        return 'Step 1: Drill Well';
+        return t('header.step1');
       case 'choose_founding_company':
-        return 'Incorporate Company';
+        return t('header.incorporate');
       case 'choose_merger_survivor':
-        return 'Merger Tiebreak';
+        return t('header.mergerTiebreak');
       case 'dispose_merger_shares':
-        return 'Merger Disposition';
+        return t('header.mergerDisposition');
       case 'buy_shares':
-        return 'Step 2: Invest in Stocks';
+        return t('header.step2');
       case 'game_over':
-        return 'Game Over';
+        return t('header.gameOver');
       default:
-        return 'Active Turn';
+        return t('header.activeTurn');
     }
   };
 
@@ -66,7 +75,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
         <div className="brand-logo-badge">🛢️</div>
         <div className="brand-title">
           <span className="brand-name">OIL BARON</span>
-          <span className="brand-sub">STRATEGY</span>
+          <span className="brand-sub">{t('header.brandSub')}</span>
         </div>
       </div>
 
@@ -89,11 +98,11 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
             playClick();
             onToggleLedger();
           }}
-          title="Ledger & Strategic Analytics"
+          title={t('header.ledgerTooltip')}
           aria-label="ledger"
         >
           <BarChart3 size={16} />
-          <span className="btn-label">Ledger</span>
+          <span className="btn-label">{t('header.ledger')}</span>
         </button>
 
         <button
@@ -123,6 +132,36 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           <span className="btn-label">{language.toUpperCase()}</span>
         </button>
 
+        {onOpenSaveLoad && (
+          <button
+            type="button"
+            className="header-icon-btn"
+            onClick={() => {
+              playClick();
+              onOpenSaveLoad();
+            }}
+            title={t('header.saveLoad')}
+            aria-label="save load"
+          >
+            <FolderOpen size={16} />
+          </button>
+        )}
+
+        {onOpenOptions && (
+          <button
+            type="button"
+            className="header-icon-btn"
+            onClick={() => {
+              playClick();
+              onOpenOptions();
+            }}
+            title={t('header.options')}
+            aria-label="options"
+          >
+            <Settings size={16} />
+          </button>
+        )}
+
         <button
           type="button"
           className="header-icon-btn"
@@ -130,7 +169,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
             playClick();
             onOpenRules();
           }}
-          title="Game Rules & Guide"
+          title={t('header.rules')}
           aria-label="rules"
         >
           <BookOpen size={16} />
@@ -143,7 +182,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
             playClick();
             onOpenNewGame();
           }}
-          title="New Match"
+          title={t('header.newMatch')}
           aria-label="new game"
         >
           <RotateCcw size={16} />
@@ -157,11 +196,11 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
               playClick();
               onSwitchClassic();
             }}
-            title="Switch to 1993 Windows 3.1 Classic View"
+            title={t('header.classicViewTooltip')}
             aria-label="classic view"
           >
             <Monitor size={16} />
-            <span className="btn-label">1993 View</span>
+            <span className="btn-label">{t('header.classicView')}</span>
           </button>
         )}
       </div>

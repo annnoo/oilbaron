@@ -3,6 +3,7 @@ import { X, BarChart2, PieChart, Building2 } from 'lucide-react';
 import type { GameState } from '../engine/types';
 import { calculateNetWorth, calculateSharePrice } from '../engine/market';
 import { playClick } from '../assets/audio';
+import { useTranslation } from '../i18n';
 
 export interface LedgerDrawerProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export interface LedgerDrawerProps {
 type LedgerTab = 'wealth' | 'shares' | 'companies' | 'history';
 
 export const LedgerDrawer: React.FC<LedgerDrawerProps> = ({ isOpen, onClose, gameState }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<LedgerTab>('wealth');
 
   if (!isOpen) return null;
@@ -24,8 +26,8 @@ export const LedgerDrawer: React.FC<LedgerDrawerProps> = ({ isOpen, onClose, gam
       <div className="ledger-drawer-panel" onClick={(e) => e.stopPropagation()}>
         <div className="drawer-header">
           <div className="drawer-title-group">
-            <span className="drawer-title">Ledger & Strategic Analytics</span>
-            <span className="drawer-subtitle">Comprehensive financial registry</span>
+            <span className="drawer-title">{t('drawer.title')}</span>
+            <span className="drawer-subtitle">{t('drawer.subtitle')}</span>
           </div>
           <button
             type="button"
@@ -48,7 +50,7 @@ export const LedgerDrawer: React.FC<LedgerDrawerProps> = ({ isOpen, onClose, gam
             aria-label="wealth"
           >
             <BarChart2 size={14} />
-            <span>Wealth</span>
+            <span>{t('drawer.tabWealth')}</span>
           </button>
           <button
             type="button"
@@ -57,7 +59,7 @@ export const LedgerDrawer: React.FC<LedgerDrawerProps> = ({ isOpen, onClose, gam
             aria-label="shares"
           >
             <PieChart size={14} />
-            <span>Shareholdings</span>
+            <span>{t('drawer.tabShares')}</span>
           </button>
           <button
             type="button"
@@ -66,14 +68,14 @@ export const LedgerDrawer: React.FC<LedgerDrawerProps> = ({ isOpen, onClose, gam
             aria-label="companies"
           >
             <Building2 size={14} />
-            <span>Companies</span>
+            <span>{t('drawer.tabCompanies')}</span>
           </button>
         </div>
 
         <div className="drawer-body">
           {activeTab === 'wealth' && (
             <div className="tab-pane-wealth">
-              <h4 className="pane-title">Net Worth & Liquidity</h4>
+              <h4 className="pane-title">{t('drawer.netWorth')}</h4>
               <div className="wealth-list">
                 {players.map((p) => {
                   const netWorth = calculateNetWorth(p, companies, config.companies);
@@ -111,12 +113,12 @@ export const LedgerDrawer: React.FC<LedgerDrawerProps> = ({ isOpen, onClose, gam
 
           {activeTab === 'shares' && (
             <div className="tab-pane-shares">
-              <h4 className="pane-title">Stock Ownership Matrix</h4>
+              <h4 className="pane-title">{t('drawer.matrixTitle')}</h4>
               <div className="matrix-table-wrap">
                 <table className="matrix-table">
                   <thead>
                     <tr>
-                      <th>Player</th>
+                      <th>{t('drawer.playerCol')}</th>
                       {config.companies.map((c) => (
                         <th key={c.id} style={{ color: c.color }}>
                           {c.name.slice(0, 3)}
@@ -143,7 +145,7 @@ export const LedgerDrawer: React.FC<LedgerDrawerProps> = ({ isOpen, onClose, gam
 
           {activeTab === 'companies' && (
             <div className="tab-pane-companies">
-              <h4 className="pane-title">Corporation Overview</h4>
+              <h4 className="pane-title">{t('drawer.corpOverview')}</h4>
               <div className="companies-grid">
                 {config.companies.map((def) => {
                   const cState = companies[def.id];
@@ -162,7 +164,7 @@ export const LedgerDrawer: React.FC<LedgerDrawerProps> = ({ isOpen, onClose, gam
                     >
                       <div className="stat-name">{def.name}</div>
                       <div className="stat-details">
-                        <span>Status: {active ? (cState?.isSafe ? '🛡️ Safe' : 'Active') : 'Dormant'}</span>
+                        <span>Status: {active ? (cState?.isSafe ? t('drawer.safe') : t('drawer.active')) : t('drawer.dormant')}</span>
                         <span>Wells: {cState?.size ?? 0}</span>
                         <span>Price: ${price}</span>
                         <span>Bank Shares: {cState?.availableShares ?? config.totalSharesPerCompany}</span>

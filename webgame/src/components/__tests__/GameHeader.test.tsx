@@ -301,4 +301,55 @@ describe('GameHeader', () => {
     const omittedBtn = screen.queryByRole('button', { name: /classic view/i });
     expect(omittedBtn).toBeNull();
   });
+
+  it('handles optional onOpenOptions and onOpenSaveLoad callbacks', () => {
+    const onOpenOptions = vi.fn();
+    const onOpenSaveLoad = vi.fn();
+
+    render(
+      <GameHeader
+        activePlayerName="Player 1"
+        isAi={false}
+        turnPhase="place_tile"
+        soundMuted={false}
+        language="en"
+        onToggleSound={vi.fn()}
+        onToggleLanguage={vi.fn()}
+        onToggleLedger={vi.fn()}
+        onOpenRules={vi.fn()}
+        onOpenNewGame={vi.fn()}
+        onOpenOptions={onOpenOptions}
+        onOpenSaveLoad={onOpenSaveLoad}
+      />
+    );
+
+    const saveLoadBtn = screen.getByRole('button', { name: /save load/i });
+    expect(saveLoadBtn).toBeDefined();
+    fireEvent.click(saveLoadBtn);
+    expect(onOpenSaveLoad).toHaveBeenCalledTimes(1);
+
+    const optionsBtn = screen.getByRole('button', { name: /options/i });
+    expect(optionsBtn).toBeDefined();
+    fireEvent.click(optionsBtn);
+    expect(onOpenOptions).toHaveBeenCalledTimes(1);
+
+    // Omitted when callbacks not provided
+    render(
+      <GameHeader
+        activePlayerName="Player 1"
+        isAi={false}
+        turnPhase="place_tile"
+        soundMuted={false}
+        language="en"
+        onToggleSound={vi.fn()}
+        onToggleLanguage={vi.fn()}
+        onToggleLedger={vi.fn()}
+        onOpenRules={vi.fn()}
+        onOpenNewGame={vi.fn()}
+      />
+    );
+
+    expect(screen.queryByRole('button', { name: /save load/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /options/i })).toBeNull();
+  });
 });

@@ -88,7 +88,12 @@ export function t(key: TranslationKey, params?: TranslationParams): string {
  * Subscribed components re-render immediately when language is changed.
  */
 export function useTranslation() {
-  const language = useSyncExternalStore(subscribe, getLanguage, getLanguage);
+  let language: Language = getLanguage();
+  try {
+    language = useSyncExternalStore(subscribe, getLanguage, getLanguage);
+  } catch {
+    language = getLanguage();
+  }
 
   return {
     t,

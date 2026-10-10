@@ -28,6 +28,8 @@ export interface ActionDockProps {
   onHoverTile: (coord: TileCoord | null) => void;
   onPlaceTile: (coord: TileCoord) => void;
   onDiscardDeadTile: (coord: TileCoord) => void;
+  onPlayBlankTile?: (coord: TileCoord) => void;
+  onToggleHideChits?: (hidden: boolean) => void;
   onConfirmPurchases: (purchases: SharePurchase[]) => void;
   onPassTurn: () => void;
 }
@@ -49,6 +51,8 @@ export const ActionDock: React.FC<ActionDockProps> = ({
   onHoverTile,
   onPlaceTile,
   onDiscardDeadTile,
+  onPlayBlankTile,
+  onToggleHideChits,
   onConfirmPurchases,
   onPassTurn,
 }) => {
@@ -79,6 +83,8 @@ export const ActionDock: React.FC<ActionDockProps> = ({
           onHoverTile={onHoverTile}
           onPlaceTile={onPlaceTile}
           onDiscardDeadTile={onDiscardDeadTile}
+          onPlayBlankTile={onPlayBlankTile}
+          onToggleHideChits={onToggleHideChits}
         />
       )}
     </div>

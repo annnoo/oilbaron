@@ -165,4 +165,36 @@ describe('ActionDock', () => {
     expect(screen.getByText('A-1')).toBeInTheDocument();
     expect(html).toContain('is-selected');
   });
+
+  it('forwards blank wildcard tile handling and privacy toggle to PlayerHand', () => {
+    const onPlayBlankTile = vi.fn();
+    const onToggleHideChits = vi.fn();
+
+    const { html } = render(
+      <ActionDock
+        phase="place_tile"
+        isCurrentTurn={true}
+        hand={[{ row: -1, col: -1, isBlank: true }]}
+        selectedCoord={{ row: -1, col: -1, isBlank: true }}
+        hoveredCoord={null}
+        activePlayerCash={5000}
+        board={emptyBoard}
+        companies={{}}
+        definitions={CLASSIC_COMPANIES}
+        hideChits={false}
+        onSelectTile={vi.fn()}
+        onHoverTile={vi.fn()}
+        onPlaceTile={vi.fn()}
+        onDiscardDeadTile={vi.fn()}
+        onPlayBlankTile={onPlayBlankTile}
+        onToggleHideChits={onToggleHideChits}
+        onConfirmPurchases={vi.fn()}
+        onPassTurn={vi.fn()}
+      />
+    );
+
+    expect(html).toContain('is-wildcard');
+    expect(html).toContain('WILDCARD');
+    expect(screen.getByText('WILDCARD')).toBeInTheDocument();
+  });
 });

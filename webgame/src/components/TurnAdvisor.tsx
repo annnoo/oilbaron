@@ -10,6 +10,7 @@ import type {
 } from '../engine/types';
 import { classifyMove, formatCoord } from '../engine/board';
 import { calculateSharePrice } from '../engine/market';
+import { useTranslation } from '../i18n';
 
 export function getStockPrice(tier: string, size: number): number {
   if (size < 2) return 0;
@@ -40,44 +41,46 @@ export const TurnAdvisor: React.FC<TurnAdvisorProps> = ({
   definitions = [],
   safeThreshold = 11,
 }) => {
+  const { t } = useTranslation();
+
   const getAdvisorMessage = () => {
     if (isAi) {
       return {
         icon: <Sparkles size={16} className="advisor-icon pulse" />,
-        headline: `${activePlayerName} (CPU) is analyzing the board...`,
-        detail: 'Evaluating territory potential and market acquisitions.',
+        headline: t('advisor.aiAnalyzing', { name: activePlayerName }),
+        detail: t('advisor.aiDetail'),
       };
     }
 
     if (phase === 'buy_shares') {
       return {
         icon: <ShoppingBag size={16} className="advisor-icon text-amber" />,
-        headline: 'Stock Exchange Open: Invest in up to 3 company shares',
-        detail: 'Use the quick-buy shelf below to purchase shares or click Finish Turn to pass.',
+        headline: t('advisor.buyShares'),
+        detail: t('advisor.buySharesDetail'),
       };
     }
 
     if (phase === 'choose_founding_company') {
       return {
         icon: <TrendingUp size={16} className="advisor-icon text-green" />,
-        headline: 'Company Incorporation',
-        detail: 'Choose an available corporation to claim your free Founder Bonus share.',
+        headline: t('advisor.incorporate'),
+        detail: t('advisor.incorporateDetail'),
       };
     }
 
     if (phase === 'choose_merger_survivor') {
       return {
         icon: <AlertCircle size={16} className="advisor-icon text-orange" />,
-        headline: 'Merger Tiebreak',
-        detail: 'Multiple chains have identical size. Select which company absorbs the other.',
+        headline: t('advisor.mergerTiebreak'),
+        detail: t('advisor.mergerTiebreakDetail'),
       };
     }
 
     if (phase === 'dispose_merger_shares') {
       return {
         icon: <TrendingUp size={16} className="advisor-icon text-blue" />,
-        headline: 'Merger Payouts & Share Disposition',
-        detail: 'Decide whether to hold, sell for cash, or trade 2-for-1 for surviving stock.',
+        headline: t('advisor.mergerPayouts'),
+        detail: t('advisor.mergerPayoutsDetail'),
       };
     }
 
@@ -86,8 +89,8 @@ export const TurnAdvisor: React.FC<TurnAdvisorProps> = ({
       if (!activeCoord) {
         return {
           icon: <Compass size={16} className="advisor-icon" />,
-          headline: 'Select an oil parcel from your hand tray below to drill',
-          detail: 'Hover over your chits to preview their impact on the board grid.',
+          headline: t('advisor.selectParcel'),
+          detail: t('advisor.selectParcelDetail'),
         };
       }
 
@@ -98,8 +101,8 @@ export const TurnAdvisor: React.FC<TurnAdvisorProps> = ({
         case 'isolated':
           return {
             icon: <Compass size={16} className="advisor-icon text-blue" />,
-            headline: `${coordName} — Isolated well`,
-            detail: 'No adjacent wells. Establishes a wildcat claim on the territory.',
+            headline: t('advisor.isolated', { coord: coordName }),
+            detail: t('advisor.isolatedDetail'),
           };
         case 'expansion':
         case 'expand': {
@@ -112,43 +115,43 @@ export const TurnAdvisor: React.FC<TurnAdvisorProps> = ({
             : getStockPrice('low', newSize);
           return {
             icon: <TrendingUp size={16} className="advisor-icon text-yellow" />,
-            headline: `${coordName} — Expands ${comp?.name ?? companyId}`,
-            detail: `Grows chain to ${newSize} wells. Share price will rise to $${newPrice}.`,
+            headline: t('advisor.expands', { coord: coordName, name: comp?.name ?? companyId ?? '' }),
+            detail: t('advisor.expandsDetail', { size: newSize, price: newPrice }),
           };
         }
         case 'founding':
         case 'found':
           return {
             icon: <Sparkles size={16} className="advisor-icon text-green" />,
-            headline: `${coordName} — Founds a new oil corporation!`,
-            detail: 'Connects adjacent wildcat wells. You will receive 1 free founder share.',
+            headline: t('advisor.founding', { coord: coordName }),
+            detail: t('advisor.foundingDetail'),
           };
         case 'merger':
           return {
             icon: <AlertCircle size={16} className="advisor-icon text-orange" />,
-            headline: `${coordName} — Triggers an Oil Merger!`,
-            detail: 'Adjacent companies will merge. Major shareholders receive cash bonuses.',
+            headline: t('advisor.merger', { coord: coordName }),
+            detail: t('advisor.mergerDetail'),
           };
         case 'illegal_safe_merger':
         case 'illegal_dead':
           return {
             icon: <ShieldAlert size={16} className="advisor-icon text-red" />,
-            headline: `${coordName} — Dead / Unplayable Tile`,
-            detail: 'Tile connects two permanent safe companies (11+ wells). Click Discard on chit.',
+            headline: t('advisor.dead', { coord: coordName }),
+            detail: t('advisor.deadDetail'),
           };
         default:
           return {
             icon: <Compass size={16} className="advisor-icon" />,
-            headline: `Tile ${coordName} selected`,
-            detail: 'Click cell on the board to confirm placement.',
+            headline: t('advisor.tileSelected', { coord: coordName }),
+            detail: t('advisor.tileSelectedDetail'),
           };
       }
     }
 
     return {
       icon: <Compass size={16} className="advisor-icon" />,
-      headline: 'Match in progress',
-      detail: 'Follow on-screen instructions.',
+      headline: t('advisor.matchInProgress'),
+      detail: t('advisor.followInstructions'),
     };
   };
 

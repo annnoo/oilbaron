@@ -3,6 +3,7 @@ import { Plus, Minus, Check, ShoppingBag } from 'lucide-react';
 import type { CompanyDefinition, CompanyId, CompanyState, SharePurchase } from '../engine/types';
 import { calculateSharePrice } from '../engine/market';
 import { playCashChime, playClick } from '../assets/audio';
+import { useTranslation } from '../i18n';
 
 export interface InlineStockMarketProps {
   activePlayerCash: number;
@@ -19,6 +20,7 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
   onConfirmPurchases,
   onPass,
 }) => {
+  const { t, language } = useTranslation();
   const [quantities, setQuantities] = useState<Record<CompanyId, number>>({});
 
   const activeCompanyList = definitions.filter((def) => {
@@ -88,17 +90,26 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
       <div className="shelf-header">
         <span className="shelf-title">
           <ShoppingBag size={14} style={{ marginRight: '6px' }} />
-          Stock Exchange: Invest in up to 3 shares
+          {t('shelf.title')}
         </span>
         <span className="shelf-budget">
-          Selected: <strong>{totalSelectedShares} / 3 shares</strong> | Total:{' '}
-          <strong>${totalCost}</strong> | Cash: <strong>${activePlayerCash}</strong>
+          {language === 'de' ? (
+            <>
+              Ausgewählt: <strong>{totalSelectedShares} / 3 Aktien</strong> | Gesamt:{' '}
+              <strong>${totalCost}</strong> | Bargeld: <strong>${activePlayerCash}</strong>
+            </>
+          ) : (
+            <>
+              Selected: <strong>{totalSelectedShares} / 3 shares</strong> | Total:{' '}
+              <strong>${totalCost}</strong> | Cash: <strong>${activePlayerCash}</strong>
+            </>
+          )}
         </span>
       </div>
 
       <div className="shelf-companies-row">
         {activeCompanyList.length === 0 ? (
-          <div className="no-companies-note">No active companies with available shares.</div>
+          <div className="no-companies-note">{t('shelf.noCompanies')}</div>
         ) : (
           activeCompanyList.map((def) => {
             const cState = companies[def.id];
@@ -118,7 +129,9 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
                 <div className="company-info">
                   <span className="company-name">{def.name}</span>
                   <span className="company-price">${price}</span>
-                  <span className="company-avail">{cState?.availableShares} left</span>
+                  <span className="company-avail">
+                    {cState?.availableShares} {language === 'de' ? 'übrig' : 'left'}
+                  </span>
                 </div>
                 <div className="company-counter">
                   <button
@@ -155,7 +168,7 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
           aria-label="finish turn"
         >
           <Check size={14} style={{ marginRight: '6px' }} />
-          {totalSelectedShares > 0 ? `Buy Shares & Finish Turn (Alt+E)` : `Pass & Finish Turn (Alt+E)`}
+          {totalSelectedShares > 0 ? t('shelf.buyFinish') : t('shelf.passFinish')}
         </button>
       </div>
     </div>

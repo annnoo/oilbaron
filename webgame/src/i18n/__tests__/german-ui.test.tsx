@@ -22,6 +22,11 @@ import { WarRoomModal } from '../../components/modals/WarRoomModal';
 import { SaveLoadModal } from '../../components/modals/SaveLoadModal';
 import { GameOverModal } from '../../components/modals/GameOverModal';
 import { HelpModal } from '../../components/modals/HelpModal';
+import { GameHeader } from '../../components/GameHeader';
+import { TurnAdvisor } from '../../components/TurnAdvisor';
+import { LedgerDrawer } from '../../components/LedgerDrawer';
+import { InlineStockMarket } from '../../components/InlineStockMarket';
+import { ActionDock } from '../../components/ActionDock';
 import { CLASSIC_CONFIG, createInitialGameState } from '../../engine/config';
 import { GameState } from '../../engine/types';
 
@@ -329,5 +334,63 @@ describe('German UI Localization Integration', () => {
     expect(gameoverHtml).toContain('Endstand &amp; Liquidiertes Vermögen');
     expect(gameoverHtml).toContain('Spielfeld inspizieren');
     expect(gameoverHtml).toContain('Neues Spiel starten');
+  });
+
+  it('renders modern strategy game components in German', () => {
+    const headerHtml = renderToStaticMarkup(
+      <GameHeader
+        activePlayerName="Hans"
+        isAi={false}
+        turnPhase="place_tile"
+        soundMuted={false}
+        language="de"
+        onToggleSound={vi.fn()}
+        onToggleLanguage={vi.fn()}
+        onToggleLedger={vi.fn()}
+        onOpenRules={vi.fn()}
+        onOpenNewGame={vi.fn()}
+        onOpenOptions={vi.fn()}
+        onOpenSaveLoad={vi.fn()}
+        onSwitchClassic={vi.fn()}
+      />
+    );
+    expect(headerHtml).toContain('STRATEGIE');
+    expect(headerHtml).toContain('Schritt 1: Ölbohrung setzen');
+    expect(headerHtml).toContain('Hauptbuch');
+    expect(headerHtml).toContain('1993-Ansicht');
+
+    const advisorHtml = renderToStaticMarkup(
+      <TurnAdvisor
+        phase="place_tile"
+        isAi={false}
+        activePlayerName="Hans"
+        selectedCoord={null}
+        hoveredCoord={null}
+        board={dummyState.board}
+      />
+    );
+    expect(advisorHtml).toContain('Wähle ein Feld aus deiner Hand unten für eine Bohrung');
+
+    const ledgerHtml = renderToStaticMarkup(
+      <LedgerDrawer
+        isOpen={true}
+        onClose={vi.fn()}
+        gameState={dummyState}
+      />
+    );
+    expect(ledgerHtml).toContain('Hauptbuch &amp; Strategische Analysen');
+    expect(ledgerHtml).toContain('Nettovermögen &amp; Liquidität');
+
+    const shelfHtml = renderToStaticMarkup(
+      <InlineStockMarket
+        activePlayerCash={2000}
+        companies={{}}
+        definitions={dummyState.config.companies}
+        onConfirmPurchases={vi.fn()}
+        onPass={vi.fn()}
+      />
+    );
+    expect(shelfHtml).toContain('Börsenhandel: Kaufe bis zu 3 Aktien');
+    expect(shelfHtml).toContain('Passen &amp; Zug beenden (Alt+E)');
   });
 });
