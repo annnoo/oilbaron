@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Minus, Check, ShoppingBag } from 'lucide-react';
-import type { CompanyDefinition, CompanyId, CompanyState, SharePurchase } from '../engine/types';
+import { Plus, Minus, Check, ShoppingBag, ArrowDownRight, ArrowUpRight, DollarSign, Trash2 } from 'lucide-react';
+import type { CompanyDefinition, CompanyId, CompanyState, SharePurchase, ShareSale } from '../engine/types';
 import { calculateSharePrice } from '../engine/market';
 import { playCashChime, playClick } from '../assets/audio';
 import { useTranslation } from '../i18n';
@@ -9,7 +9,10 @@ export interface InlineStockMarketProps {
   activePlayerCash: number;
   companies: Partial<Record<CompanyId, CompanyState & { stockPrice?: number }>>;
   definitions: readonly CompanyDefinition[];
+  playerShares?: Partial<Record<CompanyId, number>>;
   onConfirmPurchases: (purchases: SharePurchase[]) => void;
+  onConfirmSales?: (sales: ShareSale[]) => void;
+  onSellAll?: () => void;
   onPass: () => void;
 }
 
@@ -17,10 +20,14 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
   activePlayerCash,
   companies,
   definitions,
+  playerShares = {},
   onConfirmPurchases,
+  onConfirmSales,
+  onSellAll,
   onPass,
 }) => {
   const { t, language } = useTranslation();
+  const [mode, setMode] = useState<'buy' | 'sell'>('buy');
   const [quantities, setQuantities] = useState<Record<CompanyId, number>>({});
 
   const activeCompanyList = definitions.filter((def) => {
@@ -43,6 +50,17 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
     const qty = quantities[def.id] || 0;
     const price = getPrice(def);
     return sum + qty * price;
+  }, 0);
+
+  // Owned companies for sell mode
+  const ownedCompanies = definitions.filter((def) => (playerShares[def.id] ?? 0) > 0);
+  const totalOwnedSharesCount = ownedCompanies.reduce(
+    (sum, def) => sum + (playerShares[def.id] ?? 0),
+    0
+  );
+  const totalPortfolioValue = ownedCompanies.reduce((sum, def) => {
+    const count = playerShares[def.id] ?? 0;
+    return sum + count * getPrice(def);
   }, 0);
 
   const handleIncrement = (id: CompanyId) => {
@@ -71,14 +89,34 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
     });
   };
 
-  const handleFinish = () => {
-    const purchases: SharePurchase[] = Object.entries(quantities)
-      .filter(([_, count]) => count > 0)
-      .map(([companyId, count]) => ({ companyId: companyId as CompanyId, count }));
+  const handleSellOne = (companyId: CompanyId) => {
+    playCashChime();
+    onConfirmSales?.([{ companyId, count: 1 }]);
+  };
 
-    if (purchases.length > 0) {
-      playCashChime();
-      onConfirmPurchases(purchases);
+  const handleSellAllCompany = (companyId: CompanyId, count: number) => {
+    playCashChime();
+    onConfirmSales?.([{ companyId, count }]);
+  };
+
+  const handleLiquidateEntirePortfolio = () => {
+    playCashChime();
+    onSellAll?.();
+  };
+
+  const handleFinish = () => {
+    if (mode === 'buy') {
+      const purchases: SharePurchase[] = Object.entries(quantities)
+        .filter(([_, count]) => count > 0)
+        .map(([companyId, count]) => ({ companyId: companyId as CompanyId, count }));
+
+      if (purchases.length > 0) {
+        playCashChime();
+        onConfirmPurchases(purchases);
+      } else {
+        playClick();
+        onPass();
+      }
     } else {
       playClick();
       onPass();
@@ -121,79 +159,186 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
   return (
     <div className="inline-stock-shelf">
       <div className="shelf-header">
-        <span className="shelf-title">
-          <ShoppingBag size={14} style={{ marginRight: '6px' }} />
-          {t('shelf.title')}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="shelf-title">
+            <ShoppingBag size={14} style={{ marginRight: '6px' }} />
+            {t('shelf.title')}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              type="button"
+              className={`btn-mode-tab ${mode === 'buy' ? 'active' : ''}`}
+              onClick={() => {
+                playClick();
+                setMode('buy');
+              }}
+              aria-label="ACQUIRE SHARES (BUY)"
+            >
+              <ShoppingBag size={13} style={{ marginRight: '5px' }} />
+              ACQUIRE SHARES (BUY)
+            </button>
+            <button
+              type="button"
+              className={`btn-mode-tab ${mode === 'sell' ? 'active' : ''}`}
+              onClick={() => {
+                playClick();
+                setMode('sell');
+              }}
+              aria-label="LIQUIDATE SHARES (SELL)"
+            >
+              <DollarSign size={13} style={{ marginRight: '5px' }} />
+              LIQUIDATE SHARES (SELL)
+              {totalOwnedSharesCount > 0 && (
+                <span className="tab-shares-badge">{totalOwnedSharesCount}</span>
+              )}
+            </button>
+          </div>
+        </div>
+
         <span className="shelf-budget">
-          {language === 'de' ? (
-            <>
-              Ausgewählt: <strong>{totalSelectedShares} / 3 Aktien</strong> | Gesamt:{' '}
-              <strong>${totalCost}</strong> | Bargeld: <strong>${activePlayerCash}</strong>
-            </>
+          {mode === 'buy' ? (
+            language === 'de' ? (
+              <>
+                Ausgewählt: <strong>{totalSelectedShares} / 3 Aktien</strong> | Gesamt:{' '}
+                <strong>${totalCost}</strong> | Bargeld: <strong>${activePlayerCash}</strong>
+              </>
+            ) : (
+              <>
+                Selected: <strong>{totalSelectedShares} / 3 shares</strong> | Total:{' '}
+                <strong>${totalCost}</strong> | Cash: <strong>${activePlayerCash}</strong>
+              </>
+            )
           ) : (
             <>
-              Selected: <strong>{totalSelectedShares} / 3 shares</strong> | Total:{' '}
-              <strong>${totalCost}</strong> | Cash: <strong>${activePlayerCash}</strong>
+              Portfolio:{' '}
+              <strong>
+                {totalOwnedSharesCount} {language === 'de' ? 'Aktien' : 'shares'}
+              </strong>{' '}
+              | Wert: <strong>${totalPortfolioValue}</strong> | Cash:{' '}
+              <strong>${activePlayerCash}</strong>
             </>
           )}
         </span>
       </div>
 
-      <div className="shelf-companies-row">
-        {activeCompanyList.length === 0 ? (
-          <div className="no-companies-note">{t('shelf.noCompanies')}</div>
-        ) : (
-          activeCompanyList.map((def) => {
-            const cState = companies[def.id];
-            const qty = quantities[def.id] || 0;
-            const price = getPrice(def);
-            const canAdd =
-              totalSelectedShares < 3 &&
-              qty < (cState?.availableShares || 0) &&
-              totalCost + price <= activePlayerCash;
+      {mode === 'buy' ? (
+        <div className="shelf-companies-row">
+          {activeCompanyList.length === 0 ? (
+            <div className="no-companies-note">{t('shelf.noCompanies')}</div>
+          ) : (
+            activeCompanyList.map((def) => {
+              const cState = companies[def.id];
+              const qty = quantities[def.id] || 0;
+              const price = getPrice(def);
+              const canAdd =
+                totalSelectedShares < 3 &&
+                qty < (cState?.availableShares || 0) &&
+                totalCost + price <= activePlayerCash;
 
-            return (
-              <div
-                key={def.id}
-                className="inline-company-card"
-                style={{ borderLeftColor: def.color }}
-              >
-                <div className="company-info">
-                  <span className="company-name">{def.name}</span>
-                  <span className="company-price">${price}</span>
-                  <span className="company-avail">
-                    {cState?.availableShares} {language === 'de' ? 'übrig' : 'left'}
-                  </span>
+              return (
+                <div
+                  key={def.id}
+                  className="inline-company-card"
+                  style={{ borderLeftColor: def.color }}
+                >
+                  <div className="company-info">
+                    <span className="company-name">{def.name}</span>
+                    <span className="company-price">${price}</span>
+                    <span className="company-avail">
+                      {cState?.availableShares} {language === 'de' ? 'übrig' : 'left'}
+                    </span>
+                  </div>
+                  <div className="company-counter">
+                    <button
+                      type="button"
+                      className="counter-btn"
+                      onClick={() => handleDecrement(def.id)}
+                      disabled={qty <= 0}
+                      aria-label={`decrease ${def.name}`}
+                    >
+                      <Minus size={12} />
+                    </button>
+                    <span className="counter-val">{qty}</span>
+                    <button
+                      type="button"
+                      className="counter-btn"
+                      onClick={() => handleIncrement(def.id)}
+                      disabled={!canAdd}
+                      aria-label={`increase ${def.name}`}
+                    >
+                      <Plus size={12} />
+                    </button>
+                  </div>
                 </div>
-                <div className="company-counter">
-                  <button
-                    type="button"
-                    className="counter-btn"
-                    onClick={() => handleDecrement(def.id)}
-                    disabled={qty <= 0}
-                    aria-label={`decrease ${def.name}`}
-                  >
-                    <Minus size={12} />
-                  </button>
-                  <span className="counter-val">{qty}</span>
-                  <button
-                    type="button"
-                    className="counter-btn"
-                    onClick={() => handleIncrement(def.id)}
-                    disabled={!canAdd}
-                    aria-label={`increase ${def.name}`}
-                  >
-                    <Plus size={12} />
-                  </button>
+              );
+            })
+          )}
+        </div>
+      ) : (
+        <div className="shelf-companies-row">
+          {ownedCompanies.length === 0 ? (
+            <div className="no-companies-note" style={{ padding: '12px 4px' }}>
+              You currently hold no corporate equity to liquidate.
+            </div>
+          ) : (
+            ownedCompanies.map((def) => {
+              const ownedCount = playerShares[def.id] ?? 0;
+              const price = getPrice(def);
+              const totalVal = ownedCount * price;
+
+              return (
+                <div
+                  key={def.id}
+                  className="inline-company-card"
+                  style={{ borderLeftColor: def.color }}
+                >
+                  <div className="company-info">
+                    <span className="company-name">{def.name}</span>
+                    <span className="company-price">${price}</span>
+                    <span className="company-avail">
+                      {ownedCount} shares owned · ${totalVal}
+                    </span>
+                  </div>
+                  <div className="company-counter" style={{ gap: '6px' }}>
+                    <button
+                      type="button"
+                      className="btn-sell-action"
+                      onClick={() => handleSellOne(def.id)}
+                      aria-label={`sell 1 share of ${def.name}`}
+                    >
+                      -1 Share
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-sell-action is-all"
+                      onClick={() => handleSellAllCompany(def.id, ownedCount)}
+                      aria-label={`sell all shares of ${def.name}`}
+                    >
+                      Sell All
+                    </button>
+                  </div>
                 </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+              );
+            })
+          )}
+        </div>
+      )}
 
       <div className="shelf-footer-actions">
+        {mode === 'sell' && (
+          <button
+            type="button"
+            className="btn btn-secondary liquidate-all-portfolio-btn"
+            onClick={handleLiquidateEntirePortfolio}
+            disabled={totalOwnedSharesCount === 0}
+            aria-label="LIQUIDATE ENTIRE PORTFOLIO"
+            style={{ marginRight: 'auto' }}
+          >
+            <Trash2 size={13} style={{ marginRight: '5px' }} />
+            LIQUIDATE ENTIRE PORTFOLIO
+          </button>
+        )}
+
         <button
           type="button"
           className="btn btn-primary finish-turn-btn"
@@ -201,9 +346,14 @@ export const InlineStockMarket: React.FC<InlineStockMarketProps> = ({
           aria-label="finish turn"
         >
           <Check size={14} style={{ marginRight: '6px' }} />
-          {totalSelectedShares > 0 ? t('shelf.buyFinish') : t('shelf.passFinish')}
+          {mode === 'buy'
+            ? totalSelectedShares > 0
+              ? t('shelf.buyFinish')
+              : t('shelf.passFinish')
+            : 'FINISH TURN'}
         </button>
       </div>
     </div>
   );
 };
+

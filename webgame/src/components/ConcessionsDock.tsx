@@ -6,6 +6,7 @@ import type {
   CompanyId,
   CompanyState,
   SharePurchase,
+  ShareSale,
   TileCoord,
   TurnPhase,
 } from '../engine/types';
@@ -27,6 +28,7 @@ export interface ConcessionsDockProps {
   hoveredCoord: TileCoord | null;
   activePlayerCash: number;
   activePlayerName?: string;
+  playerShares?: Partial<Record<CompanyId, number>>;
   board?: readonly (readonly CellState[])[];
   companies: Partial<Record<CompanyId, CompanyState>>;
   definitions: readonly CompanyDefinition[];
@@ -36,6 +38,8 @@ export interface ConcessionsDockProps {
   onPlaceTile: (coord: TileCoord) => void;
   onDiscardDeadTile: (coord: TileCoord) => void;
   onConfirmPurchases: (purchases: SharePurchase[]) => void;
+  onConfirmSales?: (sales: ShareSale[]) => void;
+  onSellAll?: () => void;
   onPassTurn: () => void;
 }
 
@@ -81,6 +85,7 @@ export const ConcessionsDock: React.FC<ConcessionsDockProps> = ({
   selectedCoord,
   hoveredCoord,
   activePlayerCash,
+  playerShares,
   board,
   companies,
   definitions,
@@ -90,6 +95,8 @@ export const ConcessionsDock: React.FC<ConcessionsDockProps> = ({
   onPlaceTile,
   onDiscardDeadTile,
   onConfirmPurchases,
+  onConfirmSales,
+  onSellAll,
   onPassTurn,
 }) => {
   // If in buy_shares phase and active player's turn, unfold InlineStockMarket
@@ -100,7 +107,10 @@ export const ConcessionsDock: React.FC<ConcessionsDockProps> = ({
           activePlayerCash={activePlayerCash}
           companies={companies}
           definitions={definitions}
+          playerShares={playerShares}
           onConfirmPurchases={onConfirmPurchases}
+          onConfirmSales={onConfirmSales}
+          onSellAll={onSellAll}
           onPass={onPassTurn}
         />
       </div>

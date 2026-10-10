@@ -5,6 +5,7 @@ import type {
   CompanyId,
   CompanyState,
   SharePurchase,
+  ShareSale,
   TileCoord,
   TurnPhase,
 } from '../engine/types';
@@ -19,6 +20,7 @@ export interface ActionDockProps {
   hoveredCoord: TileCoord | null;
   activePlayerCash: number;
   activePlayerName?: string;
+  playerShares?: Partial<Record<CompanyId, number>>;
   board?: readonly (readonly CellState[])[];
   companies: Partial<Record<CompanyId, CompanyState>>;
   definitions: readonly CompanyDefinition[];
@@ -31,6 +33,8 @@ export interface ActionDockProps {
   onPlayBlankTile?: (coord: TileCoord) => void;
   onToggleHideChits?: (hidden: boolean) => void;
   onConfirmPurchases: (purchases: SharePurchase[]) => void;
+  onConfirmSales?: (sales: ShareSale[]) => void;
+  onSellAll?: () => void;
   onPassTurn: () => void;
 }
 
@@ -42,6 +46,7 @@ export const ActionDock: React.FC<ActionDockProps> = ({
   hoveredCoord,
   activePlayerCash,
   activePlayerName,
+  playerShares,
   board,
   companies,
   definitions,
@@ -54,6 +59,8 @@ export const ActionDock: React.FC<ActionDockProps> = ({
   onPlayBlankTile,
   onToggleHideChits,
   onConfirmPurchases,
+  onConfirmSales,
+  onSellAll,
   onPassTurn,
 }) => {
   return (
@@ -63,7 +70,10 @@ export const ActionDock: React.FC<ActionDockProps> = ({
           activePlayerCash={activePlayerCash}
           companies={companies}
           definitions={definitions}
+          playerShares={playerShares}
           onConfirmPurchases={onConfirmPurchases}
+          onConfirmSales={onConfirmSales}
+          onSellAll={onSellAll}
           onPass={onPassTurn}
         />
       ) : (

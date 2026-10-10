@@ -845,6 +845,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
             hoveredCoord={hoveredHandCoord}
             activePlayerCash={activePlayer?.cash ?? 0}
             activePlayerName={activePlayer?.name}
+            playerShares={activePlayer?.shares}
             board={gameState.board}
             companies={gameState.companies}
             definitions={gameState.config.companies}
@@ -854,6 +855,8 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
             onPlaceTile={handlePlaceTile}
             onDiscardDeadTile={handleDiscardDeadTile}
             onConfirmPurchases={handleConfirmPurchases}
+            onConfirmSales={handleConfirmSales}
+            onSellAll={handleSellAllShares}
             onPassTurn={() => {
               if (gameState.phase === 'buy_shares') {
                 dispatch({ type: 'END_TURN' });

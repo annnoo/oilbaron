@@ -675,4 +675,192 @@ describe('InlineStockMarket', () => {
       expect(onPass).not.toHaveBeenCalled();
     });
   });
+
+  describe('Sell Mode & Share Liquidation', () => {
+    const multiCompaniesWithPrices: Record<string, MockCompany> = {
+      american: {
+        id: 'american',
+        name: 'American Natural Gas',
+        tier: 'low',
+        color: '#e63946',
+        isActive: true,
+        isSafe: false,
+        size: 4,
+        stockPrice: 400,
+        availableShares: 10,
+      },
+      imperial: {
+        id: 'imperial',
+        name: 'Imperial Petroleum',
+        tier: 'mid',
+        color: '#2a9d8f',
+        isActive: true,
+        isSafe: false,
+        size: 5,
+        stockPrice: 500,
+        availableShares: 10,
+      },
+    };
+
+    it('toggles between Buy and Sell modes via header tabs', () => {
+      render(
+        <InlineStockMarket
+          activePlayerCash={3000}
+          companies={multiCompaniesWithPrices}
+          definitions={CLASSIC_COMPANIES}
+          playerShares={{ american: 3, imperial: 2 }}
+          onConfirmPurchases={vi.fn()}
+          onConfirmSales={vi.fn()}
+          onSellAll={vi.fn()}
+          onPass={vi.fn()}
+        />
+      );
+
+      // Defaults to Buy Mode
+      expect(screen.getByRole('button', { name: /ACQUIRE SHARES/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /LIQUIDATE SHARES/i })).toBeInTheDocument();
+
+      // Switch to Sell Mode
+      const sellTab = screen.getByRole('button', { name: /LIQUIDATE SHARES/i });
+      fireEvent.click(sellTab);
+
+      // In Sell Mode, shows owned corporations
+      expect(screen.getByText(/3 shares owned/i)).toBeInTheDocument();
+      expect(screen.getByText(/2 shares owned/i)).toBeInTheDocument();
+
+      // Switch back to Buy Mode
+      const buyTab = screen.getByRole('button', { name: /ACQUIRE SHARES/i });
+      fireEvent.click(buyTab);
+
+      expect(screen.getByText(/0 \/ 3 shares/i)).toBeInTheDocument();
+    });
+
+    it('shows empty state message when player owns 0 shares across all companies in Sell Mode', () => {
+      render(
+        <InlineStockMarket
+          activePlayerCash={3000}
+          companies={multiCompaniesWithPrices}
+          definitions={CLASSIC_COMPANIES}
+          playerShares={{}}
+          onConfirmPurchases={vi.fn()}
+          onConfirmSales={vi.fn()}
+          onSellAll={vi.fn()}
+          onPass={vi.fn()}
+        />
+      );
+
+      const sellTab = screen.getByRole('button', { name: /LIQUIDATE SHARES/i });
+      fireEvent.click(sellTab);
+
+      expect(screen.getByText(/You currently hold no corporate equity to liquidate/i)).toBeInTheDocument();
+
+      // Global Liquidate button should be disabled
+      const liquidateAllBtn = screen.getByRole('button', { name: /LIQUIDATE ENTIRE PORTFOLIO/i });
+      expect((liquidateAllBtn as any).props?.disabled).toBe(true);
+    });
+
+    it('executes onConfirmSales and plays cash chime when selling 1 share', () => {
+      const playCashChimeSpy = vi.spyOn(audioModule, 'playCashChime');
+      const onConfirmSales = vi.fn();
+
+      render(
+        <InlineStockMarket
+          activePlayerCash={3000}
+          companies={multiCompaniesWithPrices}
+          definitions={CLASSIC_COMPANIES}
+          playerShares={{ american: 3 }}
+          onConfirmPurchases={vi.fn()}
+          onConfirmSales={onConfirmSales}
+          onSellAll={vi.fn()}
+          onPass={vi.fn()}
+        />
+      );
+
+      const sellTab = screen.getByRole('button', { name: /LIQUIDATE SHARES/i });
+      fireEvent.click(sellTab);
+
+      const sell1Btn = screen.getByRole('button', { name: /sell 1 share of american/i });
+      fireEvent.click(sell1Btn);
+
+      expect(onConfirmSales).toHaveBeenCalledWith([{ companyId: 'american', count: 1 }]);
+      expect(playCashChimeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('executes onConfirmSales and plays cash chime when selling all shares of a company', () => {
+      const playCashChimeSpy = vi.spyOn(audioModule, 'playCashChime');
+      const onConfirmSales = vi.fn();
+
+      render(
+        <InlineStockMarket
+          activePlayerCash={3000}
+          companies={multiCompaniesWithPrices}
+          definitions={CLASSIC_COMPANIES}
+          playerShares={{ american: 4, imperial: 2 }}
+          onConfirmPurchases={vi.fn()}
+          onConfirmSales={onConfirmSales}
+          onSellAll={vi.fn()}
+          onPass={vi.fn()}
+        />
+      );
+
+      const sellTab = screen.getByRole('button', { name: /LIQUIDATE SHARES/i });
+      fireEvent.click(sellTab);
+
+      const sellAllAmericanBtn = screen.getByRole('button', { name: /sell all shares of american/i });
+      fireEvent.click(sellAllAmericanBtn);
+
+      expect(onConfirmSales).toHaveBeenCalledWith([{ companyId: 'american', count: 4 }]);
+      expect(playCashChimeSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('executes onSellAll when clicking LIQUIDATE ENTIRE PORTFOLIO', () => {
+      const onSellAll = vi.fn();
+
+      render(
+        <InlineStockMarket
+          activePlayerCash={3000}
+          companies={multiCompaniesWithPrices}
+          definitions={CLASSIC_COMPANIES}
+          playerShares={{ american: 3, imperial: 2 }}
+          onConfirmPurchases={vi.fn()}
+          onConfirmSales={vi.fn()}
+          onSellAll={onSellAll}
+          onPass={vi.fn()}
+        />
+      );
+
+      const sellTab = screen.getByRole('button', { name: /LIQUIDATE SHARES/i });
+      fireEvent.click(sellTab);
+
+      const liquidateAllBtn = screen.getByRole('button', { name: /LIQUIDATE ENTIRE PORTFOLIO/i });
+      fireEvent.click(liquidateAllBtn);
+
+      expect(onSellAll).toHaveBeenCalledTimes(1);
+    });
+
+    it('triggers onPass when FINISH TURN is clicked in Sell Mode', () => {
+      const onPass = vi.fn();
+
+      render(
+        <InlineStockMarket
+          activePlayerCash={3000}
+          companies={multiCompaniesWithPrices}
+          definitions={CLASSIC_COMPANIES}
+          playerShares={{ american: 3 }}
+          onConfirmPurchases={vi.fn()}
+          onConfirmSales={vi.fn()}
+          onSellAll={vi.fn()}
+          onPass={onPass}
+        />
+      );
+
+      const sellTab = screen.getByRole('button', { name: /LIQUIDATE SHARES/i });
+      fireEvent.click(sellTab);
+
+      const finishBtn = screen.getByRole('button', { name: /finish turn/i });
+      fireEvent.click(finishBtn);
+
+      expect(onPass).toHaveBeenCalledTimes(1);
+    });
+  });
 });
