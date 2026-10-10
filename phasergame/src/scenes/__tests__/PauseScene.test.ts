@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { listLocalStorageSaveSlots, saveToLocalStorage, loadFromLocalStorage } from '../../engine/persistence';
 import { createInitialGameState, DEFAULT_CONFIG } from '../../engine/config';
 
@@ -20,7 +20,7 @@ describe('Pause & Save/Load scene integration logic', () => {
   it('manages save slots cleanly through persistence API', () => {
     const state = createInitialGameState(DEFAULT_CONFIG, [
       { name: 'Baron Alpha', isAi: false },
-      { name: 'AI Rival', isAi: true, aiDifficulty: 'medium' },
+      { name: 'AI Rival', isAi: true, aiDifficulty: 'smart' },
     ]);
 
     const success = saveToLocalStorage(state, 'slot-1');
