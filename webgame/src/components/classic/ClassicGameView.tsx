@@ -4,6 +4,8 @@ import {
   CLASSIC_CHIT_BITMAP,
   CLASSIC_NOT_PLAYABLE_BITMAP,
   CLASSIC_PLAYER_INFO_BITMAP,
+  CLASSIC_DISCARD_SQUARE_BITMAP,
+  CLASSIC_BLANK_BITMAP,
 } from '../../assets/classicAssets';
 import { ClassicWindow } from './ClassicWindow';
 import { TurnGuidanceBar } from '../TurnGuidanceBar';
@@ -22,6 +24,7 @@ export interface ClassicGameViewProps {
   onSelectHandCoord: (coord: TileCoord | null) => void;
   onPlaceTile: (coord: TileCoord) => void;
   onDiscardDeadTile: (coord: TileCoord) => void;
+  onPlayBlankTile?: (coord: TileCoord) => void;
   onMenuAction: (actionId: MenuActionId) => void;
   onSwitchToModern: () => void;
   onTogglePlayerAi: (playerIndex: number, isAi: boolean) => void;
@@ -38,6 +41,7 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
   onSelectHandCoord,
   onPlaceTile,
   onDiscardDeadTile,
+  onPlayBlankTile,
   onMenuAction,
   onSwitchToModern,
   onTogglePlayerAi,
@@ -91,7 +95,7 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
       </div>
 
       {/* Main Window */}
-      <ClassicWindow title="OILBARON.EXE - [Petroleum Oil Board: 10x12]">
+      <ClassicWindow title={`OILBARON.EXE - [Petroleum Oil Board: ${rows}x${cols}]`}>
         {/* Top Menu Bar */}
         <MenuBar
           activePlayerIsAi={activePlayerIsAi}
@@ -113,7 +117,13 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
             lastDividendPayout={gameState.lastDividendPayout}
             onToggleHints={onToggleHints}
             onPlaceSelected={() => {
-              if (selectedHandCoord) onPlaceTile(selectedHandCoord);
+              if (selectedHandCoord) {
+                if (selectedHandCoord.isBlank) {
+                  onPlayBlankTile?.(selectedHandCoord);
+                } else {
+                  onPlaceTile(selectedHandCoord);
+                }
+              }
             }}
             onOpenStockMarket={onOpenStockMarket}
             onEndTurn={onEndTurn}
@@ -176,12 +186,22 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
 
           {/* Layout: Board on Left, Scoreboard on Right */}
           <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-            {/* 10x12 Board */}
-            <div className="win31-window" style={{ padding: '6px' }} data-testid="classic-board">
-              <div className="win31-board-grid">
+            {/* Board */}
+            <div
+              className="win31-window"
+              style={{ padding: '6px', maxWidth: '100%', overflow: 'auto' }}
+              data-testid="classic-board"
+            >
+              <div
+                className="win31-board-grid"
+                style={{
+                  gridTemplateColumns: `26px repeat(${cols}, 38px)`,
+                  gridTemplateRows: `20px repeat(${rows}, 38px)`,
+                }}
+              >
                 {/* Column Headers */}
                 <div className="win31-coord-hdr"></div>
-                {Array.from({ length: 12 }, (_, c) => (
+                {Array.from({ length: cols }, (_, c) => (
                   <div key={`col-${c}`} className="win31-coord-hdr">
                     {c + 1}
                   </div>
@@ -235,6 +255,15 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
                             />
                           )}
 
+                          {cell?.type === 'discarded' && (
+                            <img
+                              src={CLASSIC_DISCARD_SQUARE_BITMAP}
+                              alt="Discarded X"
+                              className="win31-cell-bmp"
+                              data-testid="classic-discarded-marker"
+                            />
+                          )}
+
                           {cell?.type === 'empty' && (
                             <span className="win31-cell-label">
                               {ROW_LABELS[r]}{c + 1}
@@ -255,27 +284,33 @@ export const ClassicGameView: React.FC<ClassicGameViewProps> = ({
 
                 <div className="win31-hand-tray">
                   {activePlayer?.hand.map((tile, idx) => {
+                    const isBlank = Boolean(tile.isBlank);
                     const isSelected =
                       selectedHandCoord &&
-                      selectedHandCoord.row === tile.row &&
-                      selectedHandCoord.col === tile.col;
+                      (isBlank && selectedHandCoord.isBlank
+                        ? true
+                        : selectedHandCoord.row === tile.row && selectedHandCoord.col === tile.col);
 
                     return (
                       <div
-                        key={`hand-${tile.row}-${tile.col}-${idx}`}
+                        key={isBlank ? `hand-blank-${idx}` : `hand-${tile.row}-${tile.col}-${idx}`}
                         className={`win31-chit-card ${isSelected ? 'is-selected' : ''}`}
+                        title={isBlank ? 'Wildcard Blank Piece: Click to place on any vacant square' : undefined}
                         onClick={() => {
                           playClick();
+                          if (isBlank && onPlayBlankTile) {
+                            onPlayBlankTile(tile);
+                          }
                           onSelectHandCoord(isSelected ? null : tile);
                         }}
                       >
                         <img
-                          src={CLASSIC_CHIT_BITMAP}
-                          alt="Chit"
+                          src={isBlank ? CLASSIC_BLANK_BITMAP : CLASSIC_CHIT_BITMAP}
+                          alt={isBlank ? 'Blank Piece' : 'Chit'}
                           style={{ width: '24px', height: '24px', imageRendering: 'pixelated' }}
                         />
                         <span style={{ fontSize: '11px', fontWeight: 'bold', marginTop: '2px' }}>
-                          {formatCoord(tile)}
+                          {isBlank ? 'BLANK' : formatCoord(tile)}
                         </span>
                       </div>
                     );

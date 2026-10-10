@@ -10,6 +10,10 @@ import {
   parseCoord,
   coordEquals,
   getNeighborDetails,
+  generateTilePool,
+  isValidCoord,
+  coordToString,
+  stringToCoord,
 } from '../board';
 
 describe('Board Adjacency & Move Classification', () => {
@@ -194,15 +198,73 @@ describe('Board Adjacency & Move Classification', () => {
     expect(parseCoord('J-12')).toEqual({ row: 9, col: 11 });
     expect(parseCoord('j12')).toEqual({ row: 9, col: 11 });
 
-    // Invalid coordinates
-    expect(parseCoord('K-1')).toBeNull();
-    expect(parseCoord('A-13')).toBeNull();
+    // Invalid coordinates for default 26x26 grid
+    expect(parseCoord('Z-27')).toBeNull();
+    expect(parseCoord('AA-1')).toBeNull();
     expect(parseCoord('invalid')).toBeNull();
+
+    // Custom row/col boundary enforcement
+    expect(parseCoord('K-1', 10, 12)).toBeNull();
+    expect(parseCoord('A-13', 10, 12)).toBeNull();
 
     // Coordinate equality
     expect(coordEquals({ row: 1, col: 2 }, { row: 1, col: 2 })).toBe(true);
     expect(coordEquals({ row: 1, col: 2 }, { row: 1, col: 3 })).toBe(false);
     expect(coordEquals(null, { row: 1, col: 2 })).toBe(false);
+  });
+
+  it('supports full 26x26 grid dimensions and A-Z row labels', () => {
+    // A-1 to Z-26 formatting
+    expect(formatCoord({ row: 0, col: 0 })).toBe('A-1');
+    expect(formatCoord({ row: 10, col: 0 })).toBe('K-1');
+    expect(formatCoord({ row: 25, col: 25 })).toBe('Z-26');
+
+    // Parsing A-1 through Z-26
+    expect(parseCoord('K-1')).toEqual({ row: 10, col: 0 });
+    expect(parseCoord('k1')).toEqual({ row: 10, col: 0 });
+    expect(parseCoord('Z-26')).toEqual({ row: 25, col: 25 });
+    expect(parseCoord('z26')).toEqual({ row: 25, col: 25 });
+    expect(parseCoord('M-15')).toEqual({ row: 12, col: 14 });
+
+    // Out of bounds for 26x26
+    expect(parseCoord('AA-1')).toBeNull();
+    expect(parseCoord('Z-27')).toBeNull();
+    expect(parseCoord('A-0')).toBeNull();
+
+    // Board creation and adjacency on 26x26
+    const board = createEmptyBoard(26, 26);
+    expect(board).toHaveLength(26);
+    expect(board[25]).toHaveLength(26);
+
+    const corner = getAdjacentCoords({ row: 25, col: 25 }, 26, 26);
+    expect(corner).toHaveLength(2);
+    expect(corner).toContainEqual({ row: 24, col: 25 });
+    expect(corner).toContainEqual({ row: 25, col: 24 });
+  });
+
+  it('tests generateTilePool, isValidCoord, coordToString and stringToCoord', () => {
+    // 26x26 grid pool generation
+    const pool26 = generateTilePool(26, 26);
+    expect(pool26).toHaveLength(676);
+    expect(pool26[0]).toEqual({ row: 0, col: 0 });
+    expect(pool26[675]).toEqual({ row: 25, col: 25 });
+
+    // With wildcard blanks
+    const poolWithBlanks = generateTilePool(10, 12, true);
+    expect(poolWithBlanks).toHaveLength(124);
+    const blanks = poolWithBlanks.filter((t) => t.isBlank);
+    expect(blanks).toHaveLength(4);
+
+    // isValidCoord
+    expect(isValidCoord({ row: 0, col: 0 }, 10, 12)).toBe(true);
+    expect(isValidCoord({ row: 9, col: 11 }, 10, 12)).toBe(true);
+    expect(isValidCoord({ row: 10, col: 11 }, 10, 12)).toBe(false);
+    expect(isValidCoord({ row: 25, col: 25 }, 26, 26)).toBe(true);
+    expect(isValidCoord({ row: -1, col: -1, isBlank: true }, 10, 12)).toBe(true);
+
+    // Aliases
+    expect(coordToString({ row: 3, col: 7 })).toBe('D-8');
+    expect(stringToCoord('D-8')).toEqual({ row: 3, col: 7 });
   });
 
   it('provides comprehensive 4-way neighbor details including edges', () => {

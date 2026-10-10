@@ -113,6 +113,11 @@ export interface PlayerHandProps {
   onDiscardDeadTile?: (coord: TileCoord) => void;
 
   /**
+   * Callback to open blank wildcard piece coordinate selector modal.
+   */
+  onPlayBlankTile?: (coord: TileCoord) => void;
+
+  /**
    * Callback when hotseat hide chits toggle is clicked.
    */
   onToggleHideChits?: (hide: boolean) => void;
@@ -169,6 +174,7 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
   onHoverTile,
   onPlaceTile,
   onDiscardDeadTile,
+  onPlayBlankTile,
   onToggleHideChits,
   disabled = false,
   className = '',
@@ -189,20 +195,23 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
   // Identify all dead tiles in the player's hand
   const deadTiles: TileCoord[] = React.useMemo(() => {
     if (!board) return [];
-    return hand.filter((coord) => isTileDead(board, coord, companies, safeThreshold));
+    return hand.filter((coord) => !coord.isBlank && isTileDead(board, coord, companies, safeThreshold));
   }, [hand, board, companies, safeThreshold]);
 
   const hasDeadTiles = deadTiles.length > 0;
 
   // Check if currently selected tile is dead
   const isSelectedTileDead = React.useMemo(() => {
-    if (!selectedCoord || !board) return false;
+    if (!selectedCoord || selectedCoord.isBlank || !board) return false;
     return isTileDead(board, selectedCoord, companies, safeThreshold);
   }, [selectedCoord, board, companies, safeThreshold]);
 
   const handleTileClick = (coord: TileCoord) => {
     if (disabled) return;
     playClick();
+    if (coord.isBlank && onPlayBlankTile) {
+      onPlayBlankTile(coord);
+    }
     const isAlreadySelected = coordEquals(selectedCoord, coord);
     const nextCoord = isAlreadySelected ? null : coord;
 
@@ -244,7 +253,11 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
   const handlePlaceChitClick = () => {
     if (!selectedCoord || isSelectedTileDead || !isPlacementAllowed) return;
     playClick();
-    onPlaceTile?.(selectedCoord);
+    if (selectedCoord.isBlank) {
+      onPlayBlankTile?.(selectedCoord);
+    } else {
+      onPlaceTile?.(selectedCoord);
+    }
   };
 
   const handleDiscardDeadClick = () => {
@@ -354,24 +367,25 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
         ) : (
           /* Visible Chits Rack */
           <div className="hand-chits-rack" role="radiogroup" aria-label="Available chits in hand">
-            {hand.map((tile) => {
+            {hand.map((tile, idx) => {
+              const isBlank = Boolean(tile.isBlank);
               const formatted = formatCoord(tile);
               const isSelected = coordEquals(selectedCoord, tile);
               const isHovered = coordEquals(hoveredCoord, tile);
-              const isDead = board ? isTileDead(board, tile, companies, safeThreshold) : false;
-              const classification = board ? classifyMove(board, tile, companies, safeThreshold) : null;
+              const isDead = board && !isBlank ? isTileDead(board, tile, companies, safeThreshold) : false;
+              const classification = board && !isBlank ? classifyMove(board, tile, companies, safeThreshold) : null;
               const pill = getClassificationPill(classification);
 
               return (
                 <div
-                  key={`${tile.row}-${tile.col}`}
+                  key={isBlank ? `blank-${idx}` : `${tile.row}-${tile.col}`}
                   role="button"
                   tabIndex={disabled ? -1 : 0}
                   aria-pressed={isSelected}
-                  aria-label={`Chit ${formatted}${isDead ? ' (Dead tile, unplayable)' : ''}`}
+                  aria-label={isBlank ? 'Wildcard Blank Chit' : `Chit ${formatted}${isDead ? ' (Dead tile, unplayable)' : ''}`}
                   className={`hand-chit-card ${isSelected ? 'is-selected' : ''} ${
                     isDead ? 'is-dead' : ''
-                  } ${isHovered ? 'is-hovered' : ''}`}
+                  } ${isHovered ? 'is-hovered' : ''} ${isBlank ? 'is-wildcard' : ''}`}
                   onClick={() => handleTileClick(tile)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -382,7 +396,9 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
                   onMouseEnter={() => handleTileMouseEnter(tile)}
                   onMouseLeave={handleTileMouseLeave}
                   title={
-                    isDead
+                    isBlank
+                      ? 'WILDCARD BLANK PIECE: Click to choose any vacant square to place on the board'
+                      : isDead
                       ? `${formatted}: DEAD TILE — Merges 2+ safe corporations. Discard to draw a replacement.`
                       : `${formatted}: Click to select for placement; hover to preview on board`
                   }
@@ -391,7 +407,15 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
                 >
                   <div className="chit-card-top">
                     <span className="chit-coord-tag">{formatted}</span>
-                    {isDead ? (
+                    {isBlank ? (
+                      <span
+                        className="chit-move-pill preview-pill-founding"
+                        style={{ backgroundColor: '#f59e0b', color: '#111827', fontWeight: 700 }}
+                        title="Wildcard Blank Piece"
+                      >
+                        WILDCARD
+                      </span>
+                    ) : isDead ? (
                       <span className="chit-dead-badge" title="Unplayable dead tile">
                         DEAD
                       </span>
@@ -405,9 +429,12 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
                   </div>
 
                   <div className="chit-card-body">
-                    <span className="chit-marker-dot" />
+                    <span
+                      className="chit-marker-dot"
+                      style={isBlank ? { backgroundColor: '#f59e0b' } : undefined}
+                    />
                     <span className="chit-card-type">
-                      {isDead ? 'ILLEGAL' : 'WILDCAT'}
+                      {isBlank ? 'WILDCARD' : isDead ? 'ILLEGAL' : 'WILDCAT'}
                     </span>
                   </div>
 
@@ -454,12 +481,16 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
             disabled={!selectedCoord || isSelectedTileDead || !isPlacementAllowed || hideChits}
             aria-label={
               selectedCoord
-                ? `Place Chit ${formatCoord(selectedCoord)}`
+                ? selectedCoord.isBlank
+                  ? 'Place Blank Piece'
+                  : `Place Chit ${formatCoord(selectedCoord)}`
                 : 'Place Chit'
             }
             title={
               !selectedCoord
                 ? 'Select a chit from your hand first'
+                : selectedCoord.isBlank
+                ? 'Click to choose any vacant square to place this wildcard blank piece'
                 : isSelectedTileDead
                 ? 'Dead tiles cannot be placed on the board; discard instead'
                 : !isPlacementAllowed
@@ -470,7 +501,9 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
             <Play size={13} />
             <span>
               {selectedCoord && !isSelectedTileDead
-                ? (language === 'de' ? `Feld platzieren (${formatCoord(selectedCoord)})` : `Place Chit (${formatCoord(selectedCoord)})`)
+                ? selectedCoord.isBlank
+                  ? (language === 'de' ? 'Joker platzieren (BLANK)' : 'Place Blank Piece (Wildcard)')
+                  : (language === 'de' ? `Feld platzieren (${formatCoord(selectedCoord)})` : `Place Chit (${formatCoord(selectedCoord)})`)
                 : isSelectedTileDead
                 ? (language === 'de' ? 'Totes Feld nicht platzierbar' : 'Cannot Place Dead Chit')
                 : (language === 'de' ? 'Feld platzieren' : 'Place Chit')}
@@ -507,7 +540,11 @@ export const PlayerHand: React.FC<PlayerHandProps> = ({
           {hideChits ? (
             <span className="text-muted">{language === 'de' ? 'Hand zum Sichtschutz verborgen' : 'Hand hidden for hotseat privacy'}</span>
           ) : selectedCoord ? (
-            isSelectedTileDead ? (
+            selectedCoord.isBlank ? (
+              <span className="status-selected-info">
+                {language === 'de' ? 'Ausgewählt:' : 'Selected:'} <strong className="text-amber">BLANK (Joker)</strong> — {language === 'de' ? 'Klicke auf Joker platzieren, um Koordinaten zu wählen' : 'Click Place Blank to designate any vacant board cell'}
+              </span>
+            ) : isSelectedTileDead ? (
               <span className="status-dead-warning">
                 <ShieldAlert size={12} /> {language === 'de' ? `${formatCoord(selectedCoord)} ist ein totes Feld (kann sichere Konzerne nicht fusionieren)` : `${formatCoord(selectedCoord)} is a dead tile (cannot merge safe corporations)`}
               </span>

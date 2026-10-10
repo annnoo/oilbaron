@@ -34,6 +34,42 @@ describe('Task 5 Modals', () => {
       expect(html).toContain('Quick Roster Presets');
       expect(html).toContain('Start Game');
     });
+
+    it('renders AI difficulty selector (Smart AI / Dumb AI) for CPU players', () => {
+      const html = renderToStaticMarkup(
+        <NewGameModal
+          isOpen={true}
+          onClose={vi.fn()}
+          onStartGame={vi.fn()}
+          initialPlayers={[
+            { id: 'p1', name: 'Alice', color: '#f59e0b', isAi: false },
+            { id: 'p2', name: 'Bot 1', color: '#38bdf8', isAi: true, aiDifficulty: 'dumb' },
+          ]}
+        />
+      );
+      // AI difficulty selector should be present for CPU player
+      expect(html).toContain('ai-difficulty-select');
+      expect(html).toContain('Smart AI');
+      expect(html).toContain('Dumb AI');
+      expect(html).toContain('value="dumb" selected=""');
+    });
+
+    it('renders 8th Company and Economy Randomizer checkboxes', () => {
+      const html = renderToStaticMarkup(
+        <NewGameModal
+          isOpen={true}
+          onClose={vi.fn()}
+          onStartGame={vi.fn()}
+          initialConfig={CLASSIC_CONFIG}
+        />
+      );
+      expect(html).toContain('Enable 8th Company');
+      expect(html).toContain('Purple Oil Company, Int.');
+      expect(html).toContain('Random Share Prices');
+      expect(html).toContain('Random Dividends');
+      expect(html).toContain('Board Rows');
+      expect(html).toContain('Board Columns');
+    });
   });
 
   describe('OptionsModal', () => {
@@ -64,7 +100,14 @@ describe('Task 5 Modals', () => {
       expect(html).toContain('1993 Oil Baron Classic');
       expect(html).toContain('Modern Balanced');
       expect(html).toContain('Safe Company Threshold');
+      expect(html).toContain('Board Rows');
+      expect(html).toContain('Board Columns');
       expect(html).toContain('Slow Computer Turns');
+      expect(html).toContain('Show Discarded Markers (&#x27;X&#x27;)');
+      expect(html).toContain('Enable 8th Company');
+      expect(html).toContain('Purple Oil Company, Int.');
+      expect(html).toContain('Random Share Prices');
+      expect(html).toContain('Random Dividends');
     });
   });
 

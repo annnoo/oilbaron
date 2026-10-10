@@ -1,4 +1,13 @@
-export type CompanyId = string;
+export type CompanyId =
+  | 'american'
+  | 'arabian'
+  | 'imperial'
+  | 'supra'
+  | 'tower'
+  | 'royal'
+  | 'weemoco'
+  | 'purple'
+  | string;
 
 export type CompanyTier = 'low' | 'mid' | 'high' | 'custom';
 
@@ -9,6 +18,7 @@ export interface CompanyDefinition {
   basePrice: number;     // e.g. $200 (low), $300 (mid), $400 (high)
   priceDelta: number;    // e.g. $100 per size tier
   color: string;
+  letter?: string;
   icon?: string;
   shortName?: string;
   isDormant?: boolean;
@@ -29,12 +39,14 @@ export interface CompanyState {
 export interface TileCoord {
   row: number; // 0..rows-1
   col: number; // 0..cols-1
+  isBlank?: boolean;
 }
 
 export type CellState =
   | { type: 'empty' }
   | { type: 'unincorporated' }
-  | { type: 'company'; companyId: CompanyId };
+  | { type: 'company'; companyId: CompanyId }
+  | { type: 'discarded' };
 
 export interface PlayerState {
   id: string;
@@ -44,6 +56,7 @@ export interface PlayerState {
   shares: Record<CompanyId, number>;
   hand: TileCoord[];
   color?: string;
+  aiDifficulty?: 'dumb' | 'smart';
 }
 
 export interface PlayerInit {
@@ -51,6 +64,7 @@ export interface PlayerInit {
   name: string;
   isAi?: boolean;
   color?: string;
+  aiDifficulty?: 'dumb' | 'smart';
 }
 
 export type PlayerInput = string | PlayerInit;
@@ -104,6 +118,7 @@ export interface ShareDispositionChoices {
 
 export type GameAction =
   | { type: 'PLACE_TILE'; coord: TileCoord }
+  | { type: 'PLACE_BLANK_TILE'; blankTileCoord: TileCoord; targetCoord: TileCoord }
   | { type: 'CHOOSE_FOUNDED_COMPANY'; companyId: CompanyId }
   | { type: 'CHOOSE_MERGER_SURVIVOR'; survivorCompanyId: CompanyId }
   | { type: 'DISPOSE_MERGER_SHARES'; choices: ShareDispositionChoices }
@@ -130,6 +145,10 @@ export interface GameConfig {
   hardShareLimits?: boolean;     // Enforce strict share limits during merger trade
   allowBlanks?: boolean;         // Allow blank wildcard tiles
   purchaseLimit?: boolean;       // Enable per-turn purchasing limit
+  showDiscard?: boolean;         // Show discarded markers ('X') on grid when tiles are discarded
+  enableEighthCompany?: boolean; // Enable 8th corporation ("Purple Oil Company, Int.")
+  randomSharePrices?: boolean;   // Randomize initial base share prices within classic bounds
+  randomDividends?: boolean;     // Randomize dividend payout yield rates
 }
 
 export interface GameState {

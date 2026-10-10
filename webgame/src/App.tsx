@@ -57,6 +57,7 @@ import { WarRoomModal } from './components/modals/WarRoomModal';
 import { SaveLoadModal } from './components/modals/SaveLoadModal';
 import { HelpModal } from './components/modals/HelpModal';
 import { GameOverModal } from './components/modals/GameOverModal';
+import { BlankPieceModal } from './components/modals/BlankPieceModal';
 
 export interface AppProps {
   initialViewMode?: 'modern' | 'classic';
@@ -86,8 +87,11 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
   const [companyStatsModalOpen, setCompanyStatsModalOpen] = useState<boolean>(false);
   const [warRoomModalOpen, setWarRoomModalOpen] = useState<boolean>(false);
   const [saveLoadModalOpen, setSaveLoadModalOpen] = useState<boolean>(false);
+  const [saveLoadModalMode, setSaveLoadModalMode] = useState<'save' | 'load'>('save');
   const [helpModalOpen, setHelpModalOpen] = useState<boolean>(false);
   const [mergerStatsDismissed, setMergerStatsDismissed] = useState<boolean>(false);
+  const [blankPieceModalOpen, setBlankPieceModalOpen] = useState<boolean>(false);
+  const [activeBlankCoord, setActiveBlankCoord] = useState<TileCoord | null>(null);
 
   // View Mode & Turn Guidance Coaching
   const [viewMode, setViewMode] = useState<'modern' | 'classic'>(() => {
@@ -257,7 +261,11 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
         setOptionsModalOpen(true);
         break;
       case 'save_game':
+        setSaveLoadModalMode('save');
+        setSaveLoadModalOpen(true);
+        break;
       case 'load_game':
+        setSaveLoadModalMode('load');
         setSaveLoadModalOpen(true);
         break;
       case 'toggle_sound':
@@ -386,8 +394,31 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedHandCoord, gameState.phase, dispatch]);
 
+  // Wildcard Blank Piece Handlers
+  const handleOpenBlankModal = (blankCoord: TileCoord) => {
+    setActiveBlankCoord(blankCoord);
+    setBlankPieceModalOpen(true);
+  };
+
+  const handleConfirmBlankPlacement = (blankTileCoord: TileCoord, targetCoord: TileCoord) => {
+    try {
+      dispatch({ type: 'PLACE_BLANK_TILE', blankTileCoord, targetCoord });
+      setBlankPieceModalOpen(false);
+      setActiveBlankCoord(null);
+      setSelectedHandCoord(null);
+      playClick();
+      setLastAction(`Placed wildcard blank piece at ${formatCoord(targetCoord)}`);
+    } catch (err: any) {
+      setLastAction(`Blank placement error: ${err.message}`);
+    }
+  };
+
   // Tile Placement Handler
   const handlePlaceTile = (coord: TileCoord) => {
+    if (coord.isBlank) {
+      handleOpenBlankModal(coord);
+      return;
+    }
     try {
       dispatch({ type: 'PLACE_TILE', coord });
       setSelectedHandCoord(null);
@@ -423,8 +454,17 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
   };
 
   // New Game Setup Confirmation
-  const handleStartCustomGame = (players: PlayerConfig[]) => {
-    const nextState = createInitialGameState(config, players);
+  const handleStartCustomGame = (
+    players: PlayerConfig[],
+    options?: Partial<Pick<GameConfig, 'boardRows' | 'boardCols' | 'enableEighthCompany' | 'randomSharePrices' | 'randomDividends'>>
+  ) => {
+    const effectiveGameConfig: GameConfig = options
+      ? { ...config, ...options }
+      : config;
+    if (options) {
+      setConfig(effectiveGameConfig);
+    }
+    const nextState = createInitialGameState(effectiveGameConfig, players);
     setGameState(nextState);
     setSelectedHandCoord(null);
     setNewGameModalOpen(false);
@@ -525,6 +565,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
           onSelectHandCoord={setSelectedHandCoord}
           onPlaceTile={handlePlaceTile}
           onDiscardDeadTile={handleDiscardDeadTile}
+          onPlayBlankTile={handleOpenBlankModal}
           onMenuAction={handleMenuAction}
           onSwitchToModern={() => setViewMode('modern')}
           onTogglePlayerAi={handleTogglePlayerAi}
@@ -556,6 +597,14 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
                 activePlayerIsAi={activePlayerIsAi}
                 activePlayerName={activePlayer?.name ?? 'Player 1'}
                 onAction={handleMenuAction}
+                onSaveGame={() => {
+                  setSaveLoadModalMode('save');
+                  setSaveLoadModalOpen(true);
+                }}
+                onLoadGame={() => {
+                  setSaveLoadModalMode('load');
+                  setSaveLoadModalOpen(true);
+                }}
                 onViewClassic={() => setViewMode('classic')}
               />
             </div>
@@ -725,6 +774,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
                   onHoverTile={setHoveredHandCoord}
                   onPlaceTile={handlePlaceTile}
                   onDiscardDeadTile={handleDiscardDeadTile}
+                  onPlayBlankTile={handleOpenBlankModal}
                   onToggleHideChits={setHideChits}
                 />
               </div>
@@ -758,6 +808,7 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
           color: p.color || '#f59e0b',
           isAi: p.isAi ?? false,
         }))}
+        initialConfig={config}
       />
 
       <OptionsModal
@@ -861,12 +912,28 @@ export const App: React.FC<AppProps> = ({ initialViewMode }) => {
         gameState={gameState}
       />
 
+      {/* Wildcard Blank Piece (BLANK_MOVE) Modal */}
+      {blankPieceModalOpen && activeBlankCoord && (
+        <BlankPieceModal
+          isOpen={blankPieceModalOpen}
+          onClose={() => {
+            setBlankPieceModalOpen(false);
+            setActiveBlankCoord(null);
+          }}
+          gameState={gameState}
+          blankTileCoord={activeBlankCoord}
+          onConfirmPlacement={handleConfirmBlankPlacement}
+        />
+      )}
+
       {/* 6. System Utility Modals */}
       <SaveLoadModal
         isOpen={saveLoadModalOpen}
+        initialMode={saveLoadModalMode}
         onClose={() => setSaveLoadModalOpen(false)}
         gameState={gameState}
         onLoadGame={(loadedState) => {
+          setSelectedHandCoord(null);
           setGameState(loadedState);
           setLastAction('Loaded match state successfully!');
         }}

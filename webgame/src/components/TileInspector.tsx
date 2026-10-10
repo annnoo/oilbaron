@@ -55,7 +55,7 @@ export const COMPANY_VISUALS: Record<string, CompanyVisual> = {
   tower:    { id: 'tower',    name: 'Tower Drilling',        shortCode: 'TW', initials: 'T', color: '#457b9d', textColor: '#ffffff' },
   royal:    { id: 'royal',    name: 'Royal Dutch',           shortCode: 'RD', initials: 'R', color: '#1d3557', textColor: '#ffffff' },
   weemoco:  { id: 'weemoco',  name: 'Weemoco Oil',           shortCode: 'WM', initials: 'W', color: '#38b000', textColor: '#ffffff' },
-  purple:   { id: 'purple',   name: 'Purple Oil',            shortCode: 'PR', initials: 'P', color: '#7209b7', textColor: '#ffffff' },
+  purple:   { id: 'purple',   name: 'Purple Oil Company, Int.', shortCode: 'PR', initials: 'P', color: '#8b5cf6', textColor: '#ffffff' },
 };
 
 export function getCompanyVisual(companyId: CompanyId, definitions?: readonly CompanyDefinition[]): CompanyVisual {
@@ -301,6 +301,13 @@ export const TileInspector: React.FC<TileInspectorProps> = ({
               </div>
             </div>
           )}
+
+          {cell.type === 'discarded' && (
+            <div className="tooltip-chit">
+              <span className="badge badge-danger">Discarded Tile</span>
+              <span className="tooltip-sub">Permanently Blocked ('X')</span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -428,6 +435,21 @@ export const TileInspector: React.FC<TileInspectorProps> = ({
                 </div>
               )}
 
+              {/* DISCARDED CELL */}
+              {cell.type === 'discarded' && (
+                <div className="inspector-uninc-state">
+                  <div className="state-badge-row">
+                    <span className="badge badge-danger">Discarded Tile ('X')</span>
+                    <span className="badge">Permanently Blocked</span>
+                  </div>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '6px' }}>
+                    {language === 'de'
+                      ? 'Dieses Feld wurde beim Ablegen eines unspielbaren toten Plättchens markiert und ist dauerhaft blockiert.'
+                      : 'This tile was marked upon discarding an unplayable dead tile and is permanently blocked.'}
+                  </p>
+                </div>
+              )}
+
               {/* COMPANY TILE */}
               {cell.type === 'company' && companyState && companyVisual && (
                 <div className="inspector-company-state">
@@ -523,6 +545,10 @@ export const TileInspector: React.FC<TileInspectorProps> = ({
                     neighborLabel = comp ? comp.name : n.cell.companyId.toUpperCase();
                     neighborColor = comp?.color ?? 'var(--accent-blue)';
                     neighborBadgeClass = 'badge-active';
+                  } else if (n.cell?.type === 'discarded') {
+                    neighborLabel = language === 'de' ? 'Abgelegt (Blockiert)' : 'Discarded (Blocked)';
+                    neighborColor = '#ef4444';
+                    neighborBadgeClass = 'badge-danger';
                   }
 
                   return (

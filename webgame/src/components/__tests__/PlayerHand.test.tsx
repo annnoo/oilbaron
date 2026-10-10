@@ -231,4 +231,25 @@ describe('PlayerHand Component', () => {
     expect(html).toContain('No chits currently held in hand');
     expect(html).toContain('0 / 6 chits');
   });
+
+  it('renders wildcard blank piece chits distinctly with WILDCARD badge', () => {
+    const handWithBlank: TileCoord[] = [
+      { row: 2, col: 3 },
+      { row: -1, col: -1, isBlank: true },
+    ];
+
+    const html = renderToStaticMarkup(
+      <PlayerHand
+        hand={handWithBlank}
+        activePlayerName="Player 1"
+        board={emptyBoard}
+        selectedCoord={{ row: -1, col: -1, isBlank: true }}
+      />
+    );
+
+    expect(html).toContain('BLANK');
+    expect(html).toContain('WILDCARD');
+    expect(html).toContain('Place Blank Piece (Wildcard)');
+    expect(html).toContain('BLANK (Joker)');
+  });
 });

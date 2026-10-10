@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, User, Bot, Plus, Trash2, X, Play, Palette } from 'lucide-react';
 import { playClick } from '../../assets/audio';
 import { DEFAULT_PLAYER_COLORS } from '../../engine/config';
+import type { GameConfig } from '../../engine/types';
 import { useTranslation } from '../../i18n';
 
 export interface PlayerConfig {
@@ -9,13 +10,18 @@ export interface PlayerConfig {
   name: string;
   color: string;
   isAi: boolean;
+  aiDifficulty?: 'dumb' | 'smart';
 }
 
 export interface NewGameModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onStartGame: (players: PlayerConfig[]) => void;
+  onStartGame: (
+    players: PlayerConfig[],
+    options?: Partial<Pick<GameConfig, 'boardRows' | 'boardCols' | 'enableEighthCompany' | 'randomSharePrices' | 'randomDividends'>>
+  ) => void;
   initialPlayers?: readonly PlayerConfig[];
+  initialConfig?: GameConfig;
 }
 
 export const COLOR_PALETTE: readonly string[] = [
@@ -31,7 +37,7 @@ export const COLOR_PALETTE: readonly string[] = [
 
 const DEFAULT_ROSTER: readonly PlayerConfig[] = [
   { id: 'p1', name: 'Player 1', color: '#f59e0b', isAi: false },
-  { id: 'p2', name: 'Computer 1 (CPU)', color: '#38bdf8', isAi: true },
+  { id: 'p2', name: 'Computer 1 (CPU)', color: '#38bdf8', isAi: true, aiDifficulty: 'smart' },
 ];
 
 export const NewGameModal: React.FC<NewGameModalProps> = ({
@@ -39,6 +45,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
   onClose,
   onStartGame,
   initialPlayers,
+  initialConfig,
 }) => {
   const { t, language } = useTranslation();
   const [players, setPlayers] = useState<PlayerConfig[]>(() => {
@@ -48,14 +55,26 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
         name: p.name,
         color: p.color || COLOR_PALETTE[idx % COLOR_PALETTE.length]!,
         isAi: Boolean(p.isAi),
+        aiDifficulty: Boolean(p.isAi) ? (p.aiDifficulty ?? 'smart') : undefined,
       }));
     }
     return DEFAULT_ROSTER.map((p) => ({ ...p }));
   });
 
   const [activeColorPickerIdx, setActiveColorPickerIdx] = useState<number | null>(null);
+  const [boardRows, setBoardRows] = useState<number>(initialConfig?.boardRows ?? 10);
+  const [boardCols, setBoardCols] = useState<number>(initialConfig?.boardCols ?? 12);
+  const [enableEighthCompany, setEnableEighthCompany] = useState<boolean>(
+    initialConfig?.enableEighthCompany ?? false
+  );
+  const [randomSharePrices, setRandomSharePrices] = useState<boolean>(
+    initialConfig?.randomSharePrices ?? false
+  );
+  const [randomDividends, setRandomDividends] = useState<boolean>(
+    initialConfig?.randomDividends ?? false
+  );
 
-  // Sync state if modal reopens or initialPlayers changes
+  // Sync state if modal reopens or initialPlayers/initialConfig changes
   useEffect(() => {
     if (isOpen) {
       if (initialPlayers && initialPlayers.length >= 2) {
@@ -65,14 +84,20 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
             name: p.name,
             color: p.color || COLOR_PALETTE[idx % COLOR_PALETTE.length]!,
             isAi: Boolean(p.isAi),
+            aiDifficulty: Boolean(p.isAi) ? (p.aiDifficulty ?? 'smart') : undefined,
           }))
         );
       } else {
         setPlayers(DEFAULT_ROSTER.map((p) => ({ ...p })));
       }
+      setBoardRows(initialConfig?.boardRows ?? 10);
+      setBoardCols(initialConfig?.boardCols ?? 12);
+      setEnableEighthCompany(initialConfig?.enableEighthCompany ?? false);
+      setRandomSharePrices(initialConfig?.randomSharePrices ?? false);
+      setRandomDividends(initialConfig?.randomDividends ?? false);
       setActiveColorPickerIdx(null);
     }
-  }, [isOpen, initialPlayers]);
+  }, [isOpen, initialPlayers, initialConfig]);
 
   if (!isOpen) return null;
 
@@ -91,6 +116,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
         name: defaultName,
         color: nextColor,
         isAi,
+        aiDifficulty: isAi ? 'smart' : undefined,
       },
     ]);
   };
@@ -126,9 +152,17 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
         return {
           ...p,
           isAi: nextAi,
+          aiDifficulty: nextAi ? (p.aiDifficulty ?? 'smart') : undefined,
           name: updatedName,
         };
       })
+    );
+  };
+
+  const handleDifficultyChange = (index: number, difficulty: 'dumb' | 'smart') => {
+    playClick();
+    setPlayers((prev) =>
+      prev.map((p, idx) => (idx === index ? { ...p, aiDifficulty: difficulty } : p))
     );
   };
 
@@ -146,22 +180,22 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
       case '2p':
         setPlayers([
           { id: 'p1', name: 'Player 1', color: COLOR_PALETTE[0]!, isAi: false },
-          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true },
+          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true, aiDifficulty: 'smart' },
         ]);
         break;
       case '3p':
         setPlayers([
           { id: 'p1', name: 'Player 1', color: COLOR_PALETTE[0]!, isAi: false },
-          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true },
-          { id: 'p3', name: 'Computer 2 (CPU)', color: COLOR_PALETTE[2]!, isAi: true },
+          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true, aiDifficulty: 'smart' },
+          { id: 'p3', name: 'Computer 2 (CPU)', color: COLOR_PALETTE[2]!, isAi: true, aiDifficulty: 'smart' },
         ]);
         break;
       case '4p_cpu':
         setPlayers([
           { id: 'p1', name: 'Player 1', color: COLOR_PALETTE[0]!, isAi: false },
-          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true },
-          { id: 'p3', name: 'Computer 2 (CPU)', color: COLOR_PALETTE[2]!, isAi: true },
-          { id: 'p4', name: 'Computer 3 (CPU)', color: COLOR_PALETTE[3]!, isAi: true },
+          { id: 'p2', name: 'Computer 1 (CPU)', color: COLOR_PALETTE[1]!, isAi: true, aiDifficulty: 'smart' },
+          { id: 'p3', name: 'Computer 2 (CPU)', color: COLOR_PALETTE[2]!, isAi: true, aiDifficulty: 'smart' },
+          { id: 'p4', name: 'Computer 3 (CPU)', color: COLOR_PALETTE[3]!, isAi: true, aiDifficulty: 'smart' },
         ]);
         break;
       case '4p_human':
@@ -180,8 +214,15 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
     const sanitized = players.map((p, idx) => ({
       ...p,
       name: p.name.trim() || `Player ${idx + 1}`,
+      aiDifficulty: p.isAi ? (p.aiDifficulty ?? 'smart') : undefined,
     }));
-    onStartGame(sanitized);
+    onStartGame(sanitized, {
+      boardRows,
+      boardCols,
+      enableEighthCompany,
+      randomSharePrices,
+      randomDividends,
+    });
   };
 
   return (
@@ -353,7 +394,7 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                   />
 
                   {/* Human vs CPU Toggle */}
-                    <button
+                  <button
                     type="button"
                     className={`player-type-toggle-btn ${
                       player.isAi ? 'is-cpu' : 'is-human'
@@ -365,6 +406,30 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
                     {player.isAi ? <Bot size={13} /> : <User size={13} />}
                     <span>{player.isAi ? t('common.cpu') : t('common.human')}</span>
                   </button>
+
+                  {/* AI Difficulty Selector (CPU only) */}
+                  {player.isAi && (
+                    <select
+                      className="form-select ai-difficulty-select"
+                      style={{
+                        width: 'auto',
+                        minWidth: '95px',
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        height: '28px',
+                      }}
+                      value={player.aiDifficulty ?? 'smart'}
+                      onChange={(e) =>
+                        handleDifficultyChange(index, e.target.value as 'dumb' | 'smart')
+                      }
+                      title={`AI Difficulty for ${player.name}`}
+                      aria-label={`AI Difficulty for ${player.name}`}
+                      data-testid={`ai-difficulty-${index}`}
+                    >
+                      <option value="smart">{t('newGame.smartAi')}</option>
+                      <option value="dumb">{t('newGame.dumbAi')}</option>
+                    </select>
+                  )}
 
                   {/* Remove Player Button */}
                   <button
@@ -388,6 +453,110 @@ export const NewGameModal: React.FC<NewGameModalProps> = ({
             <p className="form-help">
               {t('newGame.helpText')}
             </p>
+          </div>
+
+          {/* Board Dimensions Controls (10-26) */}
+          <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg-surface-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+            <div className="form-group" style={{ marginBottom: '12px' }}>
+              <div className="form-label">
+                <span>{t('options.boardRows')}</span>
+                <span className="slider-value-badge">{boardRows} rows (A–{String.fromCharCode(64 + boardRows)})</span>
+              </div>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min={10}
+                  max={26}
+                  value={boardRows}
+                  onChange={(e) => setBoardRows(Number(e.target.value))}
+                  className="slider-input"
+                  aria-label={t('options.boardRows')}
+                />
+              </div>
+              <span className="form-help">{t('options.boardRowsDesc')}</span>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '0' }}>
+              <div className="form-label">
+                <span>{t('options.boardCols')}</span>
+                <span className="slider-value-badge">{boardCols} cols (1–{boardCols})</span>
+              </div>
+              <div className="slider-container">
+                <input
+                  type="range"
+                  min={10}
+                  max={26}
+                  value={boardCols}
+                  onChange={(e) => setBoardCols(Number(e.target.value))}
+                  className="slider-input"
+                  aria-label={t('options.boardCols')}
+                />
+              </div>
+              <span className="form-help">{t('options.boardColsDesc')}</span>
+            </div>
+          </div>
+
+          {/* Gameplay Rule Toggles: 8th Company & Economy Randomizers */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px', padding: '12px', background: 'var(--bg-surface-elevated)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={enableEighthCompany}
+                onChange={(e) => {
+                  playClick();
+                  setEnableEighthCompany(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {t('options.eighthCompany')}
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  {t('options.eighthCompanyDesc')}
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={randomSharePrices}
+                onChange={(e) => {
+                  playClick();
+                  setRandomSharePrices(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {t('options.randomSharePrices')}
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  {t('options.randomSharePricesDesc')}
+                </span>
+              </div>
+            </label>
+
+            <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={randomDividends}
+                onChange={(e) => {
+                  playClick();
+                  setRandomDividends(e.target.checked);
+                }}
+                style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)' }}
+              />
+              <div>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {t('options.randomDividends')}
+                </span>
+                <span className="form-help" style={{ display: 'block', margin: 0 }}>
+                  {t('options.randomDividendsDesc')}
+                </span>
+              </div>
+            </label>
           </div>
         </div>
 

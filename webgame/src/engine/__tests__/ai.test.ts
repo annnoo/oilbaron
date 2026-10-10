@@ -343,4 +343,230 @@ describe('AI Player Decision Engine', () => {
     expect(finalState.winnerPlayerId).toBeDefined();
     expect(finalState.players.every((p) => p.cash > 0)).toBe(true);
   });
+
+  describe('AI Difficulty Heuristics (Dumb AI vs Smart AI)', () => {
+    it('Smart AI deterministically selects optimal founding tile over isolated tile', () => {
+      const state = createInitialGameState(
+        DEFAULT_CONFIG,
+        [
+          { name: 'Smart Bot', isAi: true, aiDifficulty: 'smart' },
+          { name: 'Opponent', isAi: true },
+        ],
+        100
+      );
+      state.board[3]![3] = { type: 'unincorporated' };
+      state.players[0]!.hand = [
+        { row: 0, col: 0 },
+        { row: 3, col: 4 },
+      ];
+
+      const move = getBestTileMove(state, 0, 'smart');
+      expect(move).toEqual({ row: 3, col: 4 });
+    });
+
+    it('Dumb AI introduces noise causing suboptimal isolated tile choice over founding tile', () => {
+      const state = createInitialGameState(
+        DEFAULT_CONFIG,
+        [
+          { name: 'Dumb Bot', isAi: true, aiDifficulty: 'dumb' },
+          { name: 'Opponent', isAi: true },
+        ],
+        100
+      );
+      state.board[3]![3] = { type: 'unincorporated' };
+      state.players[0]!.hand = [
+        { row: 0, col: 0 },
+        { row: 3, col: 4 },
+      ];
+
+      // RNG favoring row 0 candidate with maximum positive noise
+      const move = getBestTileMove(state, 0, 'dumb', (candidate) => {
+        return candidate.row === 0 ? 0.99 : 0.01;
+      });
+      expect(move).toEqual({ row: 0, col: 0 });
+    });
+
+    it('Smart AI defends majority by purchasing contested company shares', () => {
+      const state = createInitialGameState(
+        DEFAULT_CONFIG,
+        [
+          { name: 'Smart Bot', isAi: true, aiDifficulty: 'smart' },
+          { name: 'Opponent', isAi: true },
+        ],
+        100
+      );
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 4,
+        availableShares: 10,
+      };
+      state.companies.imperial = {
+        ...state.companies.imperial!,
+        isActive: true,
+        size: 4,
+        availableShares: 10,
+      };
+      state.players[0]!.shares.american = 4;
+      state.players[1]!.shares.american = 5;
+      state.players[0]!.shares.imperial = 0;
+      state.players[1]!.shares.imperial = 0;
+
+      const purchases = getBestSharePurchases(state, 0, 'smart');
+      expect(purchases.length).toBeGreaterThan(0);
+      const americanPurchase = purchases.find((p) => p.companyId === 'american');
+      expect(americanPurchase).toBeDefined();
+      expect(americanPurchase!.count).toBeGreaterThan(0);
+    });
+
+    it('Dumb AI purchases random affordable shares without majority defense strategy', () => {
+      const state = createInitialGameState(
+        DEFAULT_CONFIG,
+        [
+          { name: 'Dumb Bot', isAi: true, aiDifficulty: 'dumb' },
+          { name: 'Opponent', isAi: true },
+        ],
+        100
+      );
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 4,
+        availableShares: 10,
+      };
+      state.companies.imperial = {
+        ...state.companies.imperial!,
+        isActive: true,
+        size: 4,
+        availableShares: 10,
+      };
+      state.players[0]!.shares.american = 4;
+      state.players[1]!.shares.american = 5;
+
+      const mockRng = () => 0.99;
+      const purchases = getBestSharePurchases(state, 0, 'dumb', mockRng);
+      expect(purchases.length).toBeGreaterThan(0);
+      const totalCount = purchases.reduce((sum, p) => sum + p.count, 0);
+      expect(totalCount).toBeLessThanOrEqual(DEFAULT_CONFIG.maxSharesPerPurchase);
+      expect(purchases.some((p) => p.companyId === 'imperial')).toBe(true);
+    });
+
+    it('Smart AI trades merger shares 2-for-1 when favorable and sells when unfavorable', () => {
+      const state = createInitialGameState(
+        DEFAULT_CONFIG,
+        [{ name: 'Smart Bot', isAi: true, aiDifficulty: 'smart' }],
+        100
+      );
+      state.companies.royal = {
+        ...state.companies.royal!,
+        isActive: true,
+        size: 5,
+        availableShares: 10,
+      };
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 2,
+      };
+      state.players[0]!.shares.american = 4;
+      state.pendingMerger = {
+        coord: { row: 2, col: 2 },
+        participatingCompanyIds: ['royal', 'american'],
+        survivingCompanyId: 'royal',
+        defunctCompanyQueue: ['american'],
+        currentDefunctCompanyId: 'american',
+        shareholderQueue: ['p1'],
+        currentShareholderIndex: 0,
+        preMergerPrices: { american: 200, royal: 700 },
+      };
+
+      const smartDisp = getBestMergerDisposition(state, 0, 'american', 'smart');
+      expect(smartDisp).toEqual({ trade: 4, sell: 0, hold: 0 });
+    });
+
+    it('Dumb AI can make suboptimal merger disposition decisions (e.g. holding or selling)', () => {
+      const state = createInitialGameState(
+        DEFAULT_CONFIG,
+        [{ name: 'Dumb Bot', isAi: true, aiDifficulty: 'dumb' }],
+        100
+      );
+      state.companies.royal = {
+        ...state.companies.royal!,
+        isActive: true,
+        size: 5,
+        availableShares: 10,
+      };
+      state.companies.american = {
+        ...state.companies.american!,
+        isActive: true,
+        size: 2,
+      };
+      state.players[0]!.shares.american = 4;
+      state.pendingMerger = {
+        coord: { row: 2, col: 2 },
+        participatingCompanyIds: ['royal', 'american'],
+        survivingCompanyId: 'royal',
+        defunctCompanyQueue: ['american'],
+        currentDefunctCompanyId: 'american',
+        shareholderQueue: ['p1'],
+        currentShareholderIndex: 0,
+        preMergerPrices: { american: 200, royal: 700 },
+      };
+
+      const dumbHold = getBestMergerDisposition(state, 0, 'american', 'dumb', () => 0.1);
+      expect(dumbHold.hold).toBeGreaterThan(0);
+
+      const dumbSell = getBestMergerDisposition(state, 0, 'american', 'dumb', () => 0.5);
+      expect(dumbSell.sell).toBe(4);
+      expect(dumbSell.trade).toBe(0);
+    });
+
+    it('simulateAiTurn respects player aiDifficulty and executes turn', () => {
+      const state = createInitialGameState(
+        DEFAULT_CONFIG,
+        [
+          { name: 'Dumb Bot', isAi: true, aiDifficulty: 'dumb' },
+          { name: 'Smart Bot', isAi: true, aiDifficulty: 'smart' },
+        ],
+        100
+      );
+
+      expect(state.players[0]!.aiDifficulty).toBe('dumb');
+      expect(state.players[1]!.aiDifficulty).toBe('smart');
+
+      const nextState = simulateAiTurn(state);
+      expect(nextState.activePlayerIndex).toBe(1);
+    });
+
+    it('plays a complete game with all Dumb AI players to completion', () => {
+      const config = { ...DEFAULT_CONFIG, boardRows: 6, boardCols: 6 };
+      const finalState = playFullGameAi(config, 3, 5555, 500, 'dumb');
+
+      expect(finalState.phase).toBe('game_over');
+      expect(finalState.winnerPlayerId).toBeDefined();
+      expect(finalState.players.every((p) => p.aiDifficulty === 'dumb')).toBe(true);
+    });
+
+    it('plays a complete game with mixed Dumb AI and Smart AI players', () => {
+      const config = { ...DEFAULT_CONFIG, boardRows: 6, boardCols: 6 };
+      let state = createInitialGameState(
+        config,
+        [
+          { name: 'Dumb 1', isAi: true, aiDifficulty: 'dumb' },
+          { name: 'Smart 1', isAi: true, aiDifficulty: 'smart' },
+        ],
+        7777
+      );
+
+      let turns = 0;
+      while (state.phase !== 'game_over' && turns < 500) {
+        state = simulateAiTurn(state);
+        turns++;
+      }
+
+      expect(state.phase).toBe('game_over');
+      expect(state.winnerPlayerId).toBeDefined();
+    });
+  });
 });
+

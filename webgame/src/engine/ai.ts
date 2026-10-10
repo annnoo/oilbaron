@@ -187,11 +187,15 @@ function evaluateTileMoveUtility(
 
 /**
  * Selects the optimal legal tile to place from the specified player's hand.
+ * Supports 'smart' (deterministic optimal utility) and 'dumb' (authentic 1993
+ * OILBARON.EXE Random(100) noise injection resulting in suboptimal plays).
  * Returns null if no legal moves exist.
  */
 export function getBestTileMove(
   state: GameState,
-  playerIndex: number
+  playerIndex: number,
+  difficulty?: 'dumb' | 'smart',
+  rng: ((candidate: TileCoord) => number) = Math.random
 ): TileCoord | null {
   const player = state.players[playerIndex];
   if (!player || player.hand.length === 0) {
@@ -206,23 +210,49 @@ export function getBestTileMove(
     return null;
   }
 
+  const effectiveDifficulty = difficulty ?? player.aiDifficulty ?? 'smart';
+
+  if (effectiveDifficulty === 'smart') {
+    let bestTile = playableTiles[0]!;
+    let bestScore = evaluateTileMoveUtility(state, player, bestTile);
+
+    for (let i = 1; i < playableTiles.length; i++) {
+      const candidate = playableTiles[i]!;
+      const score = evaluateTileMoveUtility(state, player, candidate);
+      if (score > bestScore) {
+        bestScore = score;
+        bestTile = candidate;
+      } else if (score === bestScore) {
+        // Deterministic tiebreak
+        if (
+          candidate.row * 1000 + candidate.col <
+          bestTile.row * 1000 + bestTile.col
+        ) {
+          bestTile = candidate;
+        }
+      }
+    }
+
+    return bestTile;
+  }
+
+  // Dumb AI: In 1993 OILBARON.EXE (ai.c:710-732), uniform random noise is added
+  // to candidate scores, causing erratic tile choices and suboptimal plays.
+  const getCandidateScore = (t: TileCoord) => {
+    const baseScore = evaluateTileMoveUtility(state, player, t);
+    const noise = rng(t) * 10000;
+    return baseScore + noise;
+  };
+
   let bestTile = playableTiles[0]!;
-  let bestScore = evaluateTileMoveUtility(state, player, bestTile);
+  let bestScore = getCandidateScore(bestTile);
 
   for (let i = 1; i < playableTiles.length; i++) {
     const candidate = playableTiles[i]!;
-    const score = evaluateTileMoveUtility(state, player, candidate);
+    const score = getCandidateScore(candidate);
     if (score > bestScore) {
       bestScore = score;
       bestTile = candidate;
-    } else if (score === bestScore) {
-      // Deterministic tiebreak
-      if (
-        candidate.row * 1000 + candidate.col <
-        bestTile.row * 1000 + bestTile.col
-      ) {
-        bestTile = candidate;
-      }
     }
   }
 
@@ -236,13 +266,24 @@ export function getBestTileMove(
  */
 export function getBestFoundedCompany(
   state: GameState,
-  availableCompanyIds: string[]
+  availableCompanyIds: string[],
+  difficulty?: 'dumb' | 'smart',
+  rng: () => number = Math.random
 ): string {
   if (availableCompanyIds.length === 0) {
     throw new Error('No available companies to found');
   }
 
   const activePlayer = state.players[state.activePlayerIndex];
+  const effectiveDifficulty = difficulty ?? activePlayer?.aiDifficulty ?? 'smart';
+
+  if (effectiveDifficulty === 'dumb') {
+    const idx = Math.min(
+      availableCompanyIds.length - 1,
+      Math.floor(rng() * availableCompanyIds.length)
+    );
+    return availableCompanyIds[idx]!;
+  }
 
   let bestId = availableCompanyIds[0]!;
   let bestScore = -Infinity;
@@ -280,7 +321,9 @@ export function getBestFoundedCompany(
  */
 export function getBestMergerSurvivor(
   state: GameState,
-  tiedCompanyIds: string[]
+  tiedCompanyIds: string[],
+  difficulty?: 'dumb' | 'smart',
+  rng: () => number = Math.random
 ): string {
   if (tiedCompanyIds.length === 0) {
     throw new Error('No tied company ids provided');
@@ -292,6 +335,16 @@ export function getBestMergerSurvivor(
   const activePlayer = state.players[state.activePlayerIndex];
   if (!activePlayer) {
     return tiedCompanyIds[0]!;
+  }
+
+  const effectiveDifficulty = difficulty ?? activePlayer.aiDifficulty ?? 'smart';
+
+  if (effectiveDifficulty === 'dumb') {
+    const idx = Math.min(
+      tiedCompanyIds.length - 1,
+      Math.floor(rng() * tiedCompanyIds.length)
+    );
+    return tiedCompanyIds[idx]!;
   }
 
   let bestSurvivor = tiedCompanyIds[0]!;
@@ -348,7 +401,9 @@ export function getBestMergerSurvivor(
  */
 export function getBestSharePurchases(
   state: GameState,
-  playerIndex: number
+  playerIndex: number,
+  difficulty?: 'dumb' | 'smart',
+  rng: () => number = Math.random
 ): { companyId: string; count: number }[] {
   const player = state.players[playerIndex];
   if (!player || player.cash <= 0) {
@@ -366,6 +421,61 @@ export function getBestSharePurchases(
   );
   if (activeCompanies.length === 0) {
     return [];
+  }
+
+  const effectiveDifficulty = difficulty ?? player.aiDifficulty ?? 'smart';
+
+  if (effectiveDifficulty === 'dumb') {
+    let remainingCash = player.cash;
+    const simulatedAvailable: Record<CompanyId, number> = {};
+    for (const c of activeCompanies) {
+      simulatedAvailable[c.id] = c.availableShares;
+    }
+
+    const purchaseMap: Record<CompanyId, number> = {};
+    let totalPurchased = 0;
+
+    while (totalPurchased < remainingAllowed) {
+      const affordable = activeCompanies.filter((c) => {
+        const avail = simulatedAvailable[c.id] ?? 0;
+        if (avail <= 0) return false;
+        const def = getCompanyDefinition(state.config.companies, c.id);
+        if (!def) return false;
+        const price = calculateSharePrice(def, c.size);
+        return price <= remainingCash;
+      });
+
+      if (affordable.length === 0) {
+        break;
+      }
+
+      const selectedIndex = Math.min(
+        affordable.length - 1,
+        Math.floor(rng() * affordable.length)
+      );
+      const chosenComp = affordable[selectedIndex]!;
+      const chosenDef = getCompanyDefinition(state.config.companies, chosenComp.id)!;
+      const price = calculateSharePrice(chosenDef, chosenComp.size);
+
+      purchaseMap[chosenComp.id] = (purchaseMap[chosenComp.id] ?? 0) + 1;
+      simulatedAvailable[chosenComp.id]!--;
+      remainingCash -= price;
+      totalPurchased++;
+    }
+
+    const purchases: SharePurchase[] = Object.entries(purchaseMap).map(
+      ([companyId, count]) => ({ companyId, count })
+    );
+
+    const validation = validateSharePurchases(
+      player,
+      state.companies,
+      state.config.companies,
+      purchases,
+      remainingAllowed
+    );
+
+    return validation.valid ? purchases : [];
   }
 
   let remainingCash = player.cash;
@@ -474,7 +584,9 @@ export function getBestSharePurchases(
 export function getBestMergerDisposition(
   state: GameState,
   playerIndex: number,
-  defunctCompanyId: string
+  defunctCompanyId: string,
+  difficulty?: 'dumb' | 'smart',
+  rng: () => number = Math.random
 ): ShareDispositionChoices {
   const player = state.players[playerIndex];
   if (!player) {
@@ -485,6 +597,8 @@ export function getBestMergerDisposition(
   if (heldShares <= 0) {
     return { sell: 0, trade: 0, hold: 0 };
   }
+
+  const effectiveDifficulty = difficulty ?? player.aiDifficulty ?? 'smart';
 
   const survivorId = state.pendingMerger?.survivingCompanyId;
   if (!survivorId) {
@@ -513,23 +627,52 @@ export function getBestMergerDisposition(
     availableSurvivorShares
   );
 
-  // 2-for-1 trade is favorable if 1 survivor share >= 2 defunct shares
-  if (maxPossibleTradePairs > 0 && survivorPrice >= 2 * defunctPrice) {
-    const tradeShares = maxPossibleTradePairs * 2;
-    const remainingShares = heldShares - tradeShares;
+  if (effectiveDifficulty === 'smart') {
+    // 2-for-1 trade is favorable if 1 survivor share >= 2 defunct shares
+    if (maxPossibleTradePairs > 0 && survivorPrice >= 2 * defunctPrice) {
+      const tradeShares = maxPossibleTradePairs * 2;
+      const remainingShares = heldShares - tradeShares;
+      return {
+        sell: remainingShares,
+        trade: tradeShares,
+        hold: 0,
+      };
+    }
+
+    // Otherwise, liquidate all held shares into cash
     return {
-      sell: remainingShares,
-      trade: tradeShares,
+      sell: heldShares,
+      trade: 0,
       hold: 0,
     };
   }
 
-  // Otherwise, liquidate all held shares into cash
-  return {
-    sell: heldShares,
-    trade: 0,
-    hold: 0,
-  };
+  // Dumb AI: Can choose suboptimal hold/sell/trade decisions or random choices.
+  const roll = rng();
+  if (roll < 0.33) {
+    // Suboptimally hold all shares
+    return {
+      sell: 0,
+      trade: 0,
+      hold: heldShares,
+    };
+  } else if (roll < 0.66) {
+    // Liquidate all shares into cash (even if trade was 2-for-1 profitable)
+    return {
+      sell: heldShares,
+      trade: 0,
+      hold: 0,
+    };
+  } else {
+    // Trade as many as possible (even if trade was unfavorable)
+    const tradeShares = maxPossibleTradePairs * 2;
+    const remaining = heldShares - tradeShares;
+    return {
+      sell: 0,
+      trade: tradeShares,
+      hold: remaining,
+    };
+  }
 }
 
 /**
@@ -537,7 +680,10 @@ export function getBestMergerDisposition(
  * actions (tile placement, founding choices, merger survivor selection, share disposition,
  * stock purchasing, and turn ending) until the turn completes or the game ends.
  */
-export function simulateAiTurn(state: GameState): GameState {
+export function simulateAiTurn(
+  state: GameState,
+  difficulty?: 'dumb' | 'smart'
+): GameState {
   if (state.phase === 'game_over') {
     return state;
   }
@@ -553,10 +699,11 @@ export function simulateAiTurn(state: GameState): GameState {
     safetyStepCount < MAX_TURN_STEPS
   ) {
     safetyStepCount++;
+    const activePlayer = currentState.players[currentState.activePlayerIndex];
+    const currentDifficulty = difficulty ?? activePlayer?.aiDifficulty ?? 'smart';
 
     switch (currentState.phase) {
       case 'place_tile': {
-        const activePlayer = currentState.players[currentState.activePlayerIndex];
         if (!activePlayer) {
           throw new Error(`Player not found at index ${currentState.activePlayerIndex}`);
         }
@@ -580,13 +727,47 @@ export function simulateAiTurn(state: GameState): GameState {
         }
 
         // 2. Select best legal playable tile
-        const bestMove = getBestTileMove(currentState, currentState.activePlayerIndex);
+        const bestMove = getBestTileMove(
+          currentState,
+          currentState.activePlayerIndex,
+          currentDifficulty
+        );
         if (bestMove) {
           currentState = gameReducer(currentState, {
             type: 'PLACE_TILE',
             coord: bestMove,
           });
           break;
+        }
+
+        // 2b. If active AI holds a wildcard blank piece, find the highest utility legal target
+        const blankTileInHand = activePlayer.hand.find((t) => t.isBlank);
+        if (blankTileInHand) {
+          let bestTarget: TileCoord | null = null;
+          let bestTargetScore = -Infinity;
+          for (let r = 0; r < currentState.config.boardRows; r++) {
+            for (let c = 0; c < currentState.config.boardCols; c++) {
+              const target: TileCoord = { row: r, col: c };
+              if (isTileLegalToPlay(target, currentState.board, currentState.companies, currentState.config)) {
+                const baseScore = evaluateTileMoveUtility(currentState, activePlayer, target);
+                const score = currentDifficulty === 'dumb'
+                  ? baseScore + Math.random() * 10000
+                  : baseScore;
+                if (score > bestTargetScore) {
+                  bestTargetScore = score;
+                  bestTarget = target;
+                }
+              }
+            }
+          }
+          if (bestTarget) {
+            currentState = gameReducer(currentState, {
+              type: 'PLACE_BLANK_TILE',
+              blankTileCoord: blankTileInHand,
+              targetCoord: bestTarget,
+            });
+            break;
+          }
         }
 
         // 3. No playable tiles and no dead tiles
@@ -610,7 +791,11 @@ export function simulateAiTurn(state: GameState): GameState {
 
       case 'choose_founding_company': {
         const available = currentState.pendingFounding?.availableCompanyIds ?? [];
-        const companyId = getBestFoundedCompany(currentState, available);
+        const companyId = getBestFoundedCompany(
+          currentState,
+          available,
+          currentDifficulty
+        );
         currentState = gameReducer(currentState, {
           type: 'CHOOSE_FOUNDED_COMPANY',
           companyId,
@@ -632,7 +817,11 @@ export function simulateAiTurn(state: GameState): GameState {
             ? [survivorCheck.survivorId]
             : participating;
 
-        const survivorCompanyId = getBestMergerSurvivor(currentState, validSurvivorIds);
+        const survivorCompanyId = getBestMergerSurvivor(
+          currentState,
+          validSurvivorIds,
+          currentDifficulty
+        );
         currentState = gameReducer(currentState, {
           type: 'CHOOSE_MERGER_SURVIVOR',
           survivorCompanyId,
@@ -654,10 +843,15 @@ export function simulateAiTurn(state: GameState): GameState {
           throw new Error(`Shareholder ${shareholderId} not found`);
         }
 
+        const shareholder = currentState.players[shareholderIndex];
+        const shareholderDifficulty =
+          difficulty ?? shareholder?.aiDifficulty ?? 'smart';
+
         const choices = getBestMergerDisposition(
           currentState,
           shareholderIndex,
-          pm.currentDefunctCompanyId
+          pm.currentDefunctCompanyId,
+          shareholderDifficulty
         );
 
         currentState = gameReducer(currentState, {
@@ -670,7 +864,8 @@ export function simulateAiTurn(state: GameState): GameState {
       case 'buy_shares': {
         const purchases = getBestSharePurchases(
           currentState,
-          currentState.activePlayerIndex
+          currentState.activePlayerIndex,
+          currentDifficulty
         );
         if (purchases.length > 0) {
           currentState = gameReducer(currentState, {
@@ -705,12 +900,14 @@ export function playFullGameAi(
   config: GameConfig,
   playerCount: number,
   seed?: number,
-  maxTurns: number = 1000
+  maxTurns: number = 1000,
+  defaultDifficulty: 'dumb' | 'smart' = 'smart'
 ): GameState {
   const players = Array.from({ length: playerCount }, (_, i) => ({
     id: `p${i + 1}`,
     name: `Bot ${i + 1}`,
     isAi: true,
+    aiDifficulty: defaultDifficulty,
   }));
 
   let state = createInitialGameState(config, players, seed);

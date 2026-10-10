@@ -18,3 +18,4 @@ export const CLASSIC_DISCARD_PIECE_BITMAP = '/classic_assets/discard_piece.png';
 export const CLASSIC_DISCARD_SQUARE_BITMAP = '/classic_assets/discard_square.png';
 export const CLASSIC_NEXT_TURN_BITMAP = '/classic_assets/next_turn.png';
 export const CLASSIC_PLAYER_INFO_BITMAP = '/classic_assets/player_info.png';
+export const CLASSIC_BLANK_BITMAP = '/classic_assets/blank.png';

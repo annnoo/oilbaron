@@ -93,6 +93,26 @@ describe('MenuBar Component', () => {
       expect(onAction).not.toHaveBeenCalled();
       expect(soundMuted).toBe(true);
     });
+
+    it('dispatches save_game and load_game to callbacks or onAction', () => {
+      const onSave = vi.fn();
+      const onLoad = vi.fn();
+      const onAction = vi.fn();
+
+      dispatchMenuAction('save_game', onSave, onAction);
+      expect(onSave).toHaveBeenCalledTimes(1);
+      expect(onAction).not.toHaveBeenCalled();
+
+      dispatchMenuAction('load_game', onLoad, onAction);
+      expect(onLoad).toHaveBeenCalledTimes(1);
+      expect(onAction).not.toHaveBeenCalled();
+
+      dispatchMenuAction('save_game', undefined, onAction);
+      expect(onAction).toHaveBeenCalledWith('save_game');
+
+      dispatchMenuAction('load_game', undefined, onAction);
+      expect(onAction).toHaveBeenCalledWith('load_game');
+    });
   });
 
   describe('handleKeyboardShortcut', () => {

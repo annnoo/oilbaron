@@ -657,6 +657,28 @@ html, body {
   color: var(--text-primary);
 }
 
+.board-cell.discarded {
+  background-color: #231212;
+  border-color: #5c1d1d;
+  color: #ef4444;
+  cursor: default;
+}
+
+.discarded-tile-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.discarded-x-mark {
+  font-size: 14px;
+  font-weight: 900;
+  color: #ef4444;
+  line-height: 1;
+}
+
 .chit-content {
   display: flex;
   flex-direction: column;
@@ -2258,6 +2280,27 @@ html, body {
 .player-type-toggle-btn.is-cpu {
   color: #c084fc;
   border-color: rgba(192, 132, 252, 0.4);
+}
+
+.ai-difficulty-select {
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ai-difficulty-select:hover {
+  border-color: var(--border-strong);
+}
+
+.ai-difficulty-select:focus {
+  border-color: var(--accent-gold);
 }
 
 /* Quick preset buttons */
